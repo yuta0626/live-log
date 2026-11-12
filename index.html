@@ -11,7 +11,7 @@ nav{display:flex;gap:7px;overflow:auto;margin:12px 0 15px}button,.tab{border:1px
 h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);margin:10px 0}.hidden{display:none}.songlist{display:grid;grid-template-columns:1fr auto;gap:0 12px}.songlist div{padding:7px 2px;border-bottom:1px solid var(--line)}.count{color:#b8d6ff;font-variant-numeric:tabular-nums}
  
 .artist-tag{display:inline-block;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700}
-.artist-BUMP{color:#a9d2ff;background:#163b62;border:1px solid #3677b5}
+.artist-BUMP{color:#ffc1c1;background:#5a1b24;border:1px solid #c94b58}
 .artist-乃木坂{color:#f0c5ff;background:#48215d;border:1px solid #a45cc4}
 .artist-小田和正{color:#c8f1d2;background:#19452d;border:1px solid #4e9b67}
 .chartbox{margin:12px 0 16px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#101a2a}
@@ -28,13 +28,49 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .matrixwrap td.mark{text-align:center;color:#8ed1ff;font-size:15px}
 .matrixwrap td.no-mark{text-align:center;color:#42536a}
 @media(max-width:560px){.barrow{grid-template-columns:95px 1fr 28px;gap:5px}.matrixwrap table{font-size:11px}.matrixwrap th:first-child,.matrixwrap td:first-child{min-width:145px}.matrixwrap th:nth-child(2),.matrixwrap td:nth-child(2){left:145px}}
-\n@media(max-width:560px){main{padding:12px}.stats{grid-template-columns:repeat(3,1fr);gap:6px}.stat{padding:9px}.stat b{font-size:16px}.stat small{font-size:10px}.panel{padding:11px}}
+
+@media(max-width:560px){main{padding:12px}.stats{grid-template-columns:repeat(3,1fr);gap:6px}.stat{padding:9px}.stat b{font-size:16px}.stat small{font-size:10px}.panel{padding:11px}}
+
+.summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}
+.summary-card{background:#101a2a;border:1px solid var(--line);border-radius:10px;padding:11px;min-width:0}
+.summary-card h3{font-size:14px;margin:0 0 8px}
+.summary-row{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid #26354b;font-size:12px}
+.summary-row:last-child{border-bottom:0}.summary-row span:first-child{overflow:hidden;text-overflow:ellipsis}
+.summary-row b{white-space:nowrap;font-variant-numeric:tabular-nums}
+.artist-summary{display:flex;align-items:center;gap:6px}
+.matrixwrap{max-height:70vh}
+.matrixwrap table{min-width:max-content;table-layout:fixed}
+.matrixwrap th,.matrixwrap td{padding:6px 4px}
+.matrixwrap th:first-child,.matrixwrap td:first-child{width:112px;min-width:112px;max-width:112px;left:0;overflow:hidden;text-overflow:ellipsis}
+.matrixwrap th:nth-child(2),.matrixwrap td:nth-child(2){width:56px;min-width:56px;max-width:56px;left:112px;text-align:center}
+.matrixwrap th.live-col{width:66px;min-width:66px;max-width:66px;padding:5px 2px}
+.matrixwrap td.mark,.matrixwrap td.no-mark{width:66px;min-width:66px;padding:5px 2px;text-align:center}
+.matrixwrap thead th{top:0;z-index:4}
+.matrixwrap thead th:first-child,.matrixwrap thead th:nth-child(2){z-index:6;background:#263a56}
+.matrixwrap tbody td:first-child,.matrixwrap tbody td:nth-child(2){z-index:3}
+.matrixwrap td:first-child,.matrixwrap td:nth-child(2){white-space:nowrap}
+@media(max-width:560px){
+ .summary-grid{grid-template-columns:1fr}
+ .matrixwrap{max-height:68vh}
+ .matrixwrap th:first-child,.matrixwrap td:first-child{width:104px;min-width:104px;max-width:104px}
+ .matrixwrap th:nth-child(2),.matrixwrap td:nth-child(2){width:48px;min-width:48px;max-width:48px;left:104px}
+ .matrixwrap th.live-col{width:56px;min-width:56px;max-width:56px}
+ .matrixwrap td.mark,.matrixwrap td.no-mark{width:56px;min-width:56px}
+}
+
 </style></head><body>
 <header><h1>LIVE LOG</h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
-<div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>チケット・遠征費合計</small><b id="sumCost">—</b></div></div>
+<div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>チケット代合計</small><b id="sumCost">—</b></div></div>
 <nav id="tabs"><button class="active" data-tab="live">ライブ実績</button><button data-tab="songs">演奏曲</button></nav>
-<section id="live" class="panel"><h2>ライブ実績・費用</h2><div class="toolbar"><input id="liveSearch" placeholder="アーティスト・会場・日付で検索"><select id="artistFilter"><option value="">全アーティスト</option><option>BUMP</option><option>乃木坂</option><option>小田和正</option></select></div><div class="tablewrap"><table><thead><tr><th>日付</th><th>アーティスト</th><th>都道府県</th><th>会場</th><th>チケット</th><th>交通</th><th>宿泊</th><th>合計</th></tr></thead><tbody id="liveBody"></tbody></table></div><p class="notice">Excel「費用」シートの実績を反映。金額が未入力の項目は「—」で表示しています。</p></section>
+<section id="live" class="panel"><h2>ライブ実績・費用</h2><div class="toolbar"><input id="liveSearch" placeholder="アーティスト・会場・日付で検索"><select id="artistFilter"><option value="">全アーティスト</option><option>BUMP</option><option>乃木坂</option><option>小田和正</option></select></div><div class="tablewrap"><table><thead><tr><th>日付</th><th>アーティスト</th><th>都道府県</th><th>会場</th><th>チケット</th><th>交通</th><th>宿泊</th><th>合計</th></tr></thead><tbody id="liveBody"></tbody></table></div>
+<div class="summary-grid">
+<div class="summary-card"><h3>アーティスト別回数</h3><div id="artistCounts"></div></div>
+<div class="summary-card"><h3>アーティスト別費用合計</h3><div id="artistTicketTotals"></div></div>
+<div class="summary-card"><h3>都道府県別合計</h3><div id="prefTotals"></div></div>
+<div class="summary-card"><h3>会場別合計</h3><div id="venueTotals"></div></div>
+</div>
+<p class="notice">Excel「費用」シートの実績を反映。金額が未入力の項目は「—」で表示しています。</p></section>
 <section id="songs" class="panel hidden">
 <h2>演奏曲記録</h2>
 <div class="toolbar">
@@ -42,9 +78,9 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 <select id="songSort"><option value="release">リリース順</option><option value="count">披露回数順</option></select>
 <input id="songSearch" placeholder="曲名で検索">
 </div>
-<div class="chartbox"><div class="charttitle">披露回数ランキング（上位15曲）</div><div id="songChart" class="bars"></div></div>
+<div class="chartbox"><div class="charttitle">全曲・披露回数ランキング</div><div id="songChart" class="bars"></div></div>
 <div class="tablewrap matrixwrap"><table id="songMatrix"><thead id="songHead"></thead><tbody id="songBody"></tbody></table></div>
-<p class="notice">横にスクロールすると各ライブの日付・会場ごとの披露状況を確認できます。●が披露ありです。リリース順はExcelの楽曲掲載順を使用しています。</p>
+<p class="notice">横にスクロールすると各ライブの日付・会場ごとの披露状況を確認できます。●が披露ありです。リリース順はExcelの楽曲掲載順です。グラフは並べ替えに関係なく全曲を披露回数順で表示します。</p>
 </section>
 <p class="notice">このアプリのデータはこのHTML内に初期データとして保存されています。今後の編集・追加機能や端末間同期は別途対応できます。ブラウザの保存データは端末ごとに異なります。</p>
 </main>
@@ -65,11 +101,28 @@ const dateJP=s=>{const d=normalizeDate(s);return d?d.replaceAll('-','.'):''};
 const liveByDate={};
 allExpenses.forEach(x=>{const d=normalizeDate(x.date);if(d)liveByDate[d]=x});
 document.getElementById('nLive').textContent=allExpenses.length+'件';
-document.getElementById('sumCost').textContent=yen(allExpenses.reduce((s,x)=>s+(typeof x.total==='number'?x.total:0),0));
+document.getElementById('sumCost').textContent=yen(allExpenses.reduce((s,x)=>s+(typeof x.ticket==='number'?x.ticket:0),0));
 function renderLive(){
  let q=document.getElementById('liveSearch').value.toLowerCase(),a=document.getElementById('artistFilter').value;
  let rows=allExpenses.filter(x=>(!a||x.artist===a)&&[x.date,x.artist,x.prefecture,x.venue].join(' ').toLowerCase().includes(q));
  document.getElementById('liveBody').innerHTML=rows.map(x=>`<tr><td>${esc(dateJP(x.date))}</td><td><span class="artist-tag artist-${esc(x.artist)}">${esc(x.artist)}</span></td><td>${esc(x.prefecture)}</td><td>${esc(x.venue)}</td><td class="num">${yen(x.ticket)}</td><td class="num">${yen(x.transport)}</td><td class="num">${yen(x.lodging??x.transportLodging)}</td><td class="num">${yen(x.total)}</td></tr>`).join('')||'<tr><td colspan="8">該当する記録はありません</td></tr>';
+}
+
+function renderSummaries(){
+ const sum=(items,key)=>items.reduce((a,x)=>a+(typeof x[key]==='number'?x[key]:0),0);
+ const artists=[...new Set(allExpenses.map(x=>x.artist).filter(Boolean))];
+ const row=(label,value,artist='')=>`<div class="summary-row"><span class="${artist?'artist-summary':''}">${artist?`<span class="artist-tag artist-${esc(artist)}">${esc(label)}</span>`:esc(label)}</span><b>${esc(value)}</b></div>`;
+ document.getElementById('artistCounts').innerHTML=artists.map(a=>row(a,allExpenses.filter(x=>x.artist===a).length+'回',a)).join('');
+ document.getElementById('artistTicketTotals').innerHTML=artists.map(a=>row(a,yen(sum(allExpenses.filter(x=>x.artist===a),'total')),a)).join('');
+ const prefMap=new Map(),venueMap=new Map();
+ allExpenses.forEach(x=>{
+  const amount=typeof x.total==='number'?x.total:0;
+  if(x.prefecture)prefMap.set(x.prefecture,(prefMap.get(x.prefecture)||0)+amount);
+  if(x.venue)venueMap.set(x.venue,(venueMap.get(x.venue)||0)+amount);
+ });
+ const sorted=(m)=>[...m.entries()].sort((a,b)=>b[1]-a[1]);
+ document.getElementById('prefTotals').innerHTML=sorted(prefMap).map(([k,v])=>row(k,yen(v))).join('');
+ document.getElementById('venueTotals').innerHTML=sorted(venueMap).map(([k,v])=>row(k,yen(v))).join('');
 }
 function renderSongs(){
  const artist=document.getElementById('songArtist').value;
@@ -85,7 +138,7 @@ function renderSongs(){
   const played=new Set((x.performed||[]).map(normalizeDate));
   return `<tr><td>${esc(x.title)}</td><td class="num">${Number(x.count)||0}回</td>${dates.map(d=>played.has(d)?'<td class="mark">●</td>':'<td class="no-mark">—</td>').join('')}</tr>`;
  }).join('')||`<tr><td colspan="${dates.length+2}">該当する楽曲はありません</td></tr>`;
- const top=[...source].sort((a,b)=>(b.count||0)-(a.count||0)).slice(0,15);
+ const top=[...source].sort((a,b)=>(b.count||0)-(a.count||0));
  const max=Math.max(1,...top.map(x=>Number(x.count)||0));
  const color=artistColors[artist]||'#65a9ed';
  document.getElementById('songChart').innerHTML=top.map((x,i)=>`<div class="barrow"><div class="barlabel" title="${esc(x.title)}">${esc(x.title)}</div><div class="bartrack"><div class="barfill" style="width:${(Number(x.count)||0)/max*100}%;--barcolor:${color}"></div></div><div class="barvalue">${Number(x.count)||0}</div></div>`).join('');
@@ -96,5 +149,5 @@ document.getElementById('artistFilter').addEventListener('change',renderLive);
 document.getElementById('songArtist').addEventListener('change',renderSongs);
 document.getElementById('songSort').addEventListener('change',renderSongs);
 document.getElementById('songSearch').addEventListener('input',renderSongs);
-renderLive();renderSongs();
+renderLive();renderSummaries();renderSongs();
 </script></body></html>
