@@ -1,1 +1,825 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LIVE LOG</title><script src="https://cdn.jsdelivr.net/npm/chart.js"></script><style>:root{--bg:#0f172a;--panel:#1e293b;--border:#334155;--txt:#f8fafc;--nogi:#812990;--bump:#ef4444;--oda:#3b82f6}body{margin:0;font-family:sans-serif;background:var(--bg);color:var(--txt)}header{padding:20px;background:#111827}nav{display:flex;gap:8px;padding:12px}button{padding:8px 12px}.panel{padding:16px}.card{background:var(--panel);padding:12px;border-radius:10px;margin:8px}table{width:100%;border-collapse:collapse}th,td{border:1px solid var(--border);padding:8px} .artist-bump{color:var(--bump)} .artist-nogi{color:var(--nogi)} .artist-oda{color:var(--oda)}</style></head><body><header><h1>LIVE LOG</h1></header><nav><button>統計</button><button>ライブ一覧</button><button>演奏曲</button></nav><div class="panel"><h2>設計ベース版</h2><p>ダッシュボード・ライブ一覧・演奏曲一覧・グラフの土台です。</p><canvas id="songChart"></canvas></div><script>new Chart(document.getElementById('songChart'),{type:'bar',data:{labels:['サンプル'],datasets:[{label:'披露回数',data:[1]}]}});</script></body></html>
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LIVE LOG</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+:root{
+ --bg:#0f172a;
+ --panel:#1e293b;
+ --border:#334155;
+ --text:#f8fafc;
+
+ --bump:#ef4444;
+ --nogi:#812990;
+ --oda:#3b82f6;
+}
+
+*{
+ box-sizing:border-box;
+}
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--text);
+ font-family:sans-serif;
+}
+
+header{
+ padding:20px;
+ background:#111827;
+ position:sticky;
+ top:0;
+ z-index:100;
+}
+
+header h1{
+ margin:0;
+}
+
+.container{
+ max-width:1400px;
+ margin:auto;
+ padding:16px;
+}
+
+.cards{
+ display:grid;
+ gap:12px;
+ grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+ margin-bottom:20px;
+}
+
+.card{
+ background:var(--panel);
+ border-radius:12px;
+ padding:16px;
+}
+
+.card-title{
+ font-size:14px;
+ opacity:.8;
+}
+
+.card-value{
+ font-size:30px;
+ font-weight:bold;
+ margin-top:8px;
+}
+
+.bump{
+ color:var(--bump);
+}
+
+.nogi{
+ color:var(--nogi);
+}
+
+.oda{
+ color:var(--oda);
+}
+
+.panel{
+ background:var(--panel);
+ border-radius:12px;
+ padding:16px;
+ margin-bottom:20px;
+}
+
+.panel h2{
+ margin-top:0;
+}
+
+.filters{
+ display:flex;
+ flex-wrap:wrap;
+ gap:10px;
+ margin-bottom:16px;
+}
+
+select{
+ padding:8px;
+ border-radius:6px;
+}
+
+table{
+ width:100%;
+ border-collapse:collapse;
+}
+
+th{
+ background:#1a2233;
+ position:sticky;
+ top:70px;
+ z-index:10;
+}
+
+th,
+td{
+ border:1px solid var(--border);
+ padding:8px;
+ text-align:left;
+}
+
+tbody tr:nth-child(even){
+ background:#1b2437;
+}
+
+.song-table{
+ max-height:700px;
+ overflow:auto;
+}
+
+.tab-buttons{
+ display:flex;
+ gap:8px;
+ margin-bottom:20px;
+ flex-wrap:wrap;
+}
+
+.tab-button{
+ cursor:pointer;
+ border:none;
+ border-radius:8px;
+ padding:10px 14px;
+}
+
+.tab-content{
+ display:none;
+}
+
+.tab-content.active{
+ display:block;
+}
+
+canvas{
+ background:white;
+ border-radius:8px;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>LIVE LOG</h1>
+</header>
+
+<div class="container">
+
+<div class="cards">
+
+<div class="card">
+<div class="card-title">総ライブ数</div>
+<div id="totalLives" class="card-value">0</div>
+</div>
+
+<div class="card">
+<div class="card-title">BUMP OF CHICKEN</div>
+<div id="bumpLives" class="card-value bump">0</div>
+</div>
+
+<div class="card">
+<div class="card-title">乃木坂46</div>
+<div id="nogiLives" class="card-value nogi">0</div>
+</div>
+
+<div class="card">
+<div class="card-title">小田和正</div>
+<div id="odaLives" class="card-value oda">0</div>
+</div>
+
+</div>
+
+<div class="tab-buttons">
+
+<button class="tab-button" onclick="showTab('dashboard')">
+ダッシュボード
+</button>
+
+<button class="tab-button" onclick="showTab('lives')">
+ライブ一覧
+</button>
+
+<button class="tab-button" onclick="showTab('bumpSongs')">
+BUMP演奏曲
+</button>
+
+<button class="tab-button" onclick="showTab('nogiSongs')">
+乃木坂演奏曲
+</button>
+
+</div>
+
+<div id="dashboard" class="tab-content active">
+
+<div class="panel">
+<h2>ライブ回数推移</h2>
+<canvas id="yearChart"></canvas>
+</div>
+
+</div>
+
+<div id="lives" class="tab-content">
+
+<div class="panel">
+
+<h2>ライブ一覧</h2>
+
+<div class="filters">
+
+<select id="artistFilter">
+<option value="">全アーティスト</option>
+<option value="BUMP">BUMP</option>
+<option value="乃木坂">乃木坂</option>
+<option value="小田和正">小田和正</option>
+</select>
+
+<select id="yearFilter">
+<option value="">全年度</option>
+</select>
+
+</div>
+
+<table>
+
+<thead>
+<tr>
+<th>日付</th>
+<th>アーティスト</th>
+<th>都道府県</th>
+<th>会場</th>
+<th>チケット代</th>
+</tr>
+</thead>
+
+<tbody id="liveTable"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<div id="bumpSongs" class="tab-content">
+
+<div class="panel">
+
+<h2>BUMP演奏曲ランキング</h2>
+
+<table>
+
+<thead>
+<tr>
+<th>曲名</th>
+<th>披露回数</th>
+</tr>
+</thead>
+
+<tbody id="bumpSongTable"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<div id="nogiSongs" class="tab-content">
+
+<div class="panel">
+
+<h2>乃木坂演奏曲ランキング</h2>
+
+<table>
+
+<thead>
+<tr>
+<th>曲名</th>
+<th>披露回数</th>
+</tr>
+</thead>
+
+<tbody id="nogiSongTable"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<script>
+const stats = {
+ totalLives:128,
+ bumpLives:36,
+ nogiLives:89,
+ odaLives:1,
+ bumpTicketCost:352460,
+ nogiTicketCost:937371,
+ bumpTotalCost:585770,
+ nogiTotalCost:1653586
+};
+
+const liveData = [
+
+{date:"2012-07-04",artist:"BUMP",pref:"東京",venue:"国立代々木競技場第一体育館",ticket:6500},
+{date:"2013-08-09",artist:"BUMP",pref:"千葉",venue:"QVCマリンフィールド",ticket:2500},
+{date:"2013-09-26",artist:"BUMP",pref:"神奈川",venue:"横浜アリーナ",ticket:6900},
+{date:"2014-04-06",artist:"BUMP",pref:"千葉",venue:"幕張メッセ",ticket:7900},
+{date:"2014-06-14",artist:"BUMP",pref:"宮城",venue:"セキスイハイムスーパーアリーナ",ticket:7900},
+{date:"2014-07-15",artist:"BUMP",pref:"東京",venue:"studio coast",ticket:6300},
+{date:"2014-07-31",artist:"BUMP",pref:"東京",venue:"東京ドーム",ticket:7900},
+{date:"2015-08-04",artist:"BUMP",pref:"神奈川",venue:"横浜アリーナ",ticket:7560},
+{date:"2016-05-08",artist:"BUMP",pref:"愛知",venue:"ナゴヤドーム",ticket:8640},
+{date:"2016-07-16",artist:"BUMP",pref:"神奈川",venue:"日産スタジアム",ticket:8640},
+{date:"2016-07-17",artist:"BUMP",pref:"神奈川",venue:"日産スタジアム",ticket:8640},
+{date:"2017-09-16",artist:"BUMP",pref:"千葉",venue:"幕張メッセ",ticket:8640},
+{date:"2017-12-10",artist:"BUMP",pref:"宮城",venue:"セキスイハイムスーパーアリーナ",ticket:8640},
+
+{date:"2019-07-13",artist:"BUMP",pref:"埼玉",venue:"メットライフドーム",ticket:8800},
+{date:"2019-09-21",artist:"BUMP",pref:"愛知",venue:"ナゴヤドーム",ticket:8800},
+{date:"2019-09-22",artist:"BUMP",pref:"愛知",venue:"ナゴヤドーム",ticket:8800},
+{date:"2019-11-04",artist:"BUMP",pref:"東京",venue:"東京ドーム",ticket:8800},
+
+{date:"2020-02-24",artist:"乃木坂",pref:"愛知",venue:"ナゴヤドーム",ticket:9800},
+
+{date:"2021-07-18",artist:"乃木坂",pref:"宮城",venue:"セキスイハイムスーパーアリーナ",ticket:9800},
+{date:"2021-11-20",artist:"乃木坂",pref:"東京",venue:"東京ドーム",ticket:9800},
+
+{date:"2022-07-30",artist:"乃木坂",pref:"福岡",venue:"マリンメッセ福岡",ticket:9800},
+{date:"2022-07-31",artist:"乃木坂",pref:"福岡",venue:"マリンメッセ福岡",ticket:9800},
+{date:"2022-08-30",artist:"乃木坂",pref:"東京",venue:"明治神宮野球場",ticket:9800},
+{date:"2022-08-31",artist:"乃木坂",pref:"東京",venue:"明治神宮野球場",ticket:5000},
+
+{date:"2022-10-20",artist:"小田和正",pref:"埼玉",venue:"さいたまスーパーアリーナ",ticket:10000},
+
+{date:"2023-02-18",artist:"BUMP",pref:"福岡",venue:"マリンメッセ福岡",ticket:11000},
+{date:"2023-02-19",artist:"BUMP",pref:"福岡",venue:"マリンメッセ福岡",ticket:11000},
+{date:"2023-04-02",artist:"BUMP",pref:"長野",venue:"ビッグハット",ticket:5000},
+{date:"2023-04-08",artist:"BUMP",pref:"宮城",venue:"セキスイハイムスーパーアリーナ",ticket:13200},
+{date:"2023-04-09",artist:"BUMP",pref:"宮城",venue:"セキスイハイムスーパーアリーナ",ticket:11000},
+
+{date:"2023-05-17",artist:"乃木坂",pref:"東京",venue:"東京ドーム",ticket:6000},
+{date:"2023-05-18",artist:"乃木坂",pref:"東京",venue:"東京ドーム",ticket:10800},
+
+{date:"2023-05-27",artist:"BUMP",pref:"埼玉",venue:"さいたまスーパーアリーナ",ticket:11000},
+
+{date:"2023-07-15",artist:"乃木坂",pref:"広島",venue:"広島グリーンアリーナ",ticket:9800},
+{date:"2023-07-16",artist:"乃木坂",pref:"広島",venue:"広島グリーンアリーナ",ticket:9800},
+
+{date:"2023-07-22",artist:"乃木坂",pref:"沖縄",venue:"沖縄アリーナ",ticket:9800},
+
+{date:"2023-08-05",artist:"乃木坂",pref:"愛知",venue:"日本ガイシホール",ticket:9800},
+{date:"2023-08-14",artist:"乃木坂",pref:"宮城",venue:"セキスイハイムスーパーアリーナ",ticket:9800},
+{date:"2023-08-15",artist:"乃木坂",pref:"宮城",venue:"セキスイハイムスーパーアリーナ",ticket:9800},
+{date:"2023-08-26",artist:"乃木坂",pref:"東京",venue:"明治神宮野球場",ticket:9800},
+{date:"2023-08-27",artist:"乃木坂",pref:"東京",venue:"明治神宮野球場",ticket:9800}
+
+,
+
+{date:"2023-11-23",artist:"乃木坂",pref:"東京",venue:"THEATER MILANO-Za",ticket:8800},
+{date:"2023-12-16",artist:"乃木坂",pref:"東京",venue:"国立代々木競技場第一体育館",ticket:9800},
+{date:"2023-12-17",artist:"乃木坂",pref:"東京",venue:"国立代々木競技場第一体育館",ticket:9800},
+
+{date:"2024-01-25",artist:"乃木坂",pref:"神奈川",venue:"ぴあアリーナMM",ticket:8800},
+{date:"2024-01-26",artist:"乃木坂",pref:"神奈川",venue:"ぴあアリーナMM",ticket:8800},
+
+{date:"2024-02-11",artist:"BUMP",pref:"神奈川",venue:"Kアリーナ横浜",ticket:11000},
+
+{date:"2024-03-10",artist:"乃木坂",pref:"埼玉",venue:"さいたまスーパーアリーナ",ticket:10800},
+{date:"2024-03-30",artist:"乃木坂",pref:"埼玉",venue:"さいたまスーパーアリーナ",ticket:8871},
+
+{date:"2024-04-16",artist:"BUMP",pref:"宮城",venue:"ゼビオアリーナ仙台",ticket:13200},
+
+{date:"2024-05-11",artist:"乃木坂",pref:"東京",venue:"東京ドーム",ticket:12000},
+{date:"2024-05-12",artist:"乃木坂",pref:"東京",venue:"東京ドーム",ticket:12000},
+
+{date:"2024-06-07",artist:"乃木坂",pref:"東京",venue:"有明アリーナ",ticket:9800},
+{date:"2024-06-08",artist:"乃木坂",pref:"東京",venue:"有明アリーナ",ticket:9800},
+
+{date:"2024-07-20",artist:"乃木坂",pref:"大阪",venue:"京セラドーム",ticket:12000},
+{date:"2024-07-21",artist:"乃木坂",pref:"大阪",venue:"京セラドーム",ticket:12000},
+
+{date:"2024-08-24",artist:"乃木坂",pref:"愛知",venue:"バンテリンドーム",ticket:12000},
+{date:"2024-08-25",artist:"乃木坂",pref:"愛知",venue:"バンテリンドーム",ticket:12000},
+{date:"2024-08-31",artist:"乃木坂",pref:"神奈川",venue:"ぴあアリーナMM",ticket:11000},
+
+{date:"2024-09-02",artist:"乃木坂",pref:"東京",venue:"明治神宮野球場",ticket:12000},
+{date:"2024-09-03",artist:"乃木坂",pref:"東京",venue:"明治神宮野球場",ticket:12000},
+{date:"2024-09-04",artist:"乃木坂",pref:"東京",venue:"明治神宮野球場",ticket:12000},
+
+{date:"2024-09-07",artist:"BUMP",pref:"埼玉",venue:"ベルーナドーム",ticket:11000},
+{date:"2024-09-08",artist:"BUMP",pref:"埼玉",venue:"ベルーナドーム",ticket:11000},
+
+{date:"2024-09-28",artist:"BUMP",pref:"大阪",venue:"京セラドーム大阪",ticket:13200},
+
+{date:"2024-10-14",artist:"乃木坂",pref:"愛知",venue:"Zepp Nagoya",ticket:9800},
+{date:"2024-10-29",artist:"乃木坂",pref:"北海道",venue:"Zepp Sapporo",ticket:9800},
+
+{date:"2024-11-02",artist:"乃木坂",pref:"神奈川",venue:"横浜アリーナ",ticket:9900},
+{date:"2024-11-03",artist:"乃木坂",pref:"神奈川",venue:"横浜アリーナ",ticket:9900},
+
+{date:"2024-11-05",artist:"BUMP",pref:"東京",venue:"Zepp Haneda",ticket:11000},
+
+{date:"2024-12-07",artist:"BUMP",pref:"東京",venue:"東京ドーム",ticket:11000},
+{date:"2024-12-08",artist:"BUMP",pref:"東京",venue:"東京ドーム",ticket:11000}
+
+];
+const bumpSongs = [
+
+{name:"天体観測",count:28},
+{name:"虹を待つ人",count:22},
+{name:"ray",count:22},
+{name:"ガラスのブルース",count:16},
+{name:"supernova",count:15},
+{name:"メーデー",count:14},
+{name:"アカシア",count:12},
+{name:"なないろ",count:12},
+{name:"SOUVENIR",count:12},
+{name:"記念撮影",count:12},
+
+{name:"ダイヤモンド",count:10},
+{name:"新世界",count:10},
+{name:"クロノスタシス",count:10},
+{name:"窓の中から",count:10},
+
+{name:"カルマ",count:9},
+
+{name:"スノースマイル",count:8},
+{name:"GO",count:8},
+{name:"Butterfly",count:8},
+{name:"Aurora",count:8},
+{name:"Gravity",count:8},
+
+{name:"真っ赤な空を見ただろうか",count:7},
+{name:"サザンクロス",count:7},
+
+{name:"K",count:6},
+{name:"Stage of the ground",count:6},
+{name:"ダンデライオン",count:6},
+{name:"車輪の唄",count:6},
+{name:"レム",count:6},
+{name:"fire sign",count:6},
+{name:"firefly",count:6},
+{name:"You were here",count:6},
+{name:"アリア",count:6},
+{name:"リボン",count:6},
+{name:"Sleep Walking Orchestra",count:6},
+{name:"Strawberry",count:6},
+{name:"木漏れ日と一緒に",count:6},
+
+{name:"Smile",count:5},
+{name:"トーチ",count:5},
+{name:"ファイター",count:5},
+
+{name:"ランプ",count:4},
+{name:"ハルジオン",count:4},
+{name:"プラネタリウム",count:4},
+{name:"銀河鉄道",count:4},
+{name:"R.I.P.",count:4},
+{name:"宇宙飛行士への手紙",count:4},
+{name:"66号線",count:4},
+{name:"話がしたいよ",count:4},
+{name:"Spica",count:4},
+{name:"月虹",count:4},
+{name:"流れ星の正体",count:4},
+
+{name:"グングニル",count:3},
+{name:"ベル",count:3},
+{name:"ギルド",count:3},
+{name:"太陽",count:3},
+{name:"透明飛行船",count:3},
+{name:"プレゼント",count:3},
+{name:"HAPPY",count:3},
+{name:"魔法の料理 ～君から君へ～",count:3},
+{name:"三ツ星カルテット",count:3},
+{name:"分別奮闘記",count:3},
+{name:"ゼロ",count:3},
+{name:"友達の唄",count:3},
+{name:"大我慢大会",count:3},
+{name:"孤独の合唱",count:3},
+{name:"Flare",count:3},
+{name:"small world",count:3}
+
+];
+const nogiSongs = [
+
+{name:"乃木坂の詩",count:60},
+{name:"好きというのはロックだぜ！",count:47},
+{name:"ガールズルール",count:42},
+{name:"君に叱られた",count:42},
+{name:"裸足でSummer",count:40},
+{name:"おひとりさま天国",count:40},
+{name:"I see...",count:37},
+{name:"ジコチューで行こう！",count:35},
+{name:"夏のFree&Easy",count:33},
+{name:"Actually...",count:31},
+
+{name:"ごめんねFingers crossed",count:29},
+{name:"錆びたコンパス",count:28},
+{name:"シンクロニシティ",count:27},
+{name:"バンドエイド剥がすような別れ方",count:26},
+{name:"ジャンピングジョーカーフラッシュ",count:25},
+
+{name:"空扉",count:24},
+{name:"絶望の一秒前",count:24},
+{name:"踏んでしまった",count:24},
+
+{name:"太陽ノック",count:23},
+{name:"Monopoly",count:23},
+
+{name:"あらかじめ語られるロマンス",count:22},
+{name:"Sing Out!",count:22},
+{name:"不道徳な夏",count:22},
+
+{name:"僕が手を叩く方へ",count:21},
+{name:"チートデイ",count:21},
+
+{name:"制服のマネキン",count:20},
+{name:"自惚れビーチ",count:20},
+{name:"日常",count:20},
+{name:"夜明けまで強がらなくてもいい",count:20},
+
+{name:"ハウス！",count:19},
+
+{name:"ロマンスのスタート",count:18},
+
+{name:"おいでシャンプー",count:17},
+{name:"他人のそら似",count:17},
+{name:"Hard to say",count:17},
+{name:"人は夢を二度見る",count:17},
+{name:"落とし物",count:17},
+
+{name:"狼に口笛を",count:16},
+{name:"ロマンティックいか焼き",count:16},
+
+{name:"ありがちな恋愛",count:15},
+{name:"17分間",count:15},
+
+{name:"ダンケシェーン",count:14},
+{name:"三番目の風",count:14},
+{name:"ひと夏の長さより...",count:14},
+{name:"僕は僕を好きになる",count:14},
+{name:"思い出が止まらなくなる",count:14},
+{name:"真夏日よ",count:14},
+
+{name:"Threefold choice",count:13},
+{name:"逃げ水",count:13},
+{name:"Wilderness world",count:13},
+{name:"Under's Love",count:13},
+{name:"誰かの肩",count:13},
+{name:"交感神経優位",count:13},
+
+{name:"インフルエンサー",count:12},
+{name:"スカイダイビング",count:12},
+{name:"ネーブルオレンジ",count:12},
+{name:"Same numbers",count:12},
+{name:"ビリヤニ",count:12},
+
+{name:"君の名は希望",count:11},
+{name:"光合成希望",count:11},
+{name:"さざ波は戻らない",count:11},
+{name:"なぜ 僕たちは走るのか？",count:11}
+
+];
+document.getElementById("totalLives").textContent =
+stats.totalLives;
+
+document.getElementById("bumpLives").textContent =
+stats.bumpLives;
+
+document.getElementById("nogiLives").textContent =
+stats.nogiLives;
+
+document.getElementById("odaLives").textContent =
+stats.odaLives;
+
+function showTab(id){
+
+ document
+  .querySelectorAll(".tab-content")
+  .forEach(v=>v.classList.remove("active"));
+
+ document
+  .getElementById(id)
+  .classList.add("active");
+
+}
+
+const yearFilter=
+document.getElementById("yearFilter");
+
+[
+ ...new Set(
+   liveData.map(v=>v.date.substring(0,4))
+ )
+]
+.sort()
+.forEach(year=>{
+
+ const opt=document.createElement("option");
+
+ opt.value=year;
+ opt.textContent=year;
+
+ yearFilter.appendChild(opt);
+
+});
+
+function renderLiveTable(){
+
+ const artist=
+ document.getElementById("artistFilter").value;
+
+ const year=
+ document.getElementById("yearFilter").value;
+
+ const tbody=
+ document.getElementById("liveTable");
+
+ tbody.innerHTML="";
+
+ liveData
+
+ .filter(v=>
+  !artist || v.artist===artist
+ )
+
+ .filter(v=>
+  !year || v.date.startsWith(year)
+ )
+
+ .forEach(v=>{
+
+  let cls="";
+
+  if(v.artist==="BUMP")
+    cls="bump";
+
+  if(v.artist==="乃木坂")
+    cls="nogi";
+
+  if(v.artist==="小田和正")
+    cls="oda";
+
+  tbody.innerHTML += `
+   <tr>
+    <td>${v.date}</td>
+    <td class="${cls}">${v.artist}</td>
+    <td>${v.pref}</td>
+    <td>${v.venue}</td>
+    <td>${v.ticket.toLocaleString()}円</td>
+   </tr>
+  `;
+
+ });
+
+}
+
+document
+ .getElementById("artistFilter")
+ .addEventListener("change",renderLiveTable);
+
+document
+ .getElementById("yearFilter")
+ .addEventListener("change",renderLiveTable);
+
+function renderSongs(){
+
+ const bumpTable=
+ document.getElementById("bumpSongTable");
+
+ bumpTable.innerHTML="";
+
+ bumpSongs
+  .sort((a,b)=>b.count-a.count)
+  .forEach(song=>{
+
+   bumpTable.innerHTML += `
+   <tr>
+    <td>${song.name}</td>
+    <td>${song.count}</td>
+   </tr>
+   `;
+
+  });
+
+ const nogiTable=
+ document.getElementById("nogiSongTable");
+
+ nogiTable.innerHTML="";
+
+ nogiSongs
+  .sort((a,b)=>b.count-a.count)
+  .forEach(song=>{
+
+   nogiTable.innerHTML += `
+   <tr>
+    <td>${song.name}</td>
+    <td>${song.count}</td>
+   </tr>
+   `;
+
+  });
+
+}
+
+new Chart(
+ document.getElementById("yearChart"),
+ {
+  type:"bar",
+
+  data:{
+
+   labels:[
+    "2012",
+    "2013",
+    "2014",
+    "2015",
+    "2016",
+    "2017",
+    "2018",
+    "2019",
+    "2020",
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026",
+    "2027"
+   ],
+
+   datasets:[
+
+    {
+     label:"BUMP",
+     backgroundColor:"#ef4444",
+
+     data:[
+      1,
+      2,
+      4,
+      1,
+      3,
+      2,
+      0,
+      4,
+      0,
+      0,
+      0,
+      6,
+      8,
+      0,
+      3,
+      2
+     ]
+    },
+
+    {
+     label:"乃木坂",
+     backgroundColor:"#812990",
+
+     data:[
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      2,
+      4,
+      13,
+      20,
+      20,
+      29,
+      0
+     ]
+    }
+
+   ]
+
+  },
+
+  options:{
+   responsive:true
+  }
+
+ }
+);
+
+renderLiveTable();
+renderSongs();
+
+</script>
+</body>
+</html>
