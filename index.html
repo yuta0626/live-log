@@ -9,14 +9,43 @@ nav{display:flex;gap:7px;overflow:auto;margin:12px 0 15px}button,.tab{border:1px
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.toolbar input,.toolbar select,input,textarea{background:#0e1726;color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:10px;min-width:0}
 .toolbar input{flex:1;min-width:170px}.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:10px}table{width:100%;border-collapse:collapse;min-width:680px;font-size:13px}th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{background:#1d2a3e;color:#cbd9eb;position:sticky;top:0}td.num{text-align:right;font-variant-numeric:tabular-nums}.muted{color:var(--muted)}.pill{font-size:11px;border:1px solid #45617f;border-radius:99px;padding:2px 7px;color:#b8d6ff}
 h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);margin:10px 0}.hidden{display:none}.songlist{display:grid;grid-template-columns:1fr auto;gap:0 12px}.songlist div{padding:7px 2px;border-bottom:1px solid var(--line)}.count{color:#b8d6ff;font-variant-numeric:tabular-nums}
-@media(max-width:560px){main{padding:12px}.stats{grid-template-columns:repeat(3,1fr);gap:6px}.stat{padding:9px}.stat b{font-size:16px}.stat small{font-size:10px}.panel{padding:11px}}
+ 
+.artist-tag{display:inline-block;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700}
+.artist-BUMP{color:#a9d2ff;background:#163b62;border:1px solid #3677b5}
+.artist-乃木坂{color:#f0c5ff;background:#48215d;border:1px solid #a45cc4}
+.artist-小田和正{color:#c8f1d2;background:#19452d;border:1px solid #4e9b67}
+.chartbox{margin:12px 0 16px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#101a2a}
+.charttitle{font-weight:700;margin-bottom:9px}.bars{display:grid;gap:7px}
+.barrow{display:grid;grid-template-columns:minmax(105px,1.2fr) 3fr 35px;gap:8px;align-items:center;font-size:12px}
+.barlabel{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bartrack{height:12px;background:#25344a;border-radius:99px;overflow:hidden}.barfill{height:100%;border-radius:99px;background:var(--barcolor,#65a9ed)}
+.barvalue{text-align:right;font-variant-numeric:tabular-nums;color:#d7e6f7}
+.matrixwrap table{min-width:max-content;font-size:12px}
+.matrixwrap th:first-child,.matrixwrap td:first-child{position:sticky;left:0;background:#1d2a3e;z-index:2;min-width:190px}
+.matrixwrap th:nth-child(2),.matrixwrap td:nth-child(2){position:sticky;left:190px;background:#1d2a3e;z-index:2}
+.matrixwrap td:first-child{background:#151f30}.matrixwrap td:nth-child(2){background:#151f30}
+.matrixwrap th.live-col{min-width:104px;max-width:130px;white-space:normal;text-align:center;vertical-align:bottom}
+.matrixwrap th.live-col small{display:block;color:var(--muted);font-weight:400;font-size:10px}
+.matrixwrap td.mark{text-align:center;color:#8ed1ff;font-size:15px}
+.matrixwrap td.no-mark{text-align:center;color:#42536a}
+@media(max-width:560px){.barrow{grid-template-columns:95px 1fr 28px;gap:5px}.matrixwrap table{font-size:11px}.matrixwrap th:first-child,.matrixwrap td:first-child{min-width:145px}.matrixwrap th:nth-child(2),.matrixwrap td:nth-child(2){left:145px}}
+\n@media(max-width:560px){main{padding:12px}.stats{grid-template-columns:repeat(3,1fr);gap:6px}.stat{padding:9px}.stat b{font-size:16px}.stat small{font-size:10px}.panel{padding:11px}}
 </style></head><body>
 <header><h1>LIVE LOG</h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
-<div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>チケット・遠征費合計</small><b id="sumCost">—</b></div><div class="stat"><small>登録楽曲</small><b id="nSongs">—</b></div></div>
+<div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>チケット・遠征費合計</small><b id="sumCost">—</b></div></div>
 <nav id="tabs"><button class="active" data-tab="live">ライブ実績</button><button data-tab="songs">演奏曲</button></nav>
 <section id="live" class="panel"><h2>ライブ実績・費用</h2><div class="toolbar"><input id="liveSearch" placeholder="アーティスト・会場・日付で検索"><select id="artistFilter"><option value="">全アーティスト</option><option>BUMP</option><option>乃木坂</option><option>小田和正</option></select></div><div class="tablewrap"><table><thead><tr><th>日付</th><th>アーティスト</th><th>都道府県</th><th>会場</th><th>チケット</th><th>交通</th><th>宿泊</th><th>合計</th></tr></thead><tbody id="liveBody"></tbody></table></div><p class="notice">Excel「費用」シートの実績を反映。金額が未入力の項目は「—」で表示しています。</p></section>
-<section id="songs" class="panel hidden"><h2>演奏曲記録</h2><div class="toolbar"><select id="songArtist"><option>BUMP</option><option>乃木坂</option></select><input id="songSearch" placeholder="曲名で検索"></div><div class="tablewrap"><table><thead><tr><th>曲名</th><th>披露回数</th><th>披露日</th></tr></thead><tbody id="songBody"></tbody></table></div><p class="notice">披露回数・日付はExcelの「演奏曲」各シートの記録を反映しています。</p></section>
+<section id="songs" class="panel hidden">
+<h2>演奏曲記録</h2>
+<div class="toolbar">
+<select id="songArtist"><option>BUMP</option><option>乃木坂</option></select>
+<select id="songSort"><option value="release">リリース順</option><option value="count">披露回数順</option></select>
+<input id="songSearch" placeholder="曲名で検索">
+</div>
+<div class="chartbox"><div class="charttitle">披露回数ランキング（上位15曲）</div><div id="songChart" class="bars"></div></div>
+<div class="tablewrap matrixwrap"><table id="songMatrix"><thead id="songHead"></thead><tbody id="songBody"></tbody></table></div>
+<p class="notice">横にスクロールすると各ライブの日付・会場ごとの披露状況を確認できます。●が披露ありです。リリース順はExcelの楽曲掲載順を使用しています。</p>
+</section>
 <p class="notice">このアプリのデータはこのHTML内に初期データとして保存されています。今後の編集・追加機能や端末間同期は別途対応できます。ブラウザの保存データは端末ごとに異なります。</p>
 </main>
 <script>
@@ -24,17 +53,48 @@ const imported={"expenses":[{"year":2012,"date":"2012-7/4","prefecture":"東京"
 const yen=n=>typeof n==='number'?n.toLocaleString('ja-JP')+'円':'—';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const allExpenses=imported.expenses;
+const artistColors={'BUMP':'#5aa8ef','乃木坂':'#b56bd1','小田和正':'#62bd83'};
+const normalizeDate=s=>{
+ if(!s)return '';
+ let m=String(s).match(/^(\d{4})-(\d{1,2})\/(\d{1,2})$/);
+ if(m)return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+ m=String(s).match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+ return m?`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`:String(s);
+};
+const dateJP=s=>{const d=normalizeDate(s);return d?d.replaceAll('-','.'):''};
+const liveByDate={};
+allExpenses.forEach(x=>{const d=normalizeDate(x.date);if(d)liveByDate[d]=x});
 document.getElementById('nLive').textContent=allExpenses.length+'件';
 document.getElementById('sumCost').textContent=yen(allExpenses.reduce((s,x)=>s+(typeof x.total==='number'?x.total:0),0));
-document.getElementById('nSongs').textContent=(imported.songs.BUMP.length+imported.songs['乃木坂'].length)+'曲';
-function renderLive(){let q=document.getElementById('liveSearch').value.toLowerCase(),a=document.getElementById('artistFilter').value;
-let rows=allExpenses.filter(x=>(!a||x.artist===a)&&[x.date,x.artist,x.prefecture,x.venue].join(' ').toLowerCase().includes(q));
-document.getElementById('liveBody').innerHTML=rows.map(x=>`<tr><td>${esc(x.date)}</td><td><span class="pill">${esc(x.artist)}</span></td><td>${esc(x.prefecture)}</td><td>${esc(x.venue)}</td><td class="num">${yen(x.ticket)}</td><td class="num">${yen(x.transport)}</td><td class="num">${yen(x.lodging)}</td><td class="num">${yen(x.total)}</td></tr>`).join('')||'<tr><td colspan="8">該当する記録はありません</td></tr>'}
-function renderSongs(){let artist=document.getElementById('songArtist').value,q=document.getElementById('songSearch').value.toLowerCase();
-let rows=imported.songs[artist].filter(x=>x.title.toLowerCase().includes(q)).sort((a,b)=>(b.count||0)-(a.count||0));
-document.getElementById('songBody').innerHTML=rows.map(x=>`<tr><td>${esc(x.title)}</td><td class="num">${esc(x.count)}回</td><td>${x.performed.map(esc).join('、')}</td></tr>`).join('')}
-document.querySelectorAll('#tabs button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('active',x===b));['live','songs'].forEach(id=>document.getElementById(id).classList.toggle('hidden',id!==b.dataset.tab))}));
-['liveSearch','artistFilter'].forEach(id=>document.getElementById(id).addEventListener('input',renderLive));
-['songArtist','songSearch'].forEach(id=>document.getElementById(id).addEventListener('input',renderSongs));
+function renderLive(){
+ let q=document.getElementById('liveSearch').value.toLowerCase(),a=document.getElementById('artistFilter').value;
+ let rows=allExpenses.filter(x=>(!a||x.artist===a)&&[x.date,x.artist,x.prefecture,x.venue].join(' ').toLowerCase().includes(q));
+ document.getElementById('liveBody').innerHTML=rows.map(x=>`<tr><td>${esc(dateJP(x.date))}</td><td><span class="artist-tag artist-${esc(x.artist)}">${esc(x.artist)}</span></td><td>${esc(x.prefecture)}</td><td>${esc(x.venue)}</td><td class="num">${yen(x.ticket)}</td><td class="num">${yen(x.transport)}</td><td class="num">${yen(x.lodging??x.transportLodging)}</td><td class="num">${yen(x.total)}</td></tr>`).join('')||'<tr><td colspan="8">該当する記録はありません</td></tr>';
+}
+function renderSongs(){
+ const artist=document.getElementById('songArtist').value;
+ const q=document.getElementById('songSearch').value.trim().toLowerCase();
+ const sort=document.getElementById('songSort').value;
+ const source=imported.songs[artist]||[];
+ let rows=source.map((x,i)=>({...x,releaseIndex:i})).filter(x=>x.title.toLowerCase().includes(q));
+ if(sort==='count') rows.sort((a,b)=>(b.count||0)-(a.count||0)||a.releaseIndex-b.releaseIndex);
+ const dates=[...new Set(source.flatMap(x=>(x.performed||[]).map(normalizeDate)))].sort();
+ const header=`<tr><th>楽曲</th><th>披露回数</th>${dates.map(d=>{const live=liveByDate[d];const venue=live?`${live.prefecture||''} ${live.venue||''}`:'ライブ情報なし';return `<th class="live-col">${dateJP(d)}<small>${esc(venue)}</small></th>`}).join('')}</tr>`;
+ document.getElementById('songHead').innerHTML=header;
+ document.getElementById('songBody').innerHTML=rows.map(x=>{
+  const played=new Set((x.performed||[]).map(normalizeDate));
+  return `<tr><td>${esc(x.title)}</td><td class="num">${Number(x.count)||0}回</td>${dates.map(d=>played.has(d)?'<td class="mark">●</td>':'<td class="no-mark">—</td>').join('')}</tr>`;
+ }).join('')||`<tr><td colspan="${dates.length+2}">該当する楽曲はありません</td></tr>`;
+ const top=[...source].sort((a,b)=>(b.count||0)-(a.count||0)).slice(0,15);
+ const max=Math.max(1,...top.map(x=>Number(x.count)||0));
+ const color=artistColors[artist]||'#65a9ed';
+ document.getElementById('songChart').innerHTML=top.map((x,i)=>`<div class="barrow"><div class="barlabel" title="${esc(x.title)}">${esc(x.title)}</div><div class="bartrack"><div class="barfill" style="width:${(Number(x.count)||0)/max*100}%;--barcolor:${color}"></div></div><div class="barvalue">${Number(x.count)||0}</div></div>`).join('');
+}
+document.querySelectorAll('#tabs button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('active',x===b));['live','songs'].forEach(id=>document.getElementById(id).classList.toggle('hidden',id!==b.dataset.tab));}));
+document.getElementById('liveSearch').addEventListener('input',renderLive);
+document.getElementById('artistFilter').addEventListener('change',renderLive);
+document.getElementById('songArtist').addEventListener('change',renderSongs);
+document.getElementById('songSort').addEventListener('change',renderSongs);
+document.getElementById('songSearch').addEventListener('input',renderSongs);
 renderLive();renderSongs();
 </script></body></html>
