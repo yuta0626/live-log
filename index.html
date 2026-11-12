@@ -3,27 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-
-<title>LIVE LOG</title>
+<title>LIVE LOG v2</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-
 :root{
  --bg:#0f172a;
  --panel:#1e293b;
  --border:#334155;
  --txt:#f8fafc;
-
  --bump:#ef4444;
  --nogi:#812990;
  --oda:#3b82f6;
 }
 
-*{
- box-sizing:border-box;
-}
+*{box-sizing:border-box}
 
 body{
  margin:0;
@@ -38,10 +33,6 @@ header{
  position:sticky;
  top:0;
  z-index:100;
-}
-
-h1{
- margin:0;
 }
 
 .container{
@@ -73,24 +64,16 @@ h1{
  margin-top:8px;
 }
 
-.bump{
- color:var(--bump);
-}
-
-.nogi{
- color:var(--nogi);
-}
-
-.oda{
- color:var(--oda);
-}
-
 .panel{
  background:var(--panel);
  border-radius:12px;
  padding:16px;
  margin-bottom:20px;
 }
+
+.bump{color:var(--bump)}
+.nogi{color:var(--nogi)}
+.oda{color:var(--oda)}
 
 .tabs{
  display:flex;
@@ -102,7 +85,7 @@ h1{
 .tabBtn{
  border:none;
  border-radius:8px;
- padding:10px 14px;
+ padding:10px 16px;
  cursor:pointer;
 }
 
@@ -124,8 +107,8 @@ h1{
 input,
 select{
  padding:8px;
- border-radius:8px;
  border:none;
+ border-radius:8px;
 }
 
 table{
@@ -133,14 +116,13 @@ table{
  border-collapse:collapse;
 }
 
-th,
-td{
+th,td{
  border:1px solid var(--border);
  padding:8px;
 }
 
 th{
- background:#142033;
+ background:#192338;
 }
 
 tbody tr:nth-child(even){
@@ -149,11 +131,14 @@ tbody tr:nth-child(even){
 
 canvas{
  background:white;
- border-radius:8px;
+ border-radius:12px;
 }
 
+.songTable{
+ max-height:700px;
+ overflow:auto;
+}
 </style>
-
 </head>
 
 <body>
@@ -167,96 +152,62 @@ canvas{
 <div class="cards">
 
 <div class="card">
-<div class="cardTitle">
-総ライブ数
-</div>
-<div
- id="totalLives"
- class="cardValue">
-0
-</div>
+<div class="cardTitle">総ライブ数</div>
+<div class="cardValue" id="totalLives">0</div>
 </div>
 
 <div class="card">
-<div class="cardTitle">
-BUMP OF CHICKEN
-</div>
-<div
- id="bumpLives"
- class="cardValue bump">
-0
-</div>
+<div class="cardTitle">BUMP OF CHICKEN</div>
+<div class="cardValue bump" id="bumpLives">0</div>
 </div>
 
 <div class="card">
-<div class="cardTitle">
-乃木坂46
-</div>
-<div
- id="nogiLives"
- class="cardValue nogi">
-0
-</div>
+<div class="cardTitle">乃木坂46</div>
+<div class="cardValue nogi" id="nogiLives">0</div>
 </div>
 
 <div class="card">
-<div class="cardTitle">
-小田和正
-</div>
-<div
- id="odaLives"
- class="cardValue oda">
-0
-</div>
+<div class="cardTitle">小田和正</div>
+<div class="cardValue oda" id="odaLives">0</div>
 </div>
 
 </div>
 
 <div class="tabs">
 
-<button
- class="tabBtn"
- onclick="showTab('dashboard')">
+<button class="tabBtn" onclick="showTab('dashboard')">
 ダッシュボード
 </button>
 
-<button
- class="tabBtn"
- onclick="showTab('lives')">
+<button class="tabBtn" onclick="showTab('lives')">
 ライブ一覧
 </button>
 
-<button
- class="tabBtn"
- onclick="showTab('bumpSongs')">
+<button class="tabBtn" onclick="showTab('bumpSongs')">
 BUMP演奏曲
 </button>
 
-<button
- class="tabBtn"
- onclick="showTab('nogiSongs')">
+<button class="tabBtn" onclick="showTab('nogiSongs')">
 乃木坂演奏曲
 </button>
 
 </div>
 
-<div
- id="dashboard"
- class="tab active">
+<div id="dashboard" class="tab active">
 
 <div class="panel">
-
 <h2>ライブ回数推移</h2>
-
 <canvas id="yearChart"></canvas>
+</div>
 
+<div class="panel">
+<h2>費用サマリー</h2>
+<div id="costSummary"></div>
 </div>
 
 </div>
 
-<div
- id="lives"
- class="tab">
+<div id="lives" class="tab">
 
 <div class="panel">
 
@@ -265,39 +216,26 @@ BUMP演奏曲
 <div class="filters">
 
 <select id="artistFilter">
-
-<option value="">
-全アーティスト
-</option>
-
-<option value="BUMP">
-BUMP
-</option>
-
-<option value="乃木坂">
-乃木坂
-</option>
-
-<option value="小田和正">
-小田和正
-</option>
-
+<option value="">全アーティスト</option>
+<option value="BUMP">BUMP</option>
+<option value="乃木坂">乃木坂</option>
+<option value="小田和正">小田和正</option>
 </select>
 
 <select id="yearFilter">
-
-<option value="">
-全年度
-</option>
-
+<option value="">全年度</option>
 </select>
+
+<input
+ id="venueSearch"
+ placeholder="会場検索"
+>
 
 </div>
 
 <table>
 
 <thead>
-
 <tr>
 <th>日付</th>
 <th>アーティスト</th>
@@ -305,12 +243,9 @@ BUMP
 <th>会場</th>
 <th>チケット代</th>
 </tr>
-
 </thead>
 
-<tbody id="liveTable">
-
-</tbody>
+<tbody id="liveTable"></tbody>
 
 </table>
 
@@ -318,25 +253,31 @@ BUMP
 
 </div>
 
-<div
- id="bumpSongs"
- class="tab">
+<div id="bumpSongs" class="tab">
 
 <div class="panel">
 
 <h2>BUMP演奏曲ランキング</h2>
 
+<div class="filters">
+<input
+ id="bumpSongSearch"
+ placeholder="曲名検索"
+>
+</div>
+
+<div class="songTable">
+
 <table>
 
 <thead>
 <tr>
 <th>曲名</th>
-<th>回数</th>
+<th>披露回数</th>
 </tr>
 </thead>
 
-<tbody id="bumpSongTable">
-</tbody>
+<tbody id="bumpSongTable"></tbody>
 
 </table>
 
@@ -344,27 +285,37 @@ BUMP
 
 </div>
 
-<div
- id="nogiSongs"
- class="tab">
+</div>
+
+<div id="nogiSongs" class="tab">
 
 <div class="panel">
 
 <h2>乃木坂演奏曲ランキング</h2>
 
+<div class="filters">
+<input
+ id="nogiSongSearch"
+ placeholder="曲名検索"
+>
+</div>
+
+<div class="songTable">
+
 <table>
 
 <thead>
 <tr>
 <th>曲名</th>
-<th>回数</th>
+<th>披露回数</th>
 </tr>
 </thead>
 
-<tbody id="nogiSongTable">
-</tbody>
+<tbody id="nogiSongTable"></tbody>
 
 </table>
+
+</div>
 
 </div>
 
@@ -401,18 +352,22 @@ const liveData = [
 {date:"2019-09-21",artist:"BUMP",pref:"愛知",venue:"ナゴヤドーム",ticket:8800},
 {date:"2019-09-22",artist:"BUMP",pref:"愛知",venue:"ナゴヤドーム",ticket:8800},
 {date:"2019-11-04",artist:"BUMP",pref:"東京",venue:"東京ドーム",ticket:8800},
+
 {date:"2020-02-24",artist:"乃木坂",pref:"愛知",venue:"ナゴヤドーム",ticket:9800},
 {date:"2021-07-18",artist:"乃木坂",pref:"宮城",venue:"セキスイハイムスーパーアリーナ",ticket:9800},
 {date:"2021-11-20",artist:"乃木坂",pref:"東京",venue:"東京ドーム",ticket:9800},
+
 {date:"2022-10-20",artist:"小田和正",pref:"埼玉",venue:"さいたまスーパーアリーナ",ticket:10000},
+
 {date:"2023-02-18",artist:"BUMP",pref:"福岡",venue:"マリンメッセ福岡",ticket:11000},
 {date:"2023-02-19",artist:"BUMP",pref:"福岡",venue:"マリンメッセ福岡",ticket:11000},
 {date:"2023-04-02",artist:"BUMP",pref:"長野",venue:"ビッグハット",ticket:5000},
 {date:"2023-04-08",artist:"BUMP",pref:"宮城",venue:"セキスイハイムスーパーアリーナ",ticket:13200},
 {date:"2023-04-09",artist:"BUMP",pref:"宮城",venue:"セキスイハイムスーパーアリーナ",ticket:11000},
+{date:"2023-05-27",artist:"BUMP",pref:"埼玉",venue:"さいたまスーパーアリーナ",ticket:11000},
+
 {date:"2023-05-17",artist:"乃木坂",pref:"東京",venue:"東京ドーム",ticket:6000},
 {date:"2023-05-18",artist:"乃木坂",pref:"東京",venue:"東京ドーム",ticket:10800},
-{date:"2023-05-27",artist:"BUMP",pref:"埼玉",venue:"さいたまスーパーアリーナ",ticket:11000},
 {date:"2023-07-15",artist:"乃木坂",pref:"広島",venue:"広島グリーンアリーナ",ticket:9800},
 {date:"2023-07-16",artist:"乃木坂",pref:"広島",venue:"広島グリーンアリーナ",ticket:9800},
 {date:"2023-07-22",artist:"乃木坂",pref:"沖縄",venue:"沖縄アリーナ",ticket:9800},
@@ -427,32 +382,13 @@ const liveData = [
 
 {date:"2024-01-25",artist:"乃木坂",pref:"神奈川",venue:"ぴあアリーナMM",ticket:8800},
 {date:"2024-01-26",artist:"乃木坂",pref:"神奈川",venue:"ぴあアリーナMM",ticket:8800},
-{date:"2024-02-11",artist:"BUMP",pref:"神奈川",venue:"Kアリーナ横浜",ticket:11000},
 {date:"2024-03-10",artist:"乃木坂",pref:"埼玉",venue:"さいたまスーパーアリーナ",ticket:10800},
 {date:"2024-03-30",artist:"乃木坂",pref:"埼玉",venue:"さいたまスーパーアリーナ",ticket:8871},
-{date:"2024-04-16",artist:"BUMP",pref:"宮城",venue:"ゼビオアリーナ仙台",ticket:13200},
 {date:"2024-05-11",artist:"乃木坂",pref:"東京",venue:"東京ドーム",ticket:12000},
 {date:"2024-05-12",artist:"乃木坂",pref:"東京",venue:"東京ドーム",ticket:12000},
 {date:"2024-06-07",artist:"乃木坂",pref:"東京",venue:"有明アリーナ",ticket:9800},
-{date:"2024-06-08",artist:"乃木坂",pref:"東京",venue:"有明アリーナ",ticket:9800},
-{date:"2024-07-20",artist:"乃木坂",pref:"大阪",venue:"京セラドーム",ticket:12000},
-{date:"2024-07-21",artist:"乃木坂",pref:"大阪",venue:"京セラドーム",ticket:12000},
-{date:"2024-08-24",artist:"乃木坂",pref:"愛知",venue:"バンテリンドーム",ticket:12000},
-{date:"2024-08-25",artist:"乃木坂",pref:"愛知",venue:"バンテリンドーム",ticket:12000},
-{date:"2024-08-31",artist:"乃木坂",pref:"神奈川",venue:"ぴあアリーナMM",ticket:11000},
-{date:"2024-09-02",artist:"乃木坂",pref:"東京",venue:"明治神宮野球場",ticket:12000},
-{date:"2024-09-03",artist:"乃木坂",pref:"東京",venue:"明治神宮野球場",ticket:12000},
-{date:"2024-09-04",artist:"乃木坂",pref:"東京",venue:"明治神宮野球場",ticket:12000},
-{date:"2024-09-07",artist:"BUMP",pref:"埼玉",venue:"ベルーナドーム",ticket:11000},
-{date:"2024-09-08",artist:"BUMP",pref:"埼玉",venue:"ベルーナドーム",ticket:11000},
-{date:"2024-09-28",artist:"BUMP",pref:"大阪",venue:"京セラドーム大阪",ticket:13200},
-{date:"2024-10-14",artist:"乃木坂",pref:"愛知",venue:"Zepp Nagoya",ticket:9800},
-{date:"2024-10-29",artist:"乃木坂",pref:"北海道",venue:"Zepp Sapporo",ticket:9800},
-{date:"2024-11-02",artist:"乃木坂",pref:"神奈川",venue:"横浜アリーナ",ticket:9900},
-{date:"2024-11-03",artist:"乃木坂",pref:"神奈川",venue:"横浜アリーナ",ticket:9900},
-{date:"2024-11-05",artist:"BUMP",pref:"東京",venue:"Zepp Haneda",ticket:11000},
-{date:"2024-12-07",artist:"BUMP",pref:"東京",venue:"東京ドーム",ticket:11000},
-{date:"2024-12-08",artist:"BUMP",pref:"東京",venue:"東京ドーム",ticket:11000}
+{date:"2024-06-08",artist:"乃木坂",pref:"東京",venue:"有明アリーナ",ticket:9800}
+
 ];
 
 const bumpSongs = [
@@ -465,7 +401,11 @@ const bumpSongs = [
 {name:"アカシア",count:12},
 {name:"なないろ",count:12},
 {name:"SOUVENIR",count:12},
-{name:"記念撮影",count:12}
+{name:"記念撮影",count:12},
+{name:"ダイヤモンド",count:10},
+{name:"新世界",count:10},
+{name:"クロノスタシス",count:10},
+{name:"窓の中から",count:10}
 ];
 
 const nogiSongs = [
@@ -475,7 +415,10 @@ const nogiSongs = [
 {name:"君に叱られた",count:42},
 {name:"裸足でSummer",count:40},
 {name:"おひとりさま天国",count:40},
-{name:"I see...",count:37}
+{name:"I see...",count:37},
+{name:"ジコチューで行こう！",count:35},
+{name:"夏のFree&Easy",count:33},
+{name:"Actually...",count:31}
 ];
 document.getElementById("totalLives").textContent =
 stats.totalLives;
@@ -488,6 +431,15 @@ stats.nogiLives;
 
 document.getElementById("odaLives").textContent =
 stats.odaLives;
+
+document.getElementById("costSummary").innerHTML = `
+<ul>
+<li>BUMP チケット代: ${stats.bumpTicketCost.toLocaleString()}円</li>
+<li>乃木坂 チケット代: ${stats.nogiTicketCost.toLocaleString()}円</li>
+<li>BUMP 総費用: ${stats.bumpTotalCost.toLocaleString()}円</li>
+<li>乃木坂 総費用: ${stats.nogiTotalCost.toLocaleString()}円</li>
+</ul>
+`;
 
 function showTab(id){
 
@@ -503,20 +455,18 @@ function showTab(id){
 
 }
 
-const yearSelect =
+const yearFilter =
 document.getElementById("yearFilter");
 
 [
  ...new Set(
   liveData.map(
-   item => item.date.substring(0,4)
+   live => live.date.substring(0,4)
   )
  )
 ]
-
 .sort()
-
-.forEach(year => {
+.forEach(year=>{
 
  const option =
  document.createElement("option");
@@ -524,7 +474,7 @@ document.getElementById("yearFilter");
  option.value = year;
  option.textContent = year;
 
- yearSelect.appendChild(option);
+ yearFilter.appendChild(option);
 
 });
 
@@ -540,6 +490,12 @@ function renderLiveTable(){
   "yearFilter"
  ).value;
 
+ const venueKeyword =
+ document.getElementById(
+  "venueSearch"
+ ).value
+ .toLowerCase();
+
  const tbody =
  document.getElementById(
   "liveTable"
@@ -549,67 +505,66 @@ function renderLiveTable(){
 
  liveData
 
- .filter(item => {
+ .filter(live =>
+  !artist ||
+  live.artist===artist
+ )
 
-  if(
-   artist &&
-   item.artist !== artist
-  ){
-   return false;
+ .filter(live =>
+  !year ||
+  live.date.startsWith(year)
+ )
+
+ .filter(live =>
+  !venueKeyword ||
+  live.venue.toLowerCase()
+   .includes(venueKeyword)
+ )
+
+ .forEach(live=>{
+
+  let artistClass="";
+
+  if(live.artist==="BUMP"){
+   artistClass="bump";
   }
 
-  return true;
-
- })
-
- .filter(item => {
-
-  if(
-   year &&
-   !item.date.startsWith(year)
-  ){
-   return false;
+  if(live.artist==="乃木坂"){
+   artistClass="nogi";
   }
 
-  return true;
-
- })
-
- .forEach(item => {
-
-  let colorClass = "";
-
-  if(item.artist==="BUMP"){
-   colorClass="bump";
-  }
-
-  if(item.artist==="乃木坂"){
-   colorClass="nogi";
-  }
-
-  if(item.artist==="小田和正"){
-   colorClass="oda";
+  if(live.artist==="小田和正"){
+   artistClass="oda";
   }
 
   tbody.innerHTML += `
   <tr>
-   <td>${item.date}</td>
-   <td class="${colorClass}">
-    ${item.artist}
+   <td>${live.date}</td>
+   <td class="${artistClass}">
+    ${live.artist}
    </td>
-   <td>${item.pref}</td>
-   <td>${item.venue}</td>
-   <td>
-    ${item.ticket.toLocaleString()}円
-   </td>
+   <td>${live.pref}</td>
+   <td>${live.venue}</td>
+   <td>${live.ticket.toLocaleString()}円</td>
   </tr>
   `;
 
  });
 
 }
-
 function renderSongTables(){
+
+ const bumpKeyword =
+ document
+ .getElementById("bumpSongSearch")
+ .value
+ .toLowerCase();
+
+ const nogiKeyword =
+ document
+ .getElementById("nogiSongSearch")
+ .value
+ .toLowerCase();
 
  const bumpBody =
  document.getElementById(
@@ -619,6 +574,12 @@ function renderSongTables(){
  bumpBody.innerHTML = "";
 
  bumpSongs
+
+ .filter(song =>
+  !bumpKeyword ||
+  song.name.toLowerCase()
+  .includes(bumpKeyword)
+ )
 
  .sort((a,b)=>
   b.count-a.count
@@ -643,6 +604,12 @@ function renderSongTables(){
  nogiBody.innerHTML = "";
 
  nogiSongs
+
+ .filter(song =>
+  !nogiKeyword ||
+  song.name.toLowerCase()
+  .includes(nogiKeyword)
+ )
 
  .sort((a,b)=>
   b.count-a.count
@@ -674,6 +641,27 @@ document
  "change",
  renderLiveTable
 );
+
+document
+.getElementById("venueSearch")
+.addEventListener(
+ "input",
+ renderLiveTable
+);
+
+document
+.getElementById("bumpSongSearch")
+.addEventListener(
+ "input",
+ renderSongTables
+);
+
+document
+.getElementById("nogiSongSearch")
+.addEventListener(
+ "input",
+ renderSongTables
+);
 const yearlyStats = {};
 
 liveData.forEach(live=>{
@@ -683,7 +671,7 @@ liveData.forEach(live=>{
 
  if(!yearlyStats[year]){
 
-  yearlyStats[year]={
+  yearlyStats[year] = {
    BUMP:0,
    乃木坂:0,
    小田和正:0
@@ -695,12 +683,15 @@ liveData.forEach(live=>{
 
 });
 
-const chartYears =
-Object.keys(yearlyStats).sort();
+const years =
+Object.keys(yearlyStats)
+.sort();
 
 new Chart(
 
- document.getElementById("yearChart"),
+ document.getElementById(
+  "yearChart"
+ ),
 
  {
 
@@ -708,34 +699,34 @@ new Chart(
 
   data:{
 
-   labels:chartYears,
+   labels:years,
 
    datasets:[
 
     {
      label:"BUMP",
      backgroundColor:"#ef4444",
-     data:chartYears.map(
+     data:years.map(
       year =>
-      yearlyStats[year]["BUMP"]||0
+      yearlyStats[year]["BUMP"] || 0
      )
     },
 
     {
      label:"乃木坂",
      backgroundColor:"#812990",
-     data:chartYears.map(
+     data:years.map(
       year =>
-      yearlyStats[year]["乃木坂"]||0
+      yearlyStats[year]["乃木坂"] || 0
      )
     },
 
     {
      label:"小田和正",
      backgroundColor:"#3b82f6",
-     data:chartYears.map(
+     data:years.map(
       year =>
-      yearlyStats[year]["小田和正"]||0
+      yearlyStats[year]["小田和正"] || 0
      )
     }
 
@@ -744,8 +735,24 @@ new Chart(
   },
 
   options:{
+
    responsive:true,
-   maintainAspectRatio:true
+
+   plugins:{
+    legend:{
+     position:"top"
+    }
+   },
+
+   scales:{
+    y:{
+     beginAtZero:true,
+     ticks:{
+      stepSize:1
+     }
+    }
+   }
+
   }
 
  }
@@ -754,40 +761,44 @@ new Chart(
 
 renderLiveTable();
 renderSongTables();
+
 localStorage.setItem(
  "liveLogVersion",
- "1"
+ "2"
 );
 
 window.addEventListener(
  "beforeunload",
  ()=>{
 
-  localStorage.setItem(
-   "lastOpenTab",
-   document
-   .querySelector(".tab.active")
-   ?.id || "dashboard"
+  const activeTab =
+  document.querySelector(
+   ".tab.active"
   );
+
+  if(activeTab){
+
+   localStorage.setItem(
+    "liveLogLastTab",
+    activeTab.id
+   );
+
+  }
 
  }
 );
 
-const lastTab =
+const savedTab =
 localStorage.getItem(
- "lastOpenTab"
+ "liveLogLastTab"
 );
 
 if(
- lastTab &&
- document.getElementById(lastTab)
+ savedTab &&
+ document.getElementById(savedTab)
 ){
- showTab(lastTab);
+ showTab(savedTab);
 }
-
-console.log(
- "LIVE LOG loaded"
-);
 </script>
 
 </body>
