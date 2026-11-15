@@ -208,11 +208,12 @@ lfFetchBtn.addEventListener('click',()=>{
  const url=formFields.setlistSource.value.trim();
  if(!url){alert('掲載ページURLを入力してください。');return}
  try{const u=new URL(url);if(!/^https?:$/.test(u.protocol))throw new Error();}catch(e){alert('有効なhttp(s) URLを入力してください。');return}
- document.getElementById('lfFetchStatus').textContent='取得を依頼中… Tampermonkeyが動作しているか確認してください。';
+ document.getElementById('lfFetchStatus').textContent='取得を依頼中…';
  window.postMessage({type:'LIVELOG_FETCH_SOURCE',url},'*');
+ window.setTimeout(()=>{const status=document.getElementById('lfFetchStatus');if(status.textContent==='取得を依頼中…')status.textContent='応答がありません。Tampermonkeyスクリプトの更新・有効化とページ再読み込みを確認してください。'},12000);
 });
 window.addEventListener('message',e=>{
- if(e.source!==window||!e.data||e.data.type!=='LIVELOG_SOURCE_RESULT')return;
+ if(!e.data||e.data.type!=='LIVELOG_SOURCE_RESULT')return;
  const d=e.data.data||{};
  if(e.data.error){document.getElementById('lfFetchStatus').textContent='取得失敗：'+e.data.error;return}
  if(d.date&&/^\d{4}-\d{2}-\d{2}$/.test(d.date)&&!formFields.date.value)formFields.date.value=d.date;
