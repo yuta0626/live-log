@@ -65,10 +65,32 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 <main>
 <div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>チケット代合計</small><b id="sumCost">—</b></div></div>
 <nav id="tabs"><button class="active" data-tab="live">ライブ実績</button><button data-tab="songs">演奏曲</button></nav>
-<section id="live" class="panel"><h2>ライブ実績・費用</h2><div class="toolbar"><a class="tab" href="https://www.livefans.jp/search/artist/202?page=1&amp;sort=e1&amp;year=before" target="_blank" rel="noopener">LiveFans：BUMP</a><a class="tab" href="https://www.livefans.jp/search/artist/6567?setlist=on&amp;sort=e1&amp;year=before" target="_blank" rel="noopener">LiveFans：乃木坂46</a><input id="liveSearch" placeholder="アーティスト・会場・日付で検索"><select id="artistFilter"><option value="">全アーティスト</option><option>BUMP</option><option>乃木坂</option><option>小田和正</option></select></div><div class="live-actions"><button type="button" class="primary-btn" id="addLiveBtn">＋ ライブを追加</button></div><form id="liveForm" class="live-form hidden"><h3 id="liveFormTitle">ライブ情報を追加</h3><label>日付<input type="date" id="lfDate" required></label><label>アーティスト<input id="lfArtist" list="artistOptions" required placeholder="例：BUMP"><datalist id="artistOptions"><option value="BUMP"><option value="乃木坂"><option value="小田和正"></datalist></label><label>都道府県<input id="lfPref" placeholder="例：東京"></label><label>ライブ名<input id="lfName" placeholder="ライブ・ツアー名"></label><label>会場<input id="lfVenue" placeholder="会場名"></label><label class="setlist-field">セットリスト（1曲1行）<textarea id="lfSetlist" rows="8" placeholder="曲名を1曲ずつ改行して入力
+<section id="live" class="panel"><h2>ライブ実績・費用</h2>
+<div class="chartbox" id="setoliImportBox">
+  <div class="charttitle">セトリモンスターから転記（今回のテスト）</div>
+  <div class="toolbar">
+    <label style="min-width:150px;flex:1">アーティスト
+      <input id="setoliArtist" value="乃木坂" readonly>
+    </label>
+    <label style="min-width:150px;flex:1">公演日
+      <input id="setoliDate" type="date" value="2026-08-23" readonly>
+    </label>
+  </div>
+  <div class="live-actions">
+    <button type="button" class="primary-btn" id="setoliTransferBtn">転記</button>
+    <a class="tab" href="https://www.setoli.monster/live/9711" target="_blank" rel="noopener">取得元ページ</a>
+    <span class="muted" id="setoliStatus" aria-live="polite">乃木坂・2026/8/23の公演を対象にしています。</span>
+  </div>
+  <details>
+    <summary class="muted" style="cursor:pointer">自動取得できない場合：ページ本文を貼り付ける</summary>
+    <p class="notice">取得元ページを開き、ページ本文をコピーして下欄に貼り付けてから「貼り付け内容から転記」を押してください。</p>
+    <textarea id="setoliManualText" rows="7" style="width:100%" placeholder="セトリモンスターの公演ページ本文を貼り付け"></textarea>
+    <button type="button" class="secondary-btn" id="setoliManualTransferBtn">貼り付け内容から転記</button>
+  </details>
+</div><div class="toolbar"><a class="tab" href="https://www.livefans.jp/search/artist/202?page=1&amp;sort=e1&amp;year=before" target="_blank" rel="noopener">LiveFans：BUMP</a><a class="tab" href="https://www.livefans.jp/search/artist/6567?setlist=on&amp;sort=e1&amp;year=before" target="_blank" rel="noopener">LiveFans：乃木坂46</a><input id="liveSearch" placeholder="アーティスト・会場・日付で検索"><select id="artistFilter"><option value="">全アーティスト</option><option>BUMP</option><option>乃木坂</option><option>小田和正</option></select></div><div class="live-actions"><button type="button" class="primary-btn" id="addLiveBtn">＋ ライブを追加</button></div><form id="liveForm" class="live-form hidden"><h3 id="liveFormTitle">ライブ情報を追加</h3><label>日付<input type="date" id="lfDate" required></label><label>アーティスト<input id="lfArtist" list="artistOptions" required placeholder="例：BUMP"><datalist id="artistOptions"><option value="BUMP"><option value="乃木坂"><option value="小田和正"></datalist></label><label>都道府県<input id="lfPref" placeholder="例：東京"></label><label>ライブ名<input id="lfName" placeholder="ライブ・ツアー名"></label><label>会場<input id="lfVenue" placeholder="会場名"></label><label class="setlist-field">セットリスト（1曲1行）<textarea id="lfSetlist" rows="8" placeholder="曲名を1曲ずつ改行して入力
 例：
 天体観測
-カルマ"></textarea></label><label class="setlist-field">セットリスト掲載ページURL<input type="url" id="lfSetlistSource" placeholder="https://掲載ページのURL"></label><div class="form-actions"><button type="button" class="primary-btn" id="lfFetchSource">URLから情報を取得</button><button type="button" class="secondary-btn" id="lfSetlistSearch">掲載サイトを検索</button><span class="muted" id="lfFetchStatus">Tampermonkey連携スクリプトが必要です。取得内容を確認して保存してください。</span></div><label>チケット代<input type="number" min="0" step="1" id="lfTicket"></label><label>交通費<input type="number" min="0" step="1" id="lfTransport"></label><label>宿泊費<input type="number" min="0" step="1" id="lfLodging"></label><div class="form-actions"><button type="submit" class="primary-btn" id="lfSave">保存</button><button type="button" class="secondary-btn" id="lfCancel">キャンセル</button><span class="muted" id="lfHint"></span></div></form><div class="tablewrap"><table><thead><tr><th>日付</th><th>アーティスト</th><th>都道府県</th><th>ライブ名</th><th>会場</th><th>セットリスト</th><th>チケット</th><th>交通</th><th>宿泊</th><th>合計</th><th>操作</th></tr></thead><tbody id="liveBody"></tbody></table></div>
+カルマ"></textarea></label><label>セットリスト出典URL<input type="url" id="lfSetlistSource" placeholder="https://..."></label><div class="form-actions"><button type="button" class="secondary-btn" id="lfSetlistSearch">セットリスト掲載サイトを検索</button><span class="muted">検索結果を確認し、セットリストをフォームへ入力して保存します。</span></div><label>チケット代<input type="number" min="0" step="1" id="lfTicket"></label><label>交通費<input type="number" min="0" step="1" id="lfTransport"></label><label>宿泊費<input type="number" min="0" step="1" id="lfLodging"></label><div class="form-actions"><button type="submit" class="primary-btn" id="lfSave">保存</button><button type="button" class="secondary-btn" id="lfCancel">キャンセル</button><span class="muted" id="lfHint"></span></div></form><div class="tablewrap"><table><thead><tr><th>日付</th><th>アーティスト</th><th>都道府県</th><th>ライブ名</th><th>会場</th><th>セットリスト</th><th>チケット</th><th>交通</th><th>宿泊</th><th>合計</th><th>操作</th></tr></thead><tbody id="liveBody"></tbody></table></div>
 <div class="summary-grid">
 <div class="summary-card"><h3>アーティスト別回数</h3><div id="artistCounts"></div></div>
 <div class="summary-card"><h3>アーティスト別費用合計</h3><div id="artistTicketTotals"></div></div>
@@ -201,28 +223,146 @@ form.addEventListener('submit',e=>{
  }
  else{record._id=`added-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;allExpenses.push(record)}
  try{saveAdded();saveOverrides();}catch(err){alert('ブラウザへの保存に失敗しました。保存容量や設定を確認してください。');return}
- rebuildLiveIndex();refreshStats();renderLive();renderSummaries();renderSongs();closeLiveForm();
+ 
+// セトリモンスター：乃木坂46 2026/8/23（東京4日目）専用の検証用転記処理
+const SETOLI_TARGET = {
+  artist: '乃木坂',
+  date: '2026-08-23',
+  url: 'https://www.setoli.monster/live/9711',
+  liveName: '乃木坂46 真夏の全国ツアー2026 東京4日目',
+  prefecture: '東京',
+  venue: '明治神宮野球場'
+};
+const setoliSongs = [
+  'ガールズルール','ジコチューで行こう！','好きというのはロックだぜ！','自惚れビーチ',
+  '告白したい病','逃げ水','太陽ノック','オフショアガール','不道徳な夏',
+  '夏のFree&Easy','ロマンティックいか焼き','チートデイ','命の色','おまえら',
+  'マグカップとシンク','フォルテシモ','日常','Actually…',
+  '最後に階段を駆け上がったのはいつだ？','ひと夏の長さより…','君の名は希望',
+  '真夏日よ','裸足でSummer','スカイダイビング','おひとりさま天国','是非に及ばず',
+  '空扉','I see…','ビリヤニ','君ばかり','乃木坂の詩'
+];
+const setoliStatus = document.getElementById('setoliStatus');
+const setoliNormalize = value => String(value || '').normalize('NFKC').toLowerCase()
+  .replace(/[\s　!！?？…・.。〜～「」『』（）()［］\[\]：:]/g, '');
+function parseSetoliText(raw) {
+  const text = String(raw || '').replace(/\r/g, '');
+  if (!text.includes('2026年8月23日') || !(text.includes('乃木坂46') || text.includes('乃木坂'))) {
+    throw new Error('取得したページが対象公演（乃木坂・2026年8月23日）と一致しません。');
+  }
+  const titles = [];
+  const lines = text.split('\n');
+  for (const line of lines) {
+    const clean = line.replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/<[^>]*>/g, '').replace(/[*_`]/g, '').trim();
+    const m = clean.match(/^\s*(\d{1,2})\s*(?:[|｜.)、]\s*|\s+)(.+)$/);
+    if (!m) continue;
+    let title = m[2].replace(/\s+(?:日替わり|初披露|\d+公演ぶり).*$/,'').trim();
+    title = title.replace(/\s*\|.*$/,'').trim();
+    if (title && !titles.includes(title)) titles.push(title);
+  }
+  // Readerがリスト番号を変換した場合に備え、本文中に全曲名が存在することも確認する。
+  const normalized = setoliSongs.filter(song => text.includes(song) ||
+    text.includes(song.replace('！','!')) || text.includes(song.replace('…','...')));
+  const selected = titles.length >= 25 ? titles : normalized;
+  if (selected.length < 25) {
+    throw new Error('セットリストを十分に読み取れませんでした（読み取り ' + selected.length + ' 曲）。ページ本文を貼り付けて再試行してください。');
+  }
+  return selected;
+}
+function transferSetoliSongs(titles) {
+  const songs = imported.songs[SETOLI_TARGET.artist] || [];
+  const songByKey = new Map(songs.map(song => [setoliNormalize(song.title), song]));
+  const matched = [];
+  const unmatched = [];
+  titles.forEach(title => {
+    const song = songByKey.get(setoliNormalize(title));
+    if (song) {
+      savedSongMarks[`${SETOLI_TARGET.artist}::${song.title}::${SETOLI_TARGET.date}`] = true;
+      matched.push(song.title);
+    } else unmatched.push(title);
+  });
+  const record = allExpenses.find(x =>
+    x.artist === SETOLI_TARGET.artist && normalizeDate(x.date) === SETOLI_TARGET.date
+  );
+  if (record) {
+    // 既存の費用情報（チケット代など）は残し、公演名・会場・セットリストだけ補完。
+    record.liveName = SETOLI_TARGET.liveName;
+    record.prefecture = SETOLI_TARGET.prefecture;
+    record.venue = SETOLI_TARGET.venue;
+    record.setlist = titles.join('\n');
+    record.setlistSource = SETOLI_TARGET.url;
+    if (String(record._id).startsWith('base-')) saveOverrides();
+    else saveAdded();
+  } else {
+    const created = {
+      _id: `added-setoli-${Date.now()}`, date: SETOLI_TARGET.date, year: 2026,
+      artist: SETOLI_TARGET.artist, prefecture: SETOLI_TARGET.prefecture,
+      liveName: SETOLI_TARGET.liveName, venue: SETOLI_TARGET.venue,
+      ticket: null, transport: null, lodging: null, total: 0,
+      setlist: titles.join('\n'), setlistSource: SETOLI_TARGET.url
+    };
+    allExpenses.push(created);
+    saveAdded();
+  }
+  try {
+    localStorage.setItem('liveLogSongMarks', JSON.stringify(savedSongMarks));
+  } catch (err) {
+    throw new Error('演奏曲の○を保存できませんでした。ブラウザの保存設定を確認してください。');
+  }
+  rebuildLiveIndex();
+  refreshStats();
+  renderLive();
+  renderSummaries();
+  renderSongs();
+  document.getElementById('songArtist').value = SETOLI_TARGET.artist;
+  renderSongs();
+  setoliStatus.textContent = `転記完了：公演情報を反映し、演奏曲 ${matched.length} 曲に○を付けました。` +
+    (unmatched.length ? ` 未対応曲：${unmatched.join('、')}` : '');
+  document.getElementById('setoliImportBox').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+async function fetchSetoliAndTransfer() {
+  setoliStatus.textContent = 'セトリモンスターから取得しています…';
+  document.getElementById('setoliTransferBtn').disabled = true;
+  try {
+    // GitHub Pagesからの直接アクセスはCORSで拒否される可能性があるため、
+    // 無料のReader経由を先に試す。認証や制限の回避は行わない。
+    const endpoints = [
+      'https://r.jina.ai/https://www.setoli.monster/live/9711',
+      'https://r.jina.ai/http://www.setoli.monster/live/9711'
+    ];
+    let body = '';
+    let lastError = null;
+    for (const endpoint of endpoints) {
+      try {
+        const response = await fetch(endpoint, {headers:{'Accept':'text/plain'}});
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        body = await response.text();
+        if (body.length > 1000) break;
+      } catch (err) { lastError = err; }
+    }
+    if (!body) throw lastError || new Error('ページを取得できませんでした。');
+    const titles = parseSetoliText(body);
+    transferSetoliSongs(titles);
+  } catch (err) {
+    setoliStatus.textContent = '自動取得できませんでした：' + (err.message || err) +
+      ' 「取得元ページ」を開き、本文をコピーして下の貼り付け欄から転記してください。';
+  } finally {
+    document.getElementById('setoliTransferBtn').disabled = false;
+  }
+}
+document.getElementById('setoliTransferBtn').addEventListener('click', fetchSetoliAndTransfer);
+document.getElementById('setoliManualTransferBtn').addEventListener('click', () => {
+  try {
+    const titles = parseSetoliText(document.getElementById('setoliManualText').value);
+    transferSetoliSongs(titles);
+  } catch (err) {
+    setoliStatus.textContent = '転記できませんでした：' + (err.message || err);
+  }
 });
-const lfFetchBtn=document.getElementById('lfFetchSource');
-lfFetchBtn.addEventListener('click',()=>{
- const url=formFields.setlistSource.value.trim();
- if(!url){alert('掲載ページURLを入力してください。');return}
- try{const u=new URL(url);if(!/^https?:$/.test(u.protocol))throw new Error();}catch(e){alert('有効なhttp(s) URLを入力してください。');return}
- document.getElementById('lfFetchStatus').textContent='取得を依頼中…';
- window.postMessage({type:'LIVELOG_FETCH_SOURCE',url},'*');
- window.setTimeout(()=>{const status=document.getElementById('lfFetchStatus');if(status.textContent==='取得を依頼中…')status.textContent='応答がありません。Tampermonkeyスクリプトの更新・有効化とページ再読み込みを確認してください。'},12000);
-});
-window.addEventListener('message',e=>{
- if(!e.data||e.data.type!=='LIVELOG_SOURCE_RESULT')return;
- const d=e.data.data||{};
- if(e.data.error){document.getElementById('lfFetchStatus').textContent='取得失敗：'+e.data.error;return}
- if(d.date&&/^\d{4}-\d{2}-\d{2}$/.test(d.date)&&!formFields.date.value)formFields.date.value=d.date;
- if(d.artist&&!formFields.artist.value)formFields.artist.value=d.artist;
- if(d.prefecture)formFields.prefecture.value=d.prefecture;
- if(d.liveName)formFields.liveName.value=d.liveName;
- if(d.venue)formFields.venue.value=d.venue;
- if(d.setlist)formFields.setlist.value=d.setlist;
- document.getElementById('lfFetchStatus').textContent=`取得完了：${d.setlist?d.setlist.split(/\r?\n/).filter(Boolean).length:0}曲。各項目を確認して保存してください。`;
+
+rebuildLiveIndex();refreshStats();renderLive();renderSummaries();renderSongs();closeLiveForm();
 });
 document.getElementById('lfSetlistSearch').addEventListener('click',()=>{const date=formFields.date.value,artist=formFields.artist.value.trim();if(!date||!artist){alert('先に日付とアーティスト名を入力してください。');return}const d=date.split('-').reverse().join('-');const q=encodeURIComponent(`${artist} ${d} setlist セットリスト`);window.open(`https://www.google.com/search?q=${q}`,'_blank','noopener')});
 document.getElementById('liveBody').addEventListener('click',e=>{const b=e.target.closest('[data-view-setlist]');if(!b)return;const item=allExpenses.find(x=>x._id===b.dataset.viewSetlist);if(!item)return;const source=item.setlistSource?`\n\n出典：${item.setlistSource}`:'';alert(`${item.artist||''} ${dateJP(item.date)}\n${item.liveName||''}\n${item.prefecture||''} ${item.venue||''}\n\n${item.setlist||''}${source}`)});
