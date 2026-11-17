@@ -224,144 +224,6 @@ form.addEventListener('submit',e=>{
  else{record._id=`added-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;allExpenses.push(record)}
  try{saveAdded();saveOverrides();}catch(err){alert('ブラウザへの保存に失敗しました。保存容量や設定を確認してください。');return}
  
-// セトリモンスター：乃木坂46 2026/8/23（東京4日目）専用の検証用転記処理
-const SETOLI_TARGET = {
-  artist: '乃木坂',
-  date: '2026-08-23',
-  url: 'https://www.setoli.monster/live/9711',
-  liveName: '乃木坂46 真夏の全国ツアー2026 東京4日目',
-  prefecture: '東京',
-  venue: '明治神宮野球場'
-};
-const setoliSongs = [
-  'ガールズルール','ジコチューで行こう！','好きというのはロックだぜ！','自惚れビーチ',
-  '告白したい病','逃げ水','太陽ノック','オフショアガール','不道徳な夏',
-  '夏のFree&Easy','ロマンティックいか焼き','チートデイ','命の色','おまえら',
-  'マグカップとシンク','フォルテシモ','日常','Actually…',
-  '最後に階段を駆け上がったのはいつだ？','ひと夏の長さより…','君の名は希望',
-  '真夏日よ','裸足でSummer','スカイダイビング','おひとりさま天国','是非に及ばず',
-  '空扉','I see…','ビリヤニ','君ばかり','乃木坂の詩'
-];
-const setoliStatus = document.getElementById('setoliStatus');
-const setoliNormalize = value => String(value || '').normalize('NFKC').toLowerCase()
-  .replace(/[\s　!！?？…・.。〜～「」『』（）()［］\[\]：:]/g, '');
-function parseSetoliText(raw) {
-  const text = String(raw || '').replace(/\r/g, '');
-  if (!text.includes('2026年8月23日') || !(text.includes('乃木坂46') || text.includes('乃木坂'))) {
-    throw new Error('取得したページが対象公演（乃木坂・2026年8月23日）と一致しません。');
-  }
-  const titles = [];
-  const lines = text.split('\n');
-  for (const line of lines) {
-    const clean = line.replace(/!\[[^\]]*\]\([^)]*\)/g, '')
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-      .replace(/<[^>]*>/g, '').replace(/[*_`]/g, '').trim();
-    const m = clean.match(/^\s*(\d{1,2})\s*(?:[|｜.)、]\s*|\s+)(.+)$/);
-    if (!m) continue;
-    let title = m[2].replace(/\s+(?:日替わり|初披露|\d+公演ぶり).*$/,'').trim();
-    title = title.replace(/\s*\|.*$/,'').trim();
-    if (title && !titles.includes(title)) titles.push(title);
-  }
-  // Readerがリスト番号を変換した場合に備え、本文中に全曲名が存在することも確認する。
-  const normalized = setoliSongs.filter(song => text.includes(song) ||
-    text.includes(song.replace('！','!')) || text.includes(song.replace('…','...')));
-  const selected = titles.length >= 25 ? titles : normalized;
-  if (selected.length < 25) {
-    throw new Error('セットリストを十分に読み取れませんでした（読み取り ' + selected.length + ' 曲）。ページ本文を貼り付けて再試行してください。');
-  }
-  return selected;
-}
-function transferSetoliSongs(titles) {
-  const songs = imported.songs[SETOLI_TARGET.artist] || [];
-  const songByKey = new Map(songs.map(song => [setoliNormalize(song.title), song]));
-  const matched = [];
-  const unmatched = [];
-  titles.forEach(title => {
-    const song = songByKey.get(setoliNormalize(title));
-    if (song) {
-      savedSongMarks[`${SETOLI_TARGET.artist}::${song.title}::${SETOLI_TARGET.date}`] = true;
-      matched.push(song.title);
-    } else unmatched.push(title);
-  });
-  const record = allExpenses.find(x =>
-    x.artist === SETOLI_TARGET.artist && normalizeDate(x.date) === SETOLI_TARGET.date
-  );
-  if (record) {
-    // 既存の費用情報（チケット代など）は残し、公演名・会場・セットリストだけ補完。
-    record.liveName = SETOLI_TARGET.liveName;
-    record.prefecture = SETOLI_TARGET.prefecture;
-    record.venue = SETOLI_TARGET.venue;
-    record.setlist = titles.join('\n');
-    record.setlistSource = SETOLI_TARGET.url;
-    if (String(record._id).startsWith('base-')) saveOverrides();
-    else saveAdded();
-  } else {
-    const created = {
-      _id: `added-setoli-${Date.now()}`, date: SETOLI_TARGET.date, year: 2026,
-      artist: SETOLI_TARGET.artist, prefecture: SETOLI_TARGET.prefecture,
-      liveName: SETOLI_TARGET.liveName, venue: SETOLI_TARGET.venue,
-      ticket: null, transport: null, lodging: null, total: 0,
-      setlist: titles.join('\n'), setlistSource: SETOLI_TARGET.url
-    };
-    allExpenses.push(created);
-    saveAdded();
-  }
-  try {
-    localStorage.setItem('liveLogSongMarks', JSON.stringify(savedSongMarks));
-  } catch (err) {
-    throw new Error('演奏曲の○を保存できませんでした。ブラウザの保存設定を確認してください。');
-  }
-  rebuildLiveIndex();
-  refreshStats();
-  renderLive();
-  renderSummaries();
-  renderSongs();
-  document.getElementById('songArtist').value = SETOLI_TARGET.artist;
-  renderSongs();
-  setoliStatus.textContent = `転記完了：公演情報を反映し、演奏曲 ${matched.length} 曲に○を付けました。` +
-    (unmatched.length ? ` 未対応曲：${unmatched.join('、')}` : '');
-  document.getElementById('setoliImportBox').scrollIntoView({behavior:'smooth',block:'nearest'});
-}
-async function fetchSetoliAndTransfer() {
-  setoliStatus.textContent = 'セトリモンスターから取得しています…';
-  document.getElementById('setoliTransferBtn').disabled = true;
-  try {
-    // GitHub Pagesからの直接アクセスはCORSで拒否される可能性があるため、
-    // 無料のReader経由を先に試す。認証や制限の回避は行わない。
-    const endpoints = [
-      'https://r.jina.ai/https://www.setoli.monster/live/9711',
-      'https://r.jina.ai/http://www.setoli.monster/live/9711'
-    ];
-    let body = '';
-    let lastError = null;
-    for (const endpoint of endpoints) {
-      try {
-        const response = await fetch(endpoint, {headers:{'Accept':'text/plain'}});
-        if (!response.ok) throw new Error('HTTP ' + response.status);
-        body = await response.text();
-        if (body.length > 1000) break;
-      } catch (err) { lastError = err; }
-    }
-    if (!body) throw lastError || new Error('ページを取得できませんでした。');
-    const titles = parseSetoliText(body);
-    transferSetoliSongs(titles);
-  } catch (err) {
-    setoliStatus.textContent = '自動取得できませんでした：' + (err.message || err) +
-      ' 「取得元ページ」を開き、本文をコピーして下の貼り付け欄から転記してください。';
-  } finally {
-    document.getElementById('setoliTransferBtn').disabled = false;
-  }
-}
-document.getElementById('setoliTransferBtn').addEventListener('click', fetchSetoliAndTransfer);
-document.getElementById('setoliManualTransferBtn').addEventListener('click', () => {
-  try {
-    const titles = parseSetoliText(document.getElementById('setoliManualText').value);
-    transferSetoliSongs(titles);
-  } catch (err) {
-    setoliStatus.textContent = '転記できませんでした：' + (err.message || err);
-  }
-});
-
 rebuildLiveIndex();refreshStats();renderLive();renderSummaries();renderSongs();closeLiveForm();
 });
 document.getElementById('lfSetlistSearch').addEventListener('click',()=>{const date=formFields.date.value,artist=formFields.artist.value.trim();if(!date||!artist){alert('先に日付とアーティスト名を入力してください。');return}const d=date.split('-').reverse().join('-');const q=encodeURIComponent(`${artist} ${d} setlist セットリスト`);window.open(`https://www.google.com/search?q=${q}`,'_blank','noopener')});
@@ -381,5 +243,93 @@ document.getElementById('songBody').addEventListener('click',e=>{
  try{localStorage.setItem('liveLogSongMarks',JSON.stringify(savedSongMarks))}catch(err){alert('披露状況を保存できませんでした。');return}
  renderSongs();
 });
+// セトリモンスター：乃木坂46 2026/8/23 専用のテスト転記機能
+const SETOLI_TARGET = {
+  artist: '乃木坂', date: '2026-08-23',
+  url: 'https://www.setoli.monster/live/9711',
+  liveName: '乃木坂46 真夏の全国ツアー2026 東京4日目',
+  prefecture: '東京', venue: '明治神宮野球場'
+};
+const setoliStatus = document.getElementById('setoliStatus');
+const setoliNormalize = value => String(value || '').normalize('NFKC').toLowerCase()
+  .replace(/[\s　!！?？…・.。〜～「」『』（）()［］\[\]：:]/g, '');
+const SETOLI_EXPECTED_SONGS = [
+ 'ガールズルール','ジコチューで行こう！','好きというのはロックだぜ！','自惚れビーチ',
+ '告白したい病','逃げ水','太陽ノック','オフショアガール','不道徳な夏','夏のFree&Easy',
+ 'ロマンティックいか焼き','チートデイ','命の色','おまえら','マグカップとシンク',
+ 'フォルテシモ','日常','Actually…','最後に階段を駆け上がったのはいつだ？',
+ 'ひと夏の長さより…','君の名は希望','真夏日よ','裸足でSummer','スカイダイビング',
+ 'おひとりさま天国','是非に及ばず','空扉','I see…','ビリヤニ','君ばかり','乃木坂の詩'
+];
+function parseSetoliText(raw) {
+  const text = String(raw || '').replace(/\r/g, '');
+  const dateOK = /2026年\s*8月\s*23日|2026[./-]0?8[./-]23/.test(text);
+  if (!dateOK || !/乃木坂46|乃木坂/.test(text)) {
+    throw new Error('対象公演（乃木坂・2026年8月23日）を確認できません。取得元ページの本文を貼り付けてください。');
+  }
+  const parsed = [];
+  for (const line of text.split('\n')) {
+    let clean = line.replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/<[^>]*>/g, '')
+      .replace(/[*_`]/g, '').trim();
+    const m = clean.match(/^\s*\d{1,2}\s*[|｜.)、]\s*(.+)$/) || clean.match(/^\s*\d{1,2}\s+(.+)$/);
+    if (!m) continue;
+    let title = m[1].replace(/^Image\s*/i, '').replace(/\s+(?:日替わり|初披露|\d+公演ぶり).*$/,'').trim();
+    if (title && !parsed.includes(title)) parsed.push(title);
+  }
+  // 取得ページに曲名が掲載されているか照合。番号の書式に依存しない。
+  const normalizedText = setoliNormalize(text);
+  const fromCatalog = SETOLI_EXPECTED_SONGS.filter(song => normalizedText.includes(setoliNormalize(song)));
+  const titles = parsed.length >= 25 ? parsed : fromCatalog;
+  if (titles.length !== 31) throw new Error(`曲名を31曲確認できませんでした（${titles.length}曲）。本文貼り付け方式を試してください。`);
+  return titles;
+}
+function transferSetoliSongs(titles) {
+  const songs = imported.songs[SETOLI_TARGET.artist] || [];
+  const songByKey = new Map(songs.map(song => [setoliNormalize(song.title), song]));
+  const matched = [], unmatched = [];
+  titles.forEach(title => {
+    const song = songByKey.get(setoliNormalize(title));
+    if (song) {
+      savedSongMarks[`${SETOLI_TARGET.artist}::${song.title}::${SETOLI_TARGET.date}`] = true;
+      matched.push(song.title);
+    } else unmatched.push(title);
+  });
+  // 既存の2026/8/23の記録を更新し、チケット代など既存費用は保持する。
+  const record = allExpenses.find(x => x.artist === SETOLI_TARGET.artist && normalizeDate(x.date) === SETOLI_TARGET.date);
+  if (!record) throw new Error('LIVE LOG内に対象日の乃木坂の記録が見つかりません。既存データを確認してください。');
+  Object.assign(record, {
+    liveName: SETOLI_TARGET.liveName, prefecture: SETOLI_TARGET.prefecture,
+    venue: SETOLI_TARGET.venue, setlist: titles.join('\n'), setlistSource: SETOLI_TARGET.url
+  });
+  // 両方の保存処理が成功した後に画面を更新する。
+  saveOverrides();
+  localStorage.setItem('liveLogSongMarks', JSON.stringify(savedSongMarks));
+  rebuildLiveIndex(); refreshStats(); renderLive(); renderSummaries(); renderSongs();
+  document.getElementById('songArtist').value = SETOLI_TARGET.artist;
+  renderSongs();
+  setoliStatus.textContent = `転記完了：ライブ情報を更新し、${matched.length}曲に○を付けました。` +
+    (unmatched.length ? ` LIVE LOGの楽曲一覧にない曲：${unmatched.join('、')}` : '');
+}
+async function fetchSetoliAndTransfer() {
+  const button = document.getElementById('setoliTransferBtn');
+  button.disabled = true;
+  setoliStatus.textContent = 'セトリモンスターから取得しています…';
+  try {
+    const response = await fetch('https://r.jina.ai/https://www.setoli.monster/live/9711', {headers:{Accept:'text/plain'}});
+    if (!response.ok) throw new Error(`中継サービスからHTTP ${response.status}が返されました。`);
+    const body = await response.text();
+    if (body.length < 500) throw new Error('取得したページ内容が短すぎます。');
+    transferSetoliSongs(parseSetoliText(body));
+  } catch (err) {
+    setoliStatus.textContent = `自動取得に失敗しました：${err.message || err} 「取得元ページ」を開いて本文をコピーし、下の貼り付け欄から転記してください。`;
+  } finally { button.disabled = false; }
+}
+document.getElementById('setoliTransferBtn').addEventListener('click', fetchSetoliAndTransfer);
+document.getElementById('setoliManualTransferBtn').addEventListener('click', () => {
+  try { transferSetoliSongs(parseSetoliText(document.getElementById('setoliManualText').value)); }
+  catch (err) { setoliStatus.textContent = `転記できませんでした：${err.message || err}`; }
+});
+
 rebuildLiveIndex();refreshStats();renderLive();renderSummaries();renderSongs();
 </script></body></html>
