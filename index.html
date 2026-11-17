@@ -38,6 +38,18 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .summary-row{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid #26354b;font-size:12px}
 .summary-row:last-child{border-bottom:0}.summary-row span:first-child{overflow:hidden;text-overflow:ellipsis}
 .summary-row b{white-space:nowrap;font-variant-numeric:tabular-nums}
+.summary-metrics{display:grid;gap:4px;margin:6px 0 10px}
+.summary-metric{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:#c8d7e9}
+.summary-chart{display:grid;gap:6px;margin:8px 0 4px}
+.summary-chart-row{display:grid;grid-template-columns:minmax(68px,1fr) minmax(70px,2fr) auto;gap:6px;align-items:center;font-size:10px}
+.summary-chart-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#cbd9eb}
+.summary-track{height:8px;border-radius:99px;background:#26354b;overflow:hidden;display:flex}
+.summary-fill-ticket{height:100%;background:#70a9ed}
+.summary-fill-other{height:100%;background:#d29a59}
+.summary-chart-value{font-variant-numeric:tabular-nums;color:#d7e6f7;white-space:nowrap}
+.chart-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:10px;color:var(--muted);margin-top:5px}
+.chart-legend span:before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;background:#70a9ed}
+.chart-legend span.other:before{background:#d29a59}
 .artist-summary{display:flex;align-items:center;gap:6px}
 .matrixwrap{max-height:70vh}
 .matrixwrap table{min-width:max-content;table-layout:fixed}
@@ -64,8 +76,8 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 <header><h1>LIVE LOG</h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>チケット代合計</small><b id="sumCost">—</b></div></div>
-<nav id="tabs"><button class="active" data-tab="live">ライブ実績</button><button data-tab="songs">演奏曲</button></nav>
-<section id="live" class="panel"><h2>ライブ実績・費用</h2>
+<nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
+<section id="live" class="panel"><h2>実績・費用</h2>
 <div class="chartbox" id="setoliImportBox">
   <div class="charttitle">セットリストを検索して転記</div>
   <div class="toolbar">
@@ -96,12 +108,12 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 </div><div class="toolbar"><input id="liveSearch" placeholder="アーティスト・会場・日付で検索"><select id="artistFilter"><option value="">全アーティスト</option><option>BUMP</option><option>乃木坂</option><option>小田和正</option></select></div><form id="liveForm" class="live-form hidden"><h3 id="liveFormTitle">ライブ情報を編集</h3><label>日付<input type="date" id="lfDate" required></label><label>アーティスト<input id="lfArtist" list="artistOptions" required placeholder="例：BUMP"><datalist id="artistOptions"><option value="BUMP"><option value="乃木坂"><option value="小田和正"></datalist></label><label>都道府県<input id="lfPref" placeholder="例：東京"></label><label>会場<input id="lfVenue" placeholder="会場名"></label><label>ライブ名<input id="lfName" placeholder="ライブ・ツアー名"></label><label class="setlist-field">セットリスト（1曲1行）<textarea id="lfSetlist" rows="8" placeholder="曲名を1曲ずつ改行して入力
 例：
 天体観測
-カルマ"></textarea></label><label>セットリスト出典URL<input type="url" id="lfSetlistSource" placeholder="https://..."></label><div class="form-actions"><button type="button" class="secondary-btn" id="lfSetlistSearch">セットリスト掲載サイトを検索</button><span class="muted">検索結果を確認し、セットリストをフォームへ入力して保存します。</span></div><label>チケット代<input type="number" min="0" step="1" id="lfTicket"></label><label>交通費<input type="number" min="0" step="1" id="lfTransport"></label><label>宿泊費<input type="number" min="0" step="1" id="lfLodging"></label><div class="form-actions"><button type="submit" class="primary-btn" id="lfSave">保存</button><button type="button" class="secondary-btn" id="lfCancel">キャンセル</button><span class="muted" id="lfHint"></span></div></form><div class="tablewrap"><table><thead><tr><th>日付</th><th>アーティスト</th><th>都道府県</th><th>会場</th><th>ライブ名</th><th>セットリスト</th><th>チケット</th><th>交通</th><th>宿泊</th><th>合計</th><th>操作</th></tr></thead><tbody id="liveBody"></tbody></table></div>
+カルマ"></textarea></label><div class="form-actions"><button type="button" class="secondary-btn" id="lfSetlistSearch">セットリスト掲載サイトを検索</button><span class="muted">検索結果を確認し、セットリストをフォームへ入力して保存します。</span></div><label>チケット代<input type="number" min="0" step="1" id="lfTicket"></label><label>ツアー代<input type="number" min="0" step="1" id="lfTour" placeholder="交通・宿泊セット"><small class="muted">入力時は交通費・宿泊費を合計に含めません</small></label><label>交通費<input type="number" min="0" step="1" id="lfTransport"></label><label>宿泊費<input type="number" min="0" step="1" id="lfLodging"></label><div class="form-actions"><button type="submit" class="primary-btn" id="lfSave">保存</button><button type="button" class="secondary-btn" id="lfCancel">キャンセル</button><span class="muted" id="lfHint"></span></div></form><div class="tablewrap"><table><thead><tr><th>日付</th><th>アーティスト</th><th>ライブ名</th><th>都道府県</th><th>会場</th><th>セットリスト</th><th>チケット</th><th>ツアー</th><th>交通</th><th>宿泊</th><th>合計</th><th>操作</th></tr></thead><tbody id="liveBody"></tbody></table></div>
 <div class="summary-grid">
 <div class="summary-card"><h3>アーティスト別回数</h3><div id="artistCounts"></div></div>
-<div class="summary-card"><h3>アーティスト別費用合計</h3><div id="artistTicketTotals"></div></div>
+<div class="summary-card"><h3>アーティスト別費用</h3><div id="artistTicketTotals"></div></div>
 <div class="summary-card"><h3>都道府県別合計</h3><div id="prefTotals"></div></div>
-<div class="summary-card"><h3>会場別合計</h3><div id="venueTotals"></div></div>
+<div class="summary-card"><h3>会場別合計</h3><div id="venueTotals"></div></div><div class="summary-card"><h3>年別合計</h3><div id="yearTotals"></div></div>
 </div>
 <p class="notice">Excel「費用」シートの実績を反映。ライブ情報は各記録の「編集」から変更できます。</p></section>
 <section id="songs" class="panel hidden">
@@ -138,45 +150,69 @@ const liveOverrides=safeLoad('liveLogExpenseOverrides',{});
 const addedExpenses=safeLoad('liveLogAddedExpenses',[]);
 const allExpenses=imported.expenses.map((x,i)=>{
  const id=`base-${i}`;const item={...x,_id:id};
- if(liveOverrides[id])Object.assign(item,liveOverrides[id]);
+ if(liveOverrides[id]){
+  const saved=liveOverrides[id];
+  const legacyBundledLodging=x.transportLodging!=null&&x.lodging==null&&saved.tour==null&&saved.lodging===x.transportLodging;
+  Object.assign(item,saved);
+  if(legacyBundledLodging)item.lodging=null;
+ }
  const d=normalizeDate(item.date);if(!item.liveName&&savedLiveNames[d])item.liveName=savedLiveNames[d];
- if(item.lodging==null&&item.transportLodging!=null)item.lodging=item.transportLodging;
+ if(item.tour==null&&item.transportLodging!=null)item.tour=item.transportLodging;
  return item;
 });
-addedExpenses.forEach((x,i)=>allExpenses.push({...x,_id:x._id||`added-${i}`}));
+addedExpenses.forEach((x,i)=>{const item={...x,_id:x._id||`added-${i}`};if(item.tour==null&&item.transportLodging!=null)item.tour=item.transportLodging;allExpenses.push(item)});
 const artistColors={'BUMP':'#5aa8ef','乃木坂':'#b56bd1','小田和正':'#62bd83'};
 const dateJP=s=>{const d=normalizeDate(s);return d?d.replaceAll('-','.'):''};
 const liveByDate={};
 const rebuildLiveIndex=()=>{Object.keys(liveByDate).forEach(k=>delete liveByDate[k]);allExpenses.forEach(x=>{const d=normalizeDate(x.date);if(d)liveByDate[`${x.artist}::${d}`]=x})};
 const saveAdded=()=>{localStorage.setItem('liveLogAddedExpenses',JSON.stringify(allExpenses.filter(x=>String(x._id).startsWith('added-'))))};
-const saveOverrides=()=>{const obj={};allExpenses.filter(x=>String(x._id).startsWith('base-')).forEach(x=>{const i=x._id.slice(5);obj[x._id]={year:x.year,date:x.date,artist:x.artist,prefecture:x.prefecture,liveName:x.liveName,venue:x.venue,ticket:x.ticket,transport:x.transport,lodging:x.lodging,transportLodging:null,total:x.total,setlist:x.setlist||'',setlistSource:x.setlistSource||''}});localStorage.setItem('liveLogExpenseOverrides',JSON.stringify(obj))};
-const refreshStats=()=>{document.getElementById('nLive').textContent=allExpenses.length+'件';document.getElementById('sumCost').textContent=yen(allExpenses.reduce((s,x)=>s+(typeof x.ticket==='number'?x.ticket:0),0))};
+const saveOverrides=()=>{const obj={};allExpenses.filter(x=>String(x._id).startsWith('base-')).forEach(x=>{const i=x._id.slice(5);obj[x._id]={year:x.year,date:x.date,artist:x.artist,prefecture:x.prefecture,liveName:x.liveName,venue:x.venue,ticket:x.ticket,tour:x.tour??x.transportLodging,transport:x.transport,lodging:x.lodging,transportLodging:null,total:calcTotal(x),setlist:x.setlist||''}});localStorage.setItem('liveLogExpenseOverrides',JSON.stringify(obj))};
+const numVal=v=>typeof v==='number'&&Number.isFinite(v)?v:0;
+const ticketCost=x=>numVal(x.ticket);
+const otherCost=x=>{
+ const tour=x.tour??x.transportLodging;
+ return tour!=null?numVal(tour):numVal(x.transport)+numVal(x.lodging);
+};
+const calcTotal=x=>ticketCost(x)+otherCost(x);
+const refreshStats=()=>{document.getElementById('nLive').textContent=allExpenses.length+'件';document.getElementById('sumCost').textContent=yen(allExpenses.reduce((s,x)=>s+numVal(x.ticket),0))};
 let editingLiveId=null;
 const form=document.getElementById('liveForm');
-const formFields={date:document.getElementById('lfDate'),artist:document.getElementById('lfArtist'),prefecture:document.getElementById('lfPref'),liveName:document.getElementById('lfName'),venue:document.getElementById('lfVenue'),ticket:document.getElementById('lfTicket'),transport:document.getElementById('lfTransport'),lodging:document.getElementById('lfLodging'),setlist:document.getElementById('lfSetlist'),setlistSource:document.getElementById('lfSetlistSource')};
+const formFields={date:document.getElementById('lfDate'),artist:document.getElementById('lfArtist'),prefecture:document.getElementById('lfPref'),liveName:document.getElementById('lfName'),venue:document.getElementById('lfVenue'),ticket:document.getElementById('lfTicket'),transport:document.getElementById('lfTransport'),tour:document.getElementById('lfTour'),lodging:document.getElementById('lfLodging'),setlist:document.getElementById('lfSetlist')};
 const closeLiveForm=()=>{form.classList.add('hidden');form.reset();editingLiveId=null;document.getElementById('liveFormTitle').textContent='ライブ情報を編集';document.getElementById('lfSave').textContent='保存';document.getElementById('lfHint').textContent=''};
-const openLiveForm=(item=null)=>{form.reset();editingLiveId=item?item._id:null;document.getElementById('liveFormTitle').textContent='ライブ情報を編集';document.getElementById('lfSave').textContent='変更を保存';if(item){formFields.date.value=normalizeDate(item.date);formFields.artist.value=item.artist||'';formFields.prefecture.value=item.prefecture||'';formFields.liveName.value=item.liveName||'';formFields.venue.value=item.venue||'';formFields.ticket.value=item.ticket??'';formFields.transport.value=item.transport??'';formFields.lodging.value=item.lodging??item.transportLodging??'';formFields.setlist.value=item.setlist||'';formFields.setlistSource.value=item.setlistSource||'';}form.classList.remove('hidden');form.scrollIntoView({behavior:'smooth',block:'nearest'});};
+const openLiveForm=(item=null)=>{form.reset();editingLiveId=item?item._id:null;document.getElementById('liveFormTitle').textContent='ライブ情報を編集';document.getElementById('lfSave').textContent='変更を保存';if(item){formFields.date.value=normalizeDate(item.date);formFields.artist.value=item.artist||'';formFields.prefecture.value=item.prefecture||'';formFields.liveName.value=item.liveName||'';formFields.venue.value=item.venue||'';formFields.ticket.value=item.ticket??'';formFields.tour.value=item.tour??item.transportLodging??'';formFields.transport.value=item.transport??'';formFields.lodging.value=item.lodging??'';formFields.setlist.value=item.setlist||'';}form.classList.remove('hidden');form.scrollIntoView({behavior:'smooth',block:'nearest'});};
 function renderLive(){
  let q=document.getElementById('liveSearch').value.toLowerCase(),a=document.getElementById('artistFilter').value;
  let rows=allExpenses.filter(x=>(!a||x.artist===a)&&[x.date,x.artist,x.prefecture,x.venue,x.liveName].join(' ').toLowerCase().includes(q));
- document.getElementById('liveBody').innerHTML=rows.map(x=>`<tr><td>${esc(dateJP(x.date))}</td><td><span class="artist-tag artist-${esc(x.artist)}">${esc(x.artist)}</span></td><td>${esc(x.prefecture||'—')}</td><td>${esc(x.venue||'—')}</td><td>${esc(x.liveName||'—')}</td><td>${x.setlist&&x.setlist.trim()?`<button type="button" class="edit-btn" data-view-setlist="${esc(x._id)}">セトリ表示（${x.setlist.trim().split(/\r?\n/).filter(Boolean).length}曲）</button>`:'—'}${x.setlistSource?`<a class="setlist-source-link" href="${esc(x.setlistSource)}" target="_blank" rel="noopener">出典</a>`:''}</td><td class="num">${yen(x.ticket)}</td><td class="num">${yen(x.transport)}</td><td class="num">${yen(x.lodging??x.transportLodging)}</td><td class="num">${yen(x.total)}</td><td><button type="button" class="edit-btn" data-edit-id="${esc(x._id)}">編集</button></td></tr>`).join('')||'<tr><td colspan="11">該当する記録はありません</td></tr>';
+ document.getElementById('liveBody').innerHTML=rows.map(x=>`<tr><td>${esc(dateJP(x.date))}</td><td><span class="artist-tag artist-${esc(x.artist)}">${esc(x.artist)}</span></td><td>${esc(x.liveName||'—')}</td><td>${esc(x.prefecture||'—')}</td><td>${esc(x.venue||'—')}</td><td>${x.setlist&&x.setlist.trim()?`<button type="button" class="edit-btn" data-view-setlist="${esc(x._id)}">セトリ表示（${x.setlist.trim().split(/\r?\n/).filter(Boolean).length}曲）</button>`:'—'}</td><td class="num">${yen(x.ticket)}</td><td class="num">${yen(x.tour??x.transportLodging)}</td><td class="num">${yen(x.transport)}</td><td class="num">${yen(x.lodging)}</td><td class="num">${yen(calcTotal(x))}</td><td><button type="button" class="edit-btn" data-edit-id="${esc(x._id)}">編集</button></td></tr>`).join('')||'<tr><td colspan="12">該当する記録はありません</td></tr>';
 }
 
 function renderSummaries(){
- const sum=(items,key)=>items.reduce((a,x)=>a+(typeof x[key]==='number'?x[key]:0),0);
  const artists=[...new Set(allExpenses.map(x=>x.artist).filter(Boolean))];
- const row=(label,value,artist='')=>`<div class="summary-row"><span class="${artist?'artist-summary':''}">${artist?`<span class="artist-tag artist-${esc(artist)}">${esc(label)}</span>`:esc(label)}</span><b>${esc(value)}</b></div>`;
- document.getElementById('artistCounts').innerHTML=artists.map(a=>row(a,allExpenses.filter(x=>x.artist===a).length+'回',a)).join('');
- document.getElementById('artistTicketTotals').innerHTML=artists.map(a=>row(a,yen(sum(allExpenses.filter(x=>x.artist===a),'total')),a)).join('');
- const prefMap=new Map(),venueMap=new Map();
- allExpenses.forEach(x=>{
-  const amount=typeof x.total==='number'?x.total:0;
-  if(x.prefecture)prefMap.set(x.prefecture,(prefMap.get(x.prefecture)||0)+amount);
-  if(x.venue)venueMap.set(x.venue,(venueMap.get(x.venue)||0)+amount);
- });
- const sorted=(m)=>[...m.entries()].sort((a,b)=>b[1]-a[1]);
- document.getElementById('prefTotals').innerHTML=sorted(prefMap).map(([k,v])=>row(k,yen(v))).join('');
- document.getElementById('venueTotals').innerHTML=sorted(venueMap).map(([k,v])=>row(k,yen(v))).join('');
+ const groups={
+  artist:artists.map(k=>[k,allExpenses.filter(x=>x.artist===k)]),
+  pref:[...new Set(allExpenses.map(x=>x.prefecture).filter(Boolean))].map(k=>[k,allExpenses.filter(x=>x.prefecture===k)]),
+  venue:[...new Set(allExpenses.map(x=>x.venue).filter(Boolean))].map(k=>[k,allExpenses.filter(x=>x.venue===k)]),
+  year:[...new Set(allExpenses.map(x=>String(x.year||normalizeDate(x.date).slice(0,4))).filter(Boolean))].sort().map(k=>[k,allExpenses.filter(x=>String(x.year||normalizeDate(x.date).slice(0,4))===k)])
+ };
+ const sum=(items,fn)=>items.reduce((a,x)=>a+fn(x),0);
+ const row=(label,value,artist='')=>`<div class="summary-row"><span>${artist?`<span class="artist-tag artist-${esc(artist)}">${esc(label)}</span>`:esc(label)}</span><b>${esc(value)}</b></div>`;
+ const graph=(items,mode='cost')=>{
+  const max=Math.max(1,...items.map(([,xs])=>mode==='count'?xs.length:sum(xs,calcTotal)));
+  return `<div class="summary-chart">${items.map(([k,xs])=>{
+   const ticket=sum(xs,ticketCost),other=sum(xs,otherCost),total=ticket+other;
+   const widthTicket=mode==='count'?xs.length/max*100:ticket/max*100;
+   const widthOther=mode==='count'?0:other/max*100;
+   const value=mode==='count'?`${xs.length}回`:yen(total);
+   return `<div class="summary-chart-row"><span class="summary-chart-label" title="${esc(k)}">${esc(k)}</span><div class="summary-track"><div class="summary-fill-ticket" style="width:${widthTicket}%"></div><div class="summary-fill-other" style="width:${widthOther}%"></div></div><span class="summary-chart-value">${value}</span></div>`;
+  }).join('')}</div>${mode==='count'?'':'<div class="chart-legend"><span>チケット代</span><span class="other">その他（ツアー・交通・宿泊）</span></div>'}`;
+ };
+ const costRows=items=>items.map(([k,xs])=>row(k,`チケット ${yen(sum(xs,ticketCost))} ／ 総額 ${yen(sum(xs,calcTotal))}`,artists.includes(k)?k:''));
+ document.getElementById('artistCounts').innerHTML=groups.artist.map(([k,xs])=>row(k,`${xs.length}回`,k)).join('')+graph(groups.artist,'count');
+ document.getElementById('artistTicketTotals').innerHTML=costRows(groups.artist)+graph(groups.artist);
+ document.getElementById('prefTotals').innerHTML=groups.pref.map(([k,xs])=>row(`${k}（${xs.length}回）`,`チケット ${yen(sum(xs,ticketCost))} ／ 総額 ${yen(sum(xs,calcTotal))}`)).join('')+graph(groups.pref,'count')+graph(groups.pref);
+ document.getElementById('venueTotals').innerHTML=groups.venue.map(([k,xs])=>row(`${k}（${xs.length}回）`,`チケット ${yen(sum(xs,ticketCost))} ／ 総額 ${yen(sum(xs,calcTotal))}`)).join('')+graph(groups.venue,'count')+graph(groups.venue);
+ document.getElementById('yearTotals').innerHTML=groups.year.map(([k,xs])=>row(`${k}年（${xs.length}回）`,`チケット ${yen(sum(xs,ticketCost))} ／ その他 ${yen(sum(xs,otherCost))}`)).join('')+
+ graph(groups.year,'count')+graph(groups.year);
 }
 function renderSongs(){
  const artist=document.getElementById('songArtist').value;
@@ -188,7 +224,7 @@ function renderSongs(){
  rows.forEach(x=>{const baseDates=new Set((x.performed||[]).map(normalizeDate));x.count=dates.reduce((n,d)=>{const v=savedSongMarks[`${artist}::${x.title}::${d}`];return n+((v===true||(v===undefined&&baseDates.has(d)))?1:0)},0)});
  rows=rows.filter(x=>x.title.toLowerCase().includes(q));
  if(sort==='count') rows.sort((a,b)=>(b.count||0)-(a.count||0)||a.releaseIndex-b.releaseIndex);
- const header=`<tr><th>楽曲</th><th>披露回数</th>${dates.map(d=>{const live=liveByDate[`${artist}::${d}`];const venue=live?`${live.prefecture||''} ${live.venue||''}`:'ライブ情報なし';return `<th class="live-col">${dateJP(d)}<small>${esc(venue)}</small></th>`}).join('')}</tr>`;
+ const header=`<tr><th>楽曲</th><th>披露回数</th>${dates.map(d=>{const live=liveByDate[`${artist}::${d}`];const liveName=live?.liveName||'ライブ名未登録';const venue=live?`${live.prefecture||''} ${live.venue||''}`:'ライブ情報なし';return `<th class="live-col">${dateJP(d)}<small>${esc(liveName)}<br>${esc(venue)}</small></th>`}).join('')}</tr>`;
  document.getElementById('songHead').innerHTML=header;
  document.getElementById('songBody').innerHTML=rows.map(x=>{
   const played=new Set((x.performed||[]).map(normalizeDate));
@@ -209,8 +245,8 @@ form.addEventListener('submit',e=>{
  const val=id=>document.getElementById(id).value.trim();
  const num=id=>val(id)===''?null:Number(val(id));
  const date=val('lfDate');if(!date)return;
- const record={date,year:Number(date.slice(0,4)),artist:val('lfArtist'),prefecture:val('lfPref'),liveName:val('lfName'),venue:val('lfVenue'),ticket:num('lfTicket'),transport:num('lfTransport'),lodging:num('lfLodging'),setlist:document.getElementById('lfSetlist').value.trim(),setlistSource:document.getElementById('lfSetlistSource').value.trim()};
- record.total=[record.ticket,record.transport,record.lodging].reduce((a,b)=>a+(typeof b==='number'?b:0),0);
+ const record={date,year:Number(date.slice(0,4)),artist:val('lfArtist'),prefecture:val('lfPref'),liveName:val('lfName'),venue:val('lfVenue'),ticket:num('lfTicket'),transport:num('lfTransport'),tour:num('lfTour'),lodging:num('lfLodging'),setlist:document.getElementById('lfSetlist').value.trim()};
+ record.total=calcTotal(record);
  if(editingLiveId){
   const target=allExpenses.find(x=>x._id===editingLiveId);
   if(target){
@@ -232,7 +268,7 @@ form.addEventListener('submit',e=>{
 rebuildLiveIndex();refreshStats();renderLive();renderSummaries();renderSongs();closeLiveForm();
 });
 document.getElementById('lfSetlistSearch').addEventListener('click',()=>{const date=formFields.date.value,artist=formFields.artist.value.trim();if(!date||!artist){alert('先に日付とアーティスト名を入力してください。');return}const d=date.split('-').reverse().join('-');const q=encodeURIComponent(`${artist} ${d} setlist セットリスト`);window.open(`https://www.google.com/search?q=${q}`,'_blank','noopener')});
-document.getElementById('liveBody').addEventListener('click',e=>{const b=e.target.closest('[data-view-setlist]');if(!b)return;const item=allExpenses.find(x=>x._id===b.dataset.viewSetlist);if(!item)return;const source=item.setlistSource?`\n\n出典：${item.setlistSource}`:'';alert(`${item.artist||''} ${dateJP(item.date)}\n${item.liveName||''}\n${item.prefecture||''} ${item.venue||''}\n\n${item.setlist||''}${source}`)});
+document.getElementById('liveBody').addEventListener('click',e=>{const b=e.target.closest('[data-view-setlist]');if(!b)return;const item=allExpenses.find(x=>x._id===b.dataset.viewSetlist);if(!item)return;alert(`${item.artist||''} ${dateJP(item.date)}\n${item.liveName||''}\n${item.prefecture||''} ${item.venue||''}\n\n${item.setlist||''}`)});
 document.getElementById('liveSearch').addEventListener('input',renderLive);
 document.getElementById('artistFilter').addEventListener('change',renderLive);
 document.getElementById('songArtist').addEventListener('change',renderSongs);
@@ -321,9 +357,9 @@ function transferSetoliRecord(data) {
   });
   let record=allExpenses.find(x=>x.artist===artist && normalizeDate(x.date)===data.date);
   if(record){
-    Object.assign(record,{liveName:data.liveName,prefecture:data.prefecture||record.prefecture||'',venue:data.venue||record.venue||'',setlist:data.songs.join('\n'),setlistSource:data.url||''});
+    Object.assign(record,{liveName:data.liveName,prefecture:data.prefecture||record.prefecture||'',venue:data.venue||record.venue||'',setlist:data.songs.join('\n')});
   }else{
-    record={_id:`added-setoli-${Date.now()}`,date:data.date,year:Number(data.date.slice(0,4)),artist,prefecture:data.prefecture||'',liveName:data.liveName,venue:data.venue||'',ticket:null,transport:null,lodging:null,total:0,setlist:data.songs.join('\n'),setlistSource:data.url||''};
+    record={_id:`added-setoli-${Date.now()}`,date:data.date,year:Number(data.date.slice(0,4)),artist,prefecture:data.prefecture||'',liveName:data.liveName,venue:data.venue||'',ticket:null,transport:null,lodging:null,total:0,setlist:data.songs.join('\n')};
     allExpenses.push(record);
   }
   try{saveAdded();saveOverrides();localStorage.setItem('liveLogSongMarks',JSON.stringify(savedSongMarks));}
