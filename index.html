@@ -93,17 +93,17 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
     <textarea id="setoliManualText" rows="7" style="width:100%;margin-top:8px" placeholder="公演ページ本文を貼り付け"></textarea>
     <button type="button" class="secondary-btn" id="setoliManualTransferBtn">貼り付け内容から転記</button>
   </details>
-</div><div class="toolbar"><a class="tab" href="https://www.livefans.jp/search/artist/202?page=1&amp;sort=e1&amp;year=before" target="_blank" rel="noopener">LiveFans：BUMP</a><a class="tab" href="https://www.livefans.jp/search/artist/6567?setlist=on&amp;sort=e1&amp;year=before" target="_blank" rel="noopener">LiveFans：乃木坂46</a><input id="liveSearch" placeholder="アーティスト・会場・日付で検索"><select id="artistFilter"><option value="">全アーティスト</option><option>BUMP</option><option>乃木坂</option><option>小田和正</option></select></div><div class="live-actions"><button type="button" class="primary-btn" id="addLiveBtn">＋ ライブを追加</button></div><form id="liveForm" class="live-form hidden"><h3 id="liveFormTitle">ライブ情報を追加</h3><label>日付<input type="date" id="lfDate" required></label><label>アーティスト<input id="lfArtist" list="artistOptions" required placeholder="例：BUMP"><datalist id="artistOptions"><option value="BUMP"><option value="乃木坂"><option value="小田和正"></datalist></label><label>都道府県<input id="lfPref" placeholder="例：東京"></label><label>ライブ名<input id="lfName" placeholder="ライブ・ツアー名"></label><label>会場<input id="lfVenue" placeholder="会場名"></label><label class="setlist-field">セットリスト（1曲1行）<textarea id="lfSetlist" rows="8" placeholder="曲名を1曲ずつ改行して入力
+</div><div class="toolbar"><input id="liveSearch" placeholder="アーティスト・会場・日付で検索"><select id="artistFilter"><option value="">全アーティスト</option><option>BUMP</option><option>乃木坂</option><option>小田和正</option></select></div><form id="liveForm" class="live-form hidden"><h3 id="liveFormTitle">ライブ情報を編集</h3><label>日付<input type="date" id="lfDate" required></label><label>アーティスト<input id="lfArtist" list="artistOptions" required placeholder="例：BUMP"><datalist id="artistOptions"><option value="BUMP"><option value="乃木坂"><option value="小田和正"></datalist></label><label>都道府県<input id="lfPref" placeholder="例：東京"></label><label>会場<input id="lfVenue" placeholder="会場名"></label><label>ライブ名<input id="lfName" placeholder="ライブ・ツアー名"></label><label class="setlist-field">セットリスト（1曲1行）<textarea id="lfSetlist" rows="8" placeholder="曲名を1曲ずつ改行して入力
 例：
 天体観測
-カルマ"></textarea></label><label>セットリスト出典URL<input type="url" id="lfSetlistSource" placeholder="https://..."></label><div class="form-actions"><button type="button" class="secondary-btn" id="lfSetlistSearch">セットリスト掲載サイトを検索</button><span class="muted">検索結果を確認し、セットリストをフォームへ入力して保存します。</span></div><label>チケット代<input type="number" min="0" step="1" id="lfTicket"></label><label>交通費<input type="number" min="0" step="1" id="lfTransport"></label><label>宿泊費<input type="number" min="0" step="1" id="lfLodging"></label><div class="form-actions"><button type="submit" class="primary-btn" id="lfSave">保存</button><button type="button" class="secondary-btn" id="lfCancel">キャンセル</button><span class="muted" id="lfHint"></span></div></form><div class="tablewrap"><table><thead><tr><th>日付</th><th>アーティスト</th><th>都道府県</th><th>ライブ名</th><th>会場</th><th>セットリスト</th><th>チケット</th><th>交通</th><th>宿泊</th><th>合計</th><th>操作</th></tr></thead><tbody id="liveBody"></tbody></table></div>
+カルマ"></textarea></label><label>セットリスト出典URL<input type="url" id="lfSetlistSource" placeholder="https://..."></label><div class="form-actions"><button type="button" class="secondary-btn" id="lfSetlistSearch">セットリスト掲載サイトを検索</button><span class="muted">検索結果を確認し、セットリストをフォームへ入力して保存します。</span></div><label>チケット代<input type="number" min="0" step="1" id="lfTicket"></label><label>交通費<input type="number" min="0" step="1" id="lfTransport"></label><label>宿泊費<input type="number" min="0" step="1" id="lfLodging"></label><div class="form-actions"><button type="submit" class="primary-btn" id="lfSave">保存</button><button type="button" class="secondary-btn" id="lfCancel">キャンセル</button><span class="muted" id="lfHint"></span></div></form><div class="tablewrap"><table><thead><tr><th>日付</th><th>アーティスト</th><th>都道府県</th><th>会場</th><th>ライブ名</th><th>セットリスト</th><th>チケット</th><th>交通</th><th>宿泊</th><th>合計</th><th>操作</th></tr></thead><tbody id="liveBody"></tbody></table></div>
 <div class="summary-grid">
 <div class="summary-card"><h3>アーティスト別回数</h3><div id="artistCounts"></div></div>
 <div class="summary-card"><h3>アーティスト別費用合計</h3><div id="artistTicketTotals"></div></div>
 <div class="summary-card"><h3>都道府県別合計</h3><div id="prefTotals"></div></div>
 <div class="summary-card"><h3>会場別合計</h3><div id="venueTotals"></div></div>
 </div>
-<p class="notice">Excel「費用」シートの実績を反映。ライブ名は入力欄から編集できます。LiveFansのアーティスト別セットリスト一覧を参照してください。</p></section>
+<p class="notice">Excel「費用」シートの実績を反映。ライブ情報は各記録の「編集」から変更できます。</p></section>
 <section id="songs" class="panel hidden">
 <h2>演奏曲記録</h2>
 <div class="toolbar">
@@ -113,7 +113,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 </div>
 <div class="chartbox"><div class="charttitle">全曲・披露回数ランキング</div><div id="songChart" class="bars"></div></div>
 <div class="tablewrap matrixwrap"><table id="songMatrix"><thead id="songHead"></thead><tbody id="songBody"></tbody></table></div>
-<p class="notice">横にスクロールすると各ライブの日付・ライブ名・会場ごとの披露状況を確認できます。○が披露ありです。LiveFansを参照し、セルをクリックして披露有無を変更できます。リリース順はExcelの楽曲掲載順です。棒グラフは横向きで曲名を左側に表示し、上の並べ替え（リリース順／披露回数順）と連動します。</p>
+<p class="notice">横にスクロールすると各ライブの日付・会場ごとの披露状況を確認できます。○が披露ありです。セルをクリックして披露有無を変更できます。リリース順はExcelの楽曲掲載順です。棒グラフは横向きで曲名を左側に表示し、上の並べ替え（リリース順／披露回数順）と連動します。</p>
 </section>
 <p class="notice">ライブ情報の追加・編集と披露曲の変更はこのブラウザに保存されます。演奏曲タブでは新しく追加したライブの日付も列に表示され、セルをクリックして○／—を切り替えられます。ブラウザ保存は端末ごとに異なります。</p>
 </main>
@@ -154,12 +154,12 @@ const refreshStats=()=>{document.getElementById('nLive').textContent=allExpenses
 let editingLiveId=null;
 const form=document.getElementById('liveForm');
 const formFields={date:document.getElementById('lfDate'),artist:document.getElementById('lfArtist'),prefecture:document.getElementById('lfPref'),liveName:document.getElementById('lfName'),venue:document.getElementById('lfVenue'),ticket:document.getElementById('lfTicket'),transport:document.getElementById('lfTransport'),lodging:document.getElementById('lfLodging'),setlist:document.getElementById('lfSetlist'),setlistSource:document.getElementById('lfSetlistSource')};
-const closeLiveForm=()=>{form.classList.add('hidden');form.reset();editingLiveId=null;document.getElementById('liveFormTitle').textContent='ライブ情報を追加';document.getElementById('lfSave').textContent='保存';document.getElementById('lfHint').textContent=''};
-const openLiveForm=(item=null)=>{form.reset();editingLiveId=item?item._id:null;document.getElementById('liveFormTitle').textContent=item?'ライブ情報を編集':'ライブ情報を追加';document.getElementById('lfSave').textContent=item?'変更を保存':'保存';if(item){formFields.date.value=normalizeDate(item.date);formFields.artist.value=item.artist||'';formFields.prefecture.value=item.prefecture||'';formFields.liveName.value=item.liveName||'';formFields.venue.value=item.venue||'';formFields.ticket.value=item.ticket??'';formFields.transport.value=item.transport??'';formFields.lodging.value=item.lodging??item.transportLodging??'';formFields.setlist.value=item.setlist||'';formFields.setlistSource.value=item.setlistSource||'';}form.classList.remove('hidden');form.scrollIntoView({behavior:'smooth',block:'nearest'});};
+const closeLiveForm=()=>{form.classList.add('hidden');form.reset();editingLiveId=null;document.getElementById('liveFormTitle').textContent='ライブ情報を編集';document.getElementById('lfSave').textContent='保存';document.getElementById('lfHint').textContent=''};
+const openLiveForm=(item=null)=>{form.reset();editingLiveId=item?item._id:null;document.getElementById('liveFormTitle').textContent='ライブ情報を編集';document.getElementById('lfSave').textContent='変更を保存';if(item){formFields.date.value=normalizeDate(item.date);formFields.artist.value=item.artist||'';formFields.prefecture.value=item.prefecture||'';formFields.liveName.value=item.liveName||'';formFields.venue.value=item.venue||'';formFields.ticket.value=item.ticket??'';formFields.transport.value=item.transport??'';formFields.lodging.value=item.lodging??item.transportLodging??'';formFields.setlist.value=item.setlist||'';formFields.setlistSource.value=item.setlistSource||'';}form.classList.remove('hidden');form.scrollIntoView({behavior:'smooth',block:'nearest'});};
 function renderLive(){
  let q=document.getElementById('liveSearch').value.toLowerCase(),a=document.getElementById('artistFilter').value;
  let rows=allExpenses.filter(x=>(!a||x.artist===a)&&[x.date,x.artist,x.prefecture,x.venue,x.liveName].join(' ').toLowerCase().includes(q));
- document.getElementById('liveBody').innerHTML=rows.map(x=>`<tr><td>${esc(dateJP(x.date))}</td><td><span class="artist-tag artist-${esc(x.artist)}">${esc(x.artist)}</span></td><td>${esc(x.prefecture||'—')}</td><td>${esc(x.liveName||'—')}</td><td>${esc(x.venue||'—')}</td><td>${x.setlist&&x.setlist.trim()?`<button type="button" class="edit-btn" data-view-setlist="${esc(x._id)}">セトリ表示（${x.setlist.trim().split(/\r?\n/).filter(Boolean).length}曲）</button>`:'—'}${x.setlistSource?`<a class="setlist-source-link" href="${esc(x.setlistSource)}" target="_blank" rel="noopener">出典</a>`:''}</td><td class="num">${yen(x.ticket)}</td><td class="num">${yen(x.transport)}</td><td class="num">${yen(x.lodging??x.transportLodging)}</td><td class="num">${yen(x.total)}</td><td><button type="button" class="edit-btn" data-edit-id="${esc(x._id)}">編集</button></td></tr>`).join('')||'<tr><td colspan="11">該当する記録はありません</td></tr>';
+ document.getElementById('liveBody').innerHTML=rows.map(x=>`<tr><td>${esc(dateJP(x.date))}</td><td><span class="artist-tag artist-${esc(x.artist)}">${esc(x.artist)}</span></td><td>${esc(x.prefecture||'—')}</td><td>${esc(x.venue||'—')}</td><td>${esc(x.liveName||'—')}</td><td>${x.setlist&&x.setlist.trim()?`<button type="button" class="edit-btn" data-view-setlist="${esc(x._id)}">セトリ表示（${x.setlist.trim().split(/\r?\n/).filter(Boolean).length}曲）</button>`:'—'}${x.setlistSource?`<a class="setlist-source-link" href="${esc(x.setlistSource)}" target="_blank" rel="noopener">出典</a>`:''}</td><td class="num">${yen(x.ticket)}</td><td class="num">${yen(x.transport)}</td><td class="num">${yen(x.lodging??x.transportLodging)}</td><td class="num">${yen(x.total)}</td><td><button type="button" class="edit-btn" data-edit-id="${esc(x._id)}">編集</button></td></tr>`).join('')||'<tr><td colspan="11">該当する記録はありません</td></tr>';
 }
 
 function renderSummaries(){
@@ -194,7 +194,7 @@ function renderSongs(){
   const played=new Set((x.performed||[]).map(normalizeDate));
   const markKey=d=>`${artist}::${x.title}::${d}`;
   dates.forEach(d=>{if(savedSongMarks[markKey(d)]===true)played.add(d);if(savedSongMarks[markKey(d)]===false)played.delete(d)});
-  return `<tr><td>${esc(x.title)}</td><td class="num">${Number(x.count)||0}回</td>${dates.map(d=>`<td class="${played.has(d)?'mark':'no-mark'}"><button class="song-mark-toggle" data-artist="${esc(artist)}" data-song="${esc(x.title)}" data-date="${esc(d)}" title="LiveFansを参照して披露有無を切替">${played.has(d)?'○':'—'}</button></td>`).join('')}</tr>`;
+  return `<tr><td>${esc(x.title)}</td><td class="num">${Number(x.count)||0}回</td>${dates.map(d=>`<td class="${played.has(d)?'mark':'no-mark'}"><button class="song-mark-toggle" data-artist="${esc(artist)}" data-song="${esc(x.title)}" data-date="${esc(d)}" title="披露有無を切替">${played.has(d)?'○':'—'}</button></td>`).join('')}</tr>`;
  }).join('')||`<tr><td colspan="${dates.length+2}">該当する楽曲はありません</td></tr>`;
  const top=rows;
  const max=Math.max(1,...top.map(x=>Number(x.count)||0));
@@ -202,7 +202,6 @@ function renderSongs(){
  document.getElementById('songChart').innerHTML=top.map((x,i)=>`<div class="barrow"><div class="barlabel" title="${esc(x.title)}">${esc(x.title)}</div><div class="bartrack"><div class="barfill" style="width:${(Number(x.count)||0)/max*100}%;--barcolor:${color}"></div></div><div class="barvalue">${Number(x.count)||0}</div></div>`).join('');
 }
 document.querySelectorAll('#tabs button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('active',x===b));['live','songs'].forEach(id=>document.getElementById(id).classList.toggle('hidden',id!==b.dataset.tab));}));
-document.getElementById('addLiveBtn').addEventListener('click',()=>openLiveForm());
 document.getElementById('lfCancel').addEventListener('click',closeLiveForm);
 document.getElementById('liveBody').addEventListener('click',e=>{const b=e.target.closest('[data-edit-id]');if(!b)return;const item=allExpenses.find(x=>x._id===b.dataset.editId);if(item)openLiveForm(item)});
 form.addEventListener('submit',e=>{
@@ -227,7 +226,7 @@ form.addEventListener('submit',e=>{
    Object.assign(target,record);
   }
  }
- else{record._id=`added-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;allExpenses.push(record)}
+ else{alert('既存のライブ記録を編集するときに使用してください。');return}
  try{saveAdded();saveOverrides();}catch(err){alert('ブラウザへの保存に失敗しました。保存容量や設定を確認してください。');return}
  
 rebuildLiveIndex();refreshStats();renderLive();renderSummaries();renderSongs();closeLiveForm();
