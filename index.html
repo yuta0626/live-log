@@ -349,17 +349,24 @@ function parseSetoliPage(raw, url, requestedArtist, requestedDate) {
   const setlistStart=text.search(/セットリスト(?:\s*[🆕速報]*)?/);
   const infoStart=text.search(/ライブ情報/);
   const section=setlistStart>=0?text.slice(setlistStart,infoStart>setlistStart?infoStart:undefined):text;
-  // 行ごとの表データを優先して抽出
-  for(const line of section.split(/[\n\r]+/)){
-    const m=line.match(/^\s*\d{1,3}\s*[|｜]\s*(?:Image\s*)?(.+?)\s*$/);
-    if(m) addSong(m[1]);
-  }
-  // 表の改行が消えている場合：連結された番号＋縦棒を境界として抽出
-  if(songs.length<3){
-    const flat=section.replace(/[\n\r]+/g,' ').replace(/\s+/g,' ');
-    const re=/(?:^|\s)(\d{1,3})\s*[|｜]\s*(?:Image\s*)?(.+?)(?=\s+\d{1,3}\s*[|｜]|$)/g;
-    for(const m of flat.matchAll(re)) addSong(m[2]);
-  }
+  // Readerの出力は「1 | 曲名」「| 1 | 曲名 |」など複数形式がある。
+  // まずセットリスト見出し以降を解析し、見出し位置の揺れで失敗した場合は本文全体も再走査する。
+  const parseNumberedRows = source => {
+    const before=songs.length;
+    for(const line of source.split(/[\n\r]+/)){
+      const clean=line.replace(/\s+/g,' ').trim();
+      const m=clean.match(/^\|?\s*(\d{1,3})\s*[|｜]\s*(?:Image\s*)?(.+?)\s*\|?\s*$/i);
+      if(m) addSong(m[2]);
+    }
+    // 改行が消えて複数行が連結された場合も、次の番号付きセルで区切る。
+    if(songs.length-before<3){
+      const flat=source.replace(/[\n\r]+/g,' ').replace(/\s+/g,' ');
+      const re=/(?:^|[|｜]\s*|\s)(\d{1,3})\s*[|｜]\s*(?:Image\s*)?(.+?)(?=\s*\|?\s*\d{1,3}\s*[|｜]|$)/gi;
+      for(const m of flat.matchAll(re)) addSong(m[2]);
+    }
+  };
+  parseNumberedRows(section);
+  if(songs.length<3) parseNumberedRows(text);
   // 通常の番号付きリスト：1. 曲名、2 曲名、3）曲名など
   if(songs.length<3){
     for(const line of section.split(/[\n\r]+/)){
