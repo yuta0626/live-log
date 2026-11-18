@@ -463,23 +463,37 @@ async function findSetoliArtistPage(artist){
   return {name:artist,url:scored[0].url};
 }
 function findLiveUrlsForDate(artistPageText,date){
-  const text=String(artistPageText||'');
+  const text=String(artistPageText||'').replace(/\\u00a0/g,' ');
   const found=[];
-  const add=(url,label)=>{ if(url && !found.some(x=>x.url===url)) found.push({url,label}); };
-  // まずMarkdownリンク単位で日付とURLを対応付ける（別公演の日付を拾わない）。
-  const linkRe=/\[([^\]\n]{1,300})\]\((https?:\/\/(?:www\.)?setoli\.monster\/live\/\d+\/?)(?:\s+[^)]*)?\)/gi;
+  const add=(url,label)=>{
+    const clean=String(url||'').replace(/[),.;]+$/,'').replace(/\/$/,'');
+    if(clean && !found.some(x=>x.url===clean)) found.push({url:clean,label:String(label||'').trim()});
+  };
+  // 通常のMarkdownリンクを先に確認する。
+  const linkRe=/\[([^\]\n]{1,500})\]\((https?:\/\/(?:www\.)?setoli\.monster)?(\/live\/\d+)(?:[^)]*)\)/gi;
   for(const m of text.matchAll(linkRe)){
-    if(setoliDateISO(m[1])===date) add(m[2].replace(/\/$/,''),m[1]);
+    const label=m[1].replace(/\s+/g,' ').trim();
+    if(setoliDateISO(label)===date) add('https://www.setoli.monster'+m[3],label);
   }
-  // Markdownリンクが崩れている場合は、URL直前の短いラベル範囲だけを見る。
+  // Readerの出力形式によっては日付とリンクが別行・別段落になる。
+  // 各公演URLについて、前後の範囲で最も近い日付だけを採用する。
   if(!found.length){
-    const urlRe=/(?:https?:\/\/(?:www\.)?setoli\.monster)?(\/live\/\d+)\/?/gi;
+    const dateRe=/20\d{2}\s+\d{1,2}[./-]\d{1,2}|20\d{2}[./-]\d{1,2}[./-]\d{1,2}|20\d{2}年\s*\d{1,2}月\s*\d{1,2}日/g;
+    const urlRe=/(?:https?:\/\/(?:www\.)?setoli\.monster)?\/live\/\d+(?:[?#][^\s)\]]*)?/gi;
+    const dates=[...text.matchAll(dateRe)];
     for(const m of text.matchAll(urlRe)){
-      const before=text.slice(Math.max(0,m.index-140),m.index);
-      const after=text.slice(m.index,Math.min(text.length,m.index+45));
-      const context=(before+' '+after).replace(/\s+/g,' ').trim();
-      const dates=[...context.matchAll(/20\d{2}\s+\d{1,2}[./-]\d{1,2}|20\d{2}[./-]\d{1,2}[./-]\d{1,2}|20\d{2}年\s*\d{1,2}月\s*\d{1,2}日/g)];
-      if(dates.some(x=>setoliDateISO(x[0])===date)) add('https://www.setoli.monster'+m[1],context);
+      const url=m[0].startsWith('http')?m[0]:'https://www.setoli.monster'+m[0];
+      const urlPos=m.index;
+      let nearest=null, distance=Infinity;
+      for(const d of dates){
+        const dPos=d.index;
+        const dist=Math.abs(dPos-urlPos);
+        if(dist<distance && dist<=1200){nearest=d;distance=dist;}
+      }
+      if(nearest && setoliDateISO(nearest[0])===date){
+        const label=text.slice(Math.max(0,nearest.index-100),Math.min(text.length,m.index+100)).replace(/\s+/g,' ').trim();
+        add(url,label);
+      }
     }
   }
   return found;
