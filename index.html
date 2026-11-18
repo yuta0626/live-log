@@ -415,11 +415,25 @@ function transferSetoliRecord(data) {
   document.getElementById('setoliCandidates').classList.add('hidden');
 }
 async function readViaJina(url){
-  const response=await fetch('https://r.jina.ai/'+url,{headers:{Accept:'text/plain'}});
-  if(!response.ok) throw new Error(`取得サービス HTTP ${response.status}`);
-  const body=await response.text();
-  if(body.length<250) throw new Error('取得したページ内容が短すぎます。');
-  return body;
+  const target='https://r.jina.ai/'+url;
+  const attempts=[
+    {name:'Jina Reader',url:target},
+    {name:'AllOrigins経由',url:'https://api.allorigins.win/raw?url='+encodeURIComponent(target)},
+    {name:'CORS中継経由',url:'https://proxy.cors.dev/'+target}
+  ];
+  const errors=[];
+  for(const attempt of attempts){
+    try{
+      const response=await fetch(attempt.url,{headers:{Accept:'text/plain'}});
+      if(!response.ok) throw new Error('HTTP '+response.status);
+      const body=await response.text();
+      if(body.length<250) throw new Error('取得内容が短すぎます（'+body.length+'文字）');
+      return body;
+    }catch(err){
+      errors.push(attempt.name+': '+(err&&err.message?err.message:String(err)));
+    }
+  }
+  throw new Error('外部サイトへの通信に失敗しました。'+errors.join('／')+'。ブラウザの開発者ツールのConsoleにもCORS・通信エラーが出ていないか確認してください。');
 }
 async function findSetoliArtistPage(artist){
   const directory=await readViaJina('https://www.setoli.monster/artists');
