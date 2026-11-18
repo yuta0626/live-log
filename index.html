@@ -316,9 +316,9 @@ function parseSetoliPage(raw, url, requestedArtist, requestedDate) {
   let titleLine=lines.find(x=>/セトリ一覧|セットリスト/.test(x) && /setoli|セトリモンスター/i.test(x)) || '';
   let liveName=titleLine.replace(/^#+\s*/,'').replace(/\s*セトリ一覧[！!]?.*$/,'').replace(/\s*セットリスト.*$/,'').replace(/\s*[|｜-]\s*[^|｜-]+\s*[|｜].*$/,'').trim();
   if(!liveName){
-    const h=lines.findIndex(x=>/^#\s/.test(x));
-    const before=h>0?lines.slice(Math.max(0,h-2),h).join(' '):'';
-    liveName=(before||lines.find(x=>x.includes(requestedArtist))||requestedArtist).replace(/^#+\s*/,'').trim();
+    // Setoliの公演ページではH1が公演名。H1直前のアーティスト名を誤採用しない。
+    const heading=lines.find(x=>/^#\s+/.test(x) && !/セトリ一覧|セットリスト/.test(x));
+    liveName=heading ? heading.replace(/^#\s*/,'').replace(/\s*[|｜].*$/,'').trim() : '';
   }
   // ページ上部の都道府県表示（北海道・東京都・○○府・○○県）
   const prefLine=lines.find(x=>/^(北海道|東京都|京都府|大阪府|.{2,3}県)$/.test(x));
@@ -449,51 +449,72 @@ async function findSetoliArtistPage(artist){
   const wanted=setoliNormalize(artist);
   const catalogArtist=setoliNormalize(resolveLivelogArtist(artist));
   const links=[];
-  // Markdownの入れ子（アーティスト画像リンク）で通常の [label](url) が崩れるため、
-  // URLを先に抽出し、その前後のテキストを名前候補として扱う。
-  const re=/https?:\/\/(?:www\.)?setoli\.monster\/artist\/(\d+)\/?/gi;
-  for(const m of directory.matchAll(re)){
-    const context=directory.slice(Math.max(0,m.index-180),Math.min(directory.length,m.index+100));
-    links.push({name:context.replace(/!\[[^\]]*\]\([^)]*\)/g,' ').replace(/\[[^\]]*\]/g,' ').replace(/\([^)]*\)/g,' ').replace(/https?:\/\/[^\s)]+/g,' ').replace(/\s+/g,' ').trim(),url:m[0]});
+  // 画像付きの入れ子Markdownを先に除去すると、[アーティスト名](プロフィールURL)
+  // として安全に解析できる。アーティスト名は固定リストにせず一覧から取得する。
+  const plainDirectory=directory
+    .replace(/!\[[^\]]*\]\([^)]*\)/g,' ')
+    .replace(/<img\b[^>]*>/gi,' ')
+    .replace(/&amp;/gi,'&');
+  const profileLinkRe=/\[([^\]\n]{1,500})\]\((https?:\/\/(?:www\.)?setoli\.monster)?(\/artist\/\d+)(?:[^)]*)\)/gi;
+  for(const m of plainDirectory.matchAll(profileLinkRe)){
+    links.push({name:m[1].replace(/\s+/g,' ').trim(),url:'https://www.setoli.monster'+m[3]});
+  }
+  // Markdownリンクとして取れない形式でも、URL周辺の文字列から補完する。
+  if(!links.length){
+    const re=/https?:\/\/(?:www\.)?setoli\.monster\/artist\/(\d+)\/?|\/artist\/(\d+)/gi;
+    for(const m of directory.matchAll(re)){
+      const context=directory.slice(Math.max(0,m.index-500),Math.min(directory.length,m.index+120));
+      const name=context.replace(/!\[[^\]]*\]\([^)]*\)/g,' ')
+        .replace(/https?:\/\/[^\s)]+/g,' ').replace(/\s+/g,' ').trim();
+      links.push({name,url:'https://www.setoli.monster/artist/'+(m[1]||m[2])});
+    }
   }
   const scored=links.map(x=>({...x,n:setoliNormalize(x.name)})).filter(x=>x.n)
-    .map(x=>({...x,score:(x.n===wanted||x.n===catalogArtist?100:0)+(x.n.includes(wanted)||wanted.includes(x.n)?30:0)+(x.n.includes(catalogArtist)||catalogArtist.includes(x.n)?20:0)}))
+    .map(x=>({...x,score:(x.n===wanted||x.n===catalogArtist?100:0)
+      +(x.n.includes(wanted)||wanted.includes(x.n)?30:0)
+      +(x.n.includes(catalogArtist)||catalogArtist.includes(x.n)?20:0)}))
     .filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
   if(!scored.length) throw new Error(`セトリモンスターのアーティスト一覧に「${artist}」が見つかりません。`);
   return {name:artist,url:scored[0].url};
 }
 function findLiveUrlsForDate(artistPageText,date){
-  const text=String(artistPageText||'').replace(/\\u00a0/g,' ');
+  // Setoli Monsterの公演一覧は、Readerによって通常リンク・入れ子画像リンク・
+  // 相対URL・HTMLのいずれにも変換されるため、リンク文字列の形を固定しない。
+  const raw=String(artistPageText||'').replace(/\\u00a0/g,' ')
+    .replace(/&nbsp;|&#160;/gi,' ')
+    .replace(/&amp;/gi,'&')
+    .replace(/\\\//g,'/');
+  const target=String(date||'').slice(0,10);
+  const dateRe=/(20\d{2}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|20\d{2}\s*[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|20\d{2}\s+\d{1,2}\s*[./-]\s*\d{1,2})/g;
+  const urlRe=/(?:https?:\\?\/\\?\/(?:www\\?\.)?setoli\\?\.monster)?\\?\/live\\?\/(\d+)(?:[?#][^\\s)\]"']*)?/gi;
+  const dates=[...raw.matchAll(dateRe)].map(m=>({value:setoliDateISO(m[0]),index:m.index,text:m[0]})).filter(x=>x.value);
+  const urls=[...raw.matchAll(urlRe)].map(m=>({url:'https://www.setoli.monster/live/'+m[1],index:m.index,raw:m[0]}));
   const found=[];
   const add=(url,label)=>{
     const clean=String(url||'').replace(/[),.;]+$/,'').replace(/\/$/,'');
-    if(clean && !found.some(x=>x.url===clean)) found.push({url:clean,label:String(label||'').trim()});
+    if(clean && !found.some(x=>x.url===clean)) found.push({url:clean,label:String(label||'').replace(/\\s+/g,' ').trim()});
   };
-  // 通常のMarkdownリンクを先に確認する。
-  const linkRe=/\[([^\]\n]{1,500})\]\((https?:\/\/(?:www\.)?setoli\.monster)?(\/live\/\d+)(?:[^)]*)\)/gi;
-  for(const m of text.matchAll(linkRe)){
-    const label=m[1].replace(/\s+/g,' ').trim();
-    if(setoliDateISO(label)===date) add('https://www.setoli.monster'+m[3],label);
+  for(const u of urls){
+    // 公演カードのテキスト構造が変わっても拾えるよう、URLの前後を広めに確認。
+    const nearby=dates.filter(d=>Math.abs(d.index-u.index)<=5000)
+      .sort((a,b)=>Math.abs(a.index-u.index)-Math.abs(b.index-u.index));
+    const match=nearby.find(d=>d.value===target);
+    if(match){
+      const from=Math.max(0,Math.min(match.index,u.index)-180);
+      const to=Math.min(raw.length,Math.max(match.index,u.index)+260);
+      add(u.url,raw.slice(from,to));
+    }
   }
-  // Readerの出力形式によっては日付とリンクが別行・別段落になる。
-  // 各公演URLについて、前後の範囲で最も近い日付だけを採用する。
+  // URLがリンク先属性として含まれるHTML形式も対象にする。
   if(!found.length){
-    const dateRe=/20\d{2}\s+\d{1,2}[./-]\d{1,2}|20\d{2}[./-]\d{1,2}[./-]\d{1,2}|20\d{2}年\s*\d{1,2}月\s*\d{1,2}日/g;
-    const urlRe=/(?:https?:\/\/(?:www\.)?setoli\.monster)?\/live\/\d+(?:[?#][^\s)\]]*)?/gi;
-    const dates=[...text.matchAll(dateRe)];
-    for(const m of text.matchAll(urlRe)){
-      const url=m[0].startsWith('http')?m[0]:'https://www.setoli.monster'+m[0];
-      const urlPos=m.index;
-      let nearest=null, distance=Infinity;
-      for(const d of dates){
-        const dPos=d.index;
-        const dist=Math.abs(dPos-urlPos);
-        if(dist<distance && dist<=1200){nearest=d;distance=dist;}
-      }
-      if(nearest && setoliDateISO(nearest[0])===date){
-        const label=text.slice(Math.max(0,nearest.index-100),Math.min(text.length,m.index+100)).replace(/\s+/g,' ').trim();
-        add(url,label);
-      }
+    const htmlLinks=[...raw.matchAll(/href\s*=\s*["']([^"']*\/live\/\d+[^"']*)["']/gi)];
+    for(const link of htmlLinks){
+      const id=link[1].match(/\/live\/(\d+)/i)?.[1];
+      if(!id) continue;
+      const nearby=dates.filter(d=>Math.abs(d.index-link.index)<=5000)
+        .sort((a,b)=>Math.abs(a.index-link.index)-Math.abs(b.index-link.index));
+      const match=nearby.find(d=>d.value===target);
+      if(match) add('https://www.setoli.monster/live/'+id,raw.slice(Math.max(0,link.index-180),Math.min(raw.length,link.index+260)));
     }
   }
   return found;
