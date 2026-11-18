@@ -334,13 +334,41 @@ function parseSetoliPage(raw, url, requestedArtist, requestedDate) {
     const ix=lines.findIndex(x=>/ライブ情報/.test(x));
     if(ix>=0){const v=lines.slice(ix,ix+8).findIndex(x=>/^会場$/.test(x));if(v>=0)venue=lines[ix+v+1]||'';}
   }
+  // セトリモンスターのセットリストは「1 | Image 曲名」の表形式で返る。
+  // Readerが表を1行に連結する場合と、通常の番号付きリストの両方に対応する。
   const songs=[];
-  for(const line of lines){
-    const clean=line.replace(/!\[[^\]]*\]\([^)]*\)/g,'').replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').replace(/<[^>]*>/g,'').replace(/[*_`]/g,'').trim();
-    const m=clean.match(/^\s*\d{1,3}\s*[|｜.)、]\s*(.+)$/) || clean.match(/^\s*\d{1,3}\s+(.+)$/);
-    if(!m) continue;
-    const song=m[1].replace(/^Image\s*/i,'').replace(/\s+(?:日替わり|初披露|\d+公演ぶり).*$/,'').trim();
-    if(song && !/^(?:Image|アンコール|本編|Encore)/i.test(song) && !songs.includes(song)) songs.push(song);
+  const addSong=value=>{
+    let song=String(value||'').replace(/!\[[^\]]*\]\([^)]*\)/g,'')
+      .replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/<[^>]*>/g,'')
+      .replace(/[*_`]/g,'').replace(/^Image\s*/i,'').trim();
+    song=song.replace(/\s+(?:日替わり|初披露|\d+公演ぶり).*$/,'').trim();
+    song=song.replace(/^[-–—|｜]+|[-–—|｜]+$/g,'').trim();
+    if(song && !/^(?:Image|アンコール|本編|Encore|ログインして再生|編集する|履歴)$/i.test(song)
+      && !/^\d+\s*曲$/.test(song) && !songs.includes(song)) songs.push(song);
+  };
+  const setlistStart=text.search(/セットリスト(?:\s*[🆕速報]*)?/);
+  const infoStart=text.search(/ライブ情報/);
+  const section=setlistStart>=0?text.slice(setlistStart,infoStart>setlistStart?infoStart:undefined):text;
+  // 行ごとの表データを優先して抽出
+  for(const line of section.split(/[\n\r]+/)){
+    const m=line.match(/^\s*\d{1,3}\s*[|｜]\s*(?:Image\s*)?(.+?)\s*$/);
+    if(m) addSong(m[1]);
+  }
+  // 表の改行が消えている場合：連結された番号＋縦棒を境界として抽出
+  if(songs.length<3){
+    const flat=section.replace(/[\n\r]+/g,' ').replace(/\s+/g,' ');
+    const re=/(?:^|\s)(\d{1,3})\s*[|｜]\s*(?:Image\s*)?(.+?)(?=\s+\d{1,3}\s*[|｜]|$)/g;
+    for(const m of flat.matchAll(re)) addSong(m[2]);
+  }
+  // 通常の番号付きリスト：1. 曲名、2 曲名、3）曲名など
+  if(songs.length<3){
+    for(const line of section.split(/[\n\r]+/)){
+      const clean=line.replace(/!\[[^\]]*\]\([^)]*\)/g,'')
+        .replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/<[^>]*>/g,'').trim();
+      const m=clean.match(/^\s*\d{1,3}\s*[|｜.)、．]\s*(.+)$/)
+        || clean.match(/^\s*\d{1,3}\s+(.+)$/);
+      if(m) addSong(m[1]);
+    }
   }
   if(songs.length<3) throw new Error(`セットリストの曲を十分に抽出できませんでした（${songs.length}曲）。ページ本文を貼り付けてください。`);
   if(!liveName || liveName.length<3) liveName=`${requestedArtist} ${dateJP(requestedDate)}`;
