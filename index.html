@@ -412,17 +412,51 @@ async function readViaJina(url){
 }
 async function searchSetoliCandidates(artist,date){
   const [y,m,d]=date.split('-');
+  const errors=[];
+  const mm=String(Number(m)), dd=String(Number(d));
+  const datePattern=new RegExp(`${y}\\s*(?:年|[./-])?\\s*0?${mm}\\s*(?:月|[./-])\\s*0?${dd}\\s*日?`);
+  const artistKey=setoliNormalize(artist);
+  const artistAliases=[artist,resolveLivelogArtist(artist)];
+  if(artistKey==='bump' || artistKey==='bumpofchicken') artistAliases.push('BUMP OF CHICKEN');
+  if(artistKey==='乃木坂' || artistKey==='乃木坂46') artistAliases.push('乃木坂46');
+  const matchesArtist=name=>{
+    const n=setoliNormalize(name);
+    return artistAliases.some(a=>{
+      const an=setoliNormalize(a);
+      return an && (n===an || n.includes(an) || an.includes(n));
+    });
+  };
+
+  // まずセトリモンスター自身のサイトマップからアーティストページを探す。
+  // 検索エンジンを経由しないため、Bing / DuckDuckGo 側の403を回避できる。
+  try{
+    const sitemap=await readViaJina('https://www.setoli.monster/site-map');
+    const artistLinks=[...sitemap.matchAll(/\[([^\]]+)\]\((https?:\/\/(?:www\.)?setoli\.monster\/artist\/\d+)\)/gi)]
+      .filter(m=>matchesArtist(m[1]));
+    if(!artistLinks.length) errors.push('サイトマップに該当アーティストが見つかりません');
+    for(const link of artistLinks.slice(0,3)){
+      try{
+        const artistPage=await readViaJina(link[2]);
+        const liveUrls=[];
+        const urlRe=/https?:\/\/(?:www\.)?setoli\.monster\/live\/\d+/gi;
+        for(const match of artistPage.matchAll(urlRe)){
+          const at=match.index||0;
+          const context=artistPage.slice(Math.max(0,at-260),Math.min(artistPage.length,at+260));
+          if(datePattern.test(context)) liveUrls.push(match[0].replace('https://setoli.monster/','https://www.setoli.monster/'));
+        }
+        const unique=[...new Set(liveUrls)];
+        if(unique.length) return unique.slice(0,8);
+        errors.push(`アーティストページ「${link[1]}」に${y}.${mm}.${dd}の公演がありません`);
+      }catch(e){errors.push(`アーティストページ取得：${e.message||e}`);}
+    }
+  }catch(e){errors.push(`サイトマップ取得：${e.message||e}`);}
+
+  // サイト内一覧で見つからない場合のみ、従来の検索エンジン経由を試す。
   const query=`site:setoli.monster/live "${artist}" "${y}年${Number(m)}月${Number(d)}日"`;
-  // Google検索はJina Reader経由で403になることがあるため、検索元を分けて順番に試す。
   const searchUrls=[
     'https://www.bing.com/search?q='+encodeURIComponent(query)+'&count=10',
     'https://html.duckduckgo.com/html/?q='+encodeURIComponent(query)
   ];
-  const errors=[];
-  // これまで動作確認に使った公演は、検索エンジンに依存せず直接ページを取得する。
-  const artistKey=artist.toLowerCase().replace(/\s+/g,'').replace(/ofchicken/g,'');
-  if(date==='2026-08-23' && (artistKey==='乃木坂' || artistKey==='乃木坂46')) return ['https://www.setoli.monster/live/9711'];
-  if(date==='2012-07-04' && (artistKey==='bump' || artistKey==='bumpofchicken')) return ['https://www.setoli.monster/live/7308'];
   for(const searchUrl of searchUrls){
     try{
       const searchText=await readViaJina(searchUrl);
@@ -432,7 +466,7 @@ async function searchSetoliCandidates(artist,date){
       errors.push('検索結果に公演URLなし');
     }catch(e){errors.push(e.message||String(e));}
   }
-  throw new Error('検索サービスから公演候補を取得できませんでした（'+errors.join('／')+'）。');
+  throw new Error('セトリモンスター内の公演一覧と検索サービスを確認しましたが、公演候補を取得できませんでした（'+errors.join('／')+'）。');
 }
 let setoliFoundPages=[];
 async function fetchSetoliAndTransfer(){
