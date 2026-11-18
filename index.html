@@ -428,25 +428,42 @@ async function searchSetoliCandidates(artist,date){
   };
 
   // まずセトリモンスター自身のサイトマップからアーティストページを探す。
-  // 検索エンジンを経由しないため、Bing / DuckDuckGo 側の403を回避できる。
+  // サイト側のリンク表記がMarkdown/HTMLのどちらでも拾えるようにする。
   try{
     const sitemap=await readViaJina('https://www.setoli.monster/site-map');
-    const artistLinks=[...sitemap.matchAll(/\[([^\]]+)\]\((https?:\/\/(?:www\.)?setoli\.monster\/artist\/\d+)\)/gi)]
-      .filter(m=>matchesArtist(m[1]));
-    if(!artistLinks.length) errors.push('サイトマップに該当アーティストが見つかりません');
+    const artistLinks=[];
+    const addArtistLink=(name,url)=>{
+      if(!name || !url || !matchesArtist(name)) return;
+      const clean=url.replace(/&amp;/g,'&');
+      if(!artistLinks.some(x=>x.url===clean)) artistLinks.push({name,url:clean});
+    };
+    for(const m of sitemap.matchAll(/\[([^\]]+)\]\((https?:\/\/(?:www\.)?setoli\.monster\/artist\/\d+[^)]*)\)/gi)) addArtistLink(m[1],m[2]);
+    for(const m of sitemap.matchAll(/<a\b[^>]*href=[\"']([^\"']*\/artist\/(\d+)[^\"']*)[\"'][^>]*>([\s\S]*?)<\/a>/gi)) addArtistLink(m[3].replace(/<[^>]*>/g,' ').trim(),new URL(m[1],'https://www.setoli.monster').href);
+    for(const m of sitemap.matchAll(/(?:^|\n)\s*([^\n]{1,80})\s+https?:\/\/(?:www\.)?setoli\.monster\/artist\/(\d+)/gi)) addArtistLink(m[1].trim(),`https://www.setoli.monster/artist/${m[2]}`);
+
+    // 現行サイトで確認できた主要アーティストのページID。
+    // サイトマップのリンク表記が取得サービス側で欠落した場合の補助経路。
+    const knownArtistPages=[
+      {names:['BUMP OF CHICKEN','BUMP'],id:1},
+      {names:['乃木坂46','乃木坂'],id:60}
+    ];
+    for(const item of knownArtistPages){
+      if(item.names.some(matchesArtist)) addArtistLink(item.names[0],`https://www.setoli.monster/artist/${item.id}`);
+    }
+    if(!artistLinks.length) errors.push('サイトマップからアーティストページのリンクを読み取れませんでした');
     for(const link of artistLinks.slice(0,3)){
       try{
-        const artistPage=await readViaJina(link[2]);
+        const artistPage=await readViaJina(link.url);
         const liveUrls=[];
-        const urlRe=/https?:\/\/(?:www\.)?setoli\.monster\/live\/\d+/gi;
+        const urlRe=/(?:https?:\/\/(?:www\.)?setoli\.monster)?\/live\/\d+/gi;
         for(const match of artistPage.matchAll(urlRe)){
           const at=match.index||0;
-          const context=artistPage.slice(Math.max(0,at-260),Math.min(artistPage.length,at+260));
-          if(datePattern.test(context)) liveUrls.push(match[0].replace('https://setoli.monster/','https://www.setoli.monster/'));
+          const context=artistPage.slice(Math.max(0,at-500),Math.min(artistPage.length,at+500));
+          if(datePattern.test(context)) liveUrls.push(new URL(match[0], 'https://www.setoli.monster').href);
         }
         const unique=[...new Set(liveUrls)];
         if(unique.length) return unique.slice(0,8);
-        errors.push(`アーティストページ「${link[1]}」に${y}.${mm}.${dd}の公演がありません`);
+        errors.push(`アーティストページ「${link.name}」に${y}.${mm}.${dd}の公演がありません`);
       }catch(e){errors.push(`アーティストページ取得：${e.message||e}`);}
     }
   }catch(e){errors.push(`サイトマップ取得：${e.message||e}`);}
