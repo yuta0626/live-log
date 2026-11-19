@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.7</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.8</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1220;--panel:#151f30;--line:#29364b;--muted:#9aabc2;--txt:#f4f7fb;--accent:#80b7ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -73,7 +73,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 
 .live-form textarea{width:100%;box-sizing:border-box;resize:vertical;min-height:140px;padding:10px;border:1px solid var(--border,#ccd);border-radius:8px;font:inherit}.setlist-field{grid-column:1/-1}.setlist-source-link{display:inline-block;margin-left:6px;font-size:12px}
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.7</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.8</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>チケット代合計</small><b id="sumCost">—</b></div></div>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
@@ -406,7 +406,7 @@ function transferSetoliRecord(data) {
     if(song){savedSongMarks[`${artist}::${song.title}::${data.date}`]=true;matched.push(song.title)}
     else unmatched.push(title);
   });
-  let record=allExpenses.find(x=>x.artist===artist && normalizeDate(x.date)===data.date);
+  let record=allExpenses.find(x=>x.artist===artist && normalizeDate(x.date)===normalizeDate(data.date));
   if(record){
     Object.assign(record,{liveName:data.liveName,prefecture:data.prefecture||record.prefecture||'',venue:data.venue||record.venue||'',setlist:data.songs.join('\n')});
   }else{
@@ -471,8 +471,23 @@ async function readViaJinaHtml(url){
   // 追加読込で高さ／公演リンク数が増えた場合は、安定するまで再度スクロールする。
   // Jina ReaderのinjectPageScriptは文字列配列で渡す必要がある。
   // mutationIdle時にJina側が提供するsimulateScroll()を呼び、遅延読込を発火させる。
-  const revealScript=`document.addEventListener('mutationIdle',()=>{if(typeof window.simulateScroll==='function'){window.simulateScroll();}});`;
-  const headers={Accept:'application/json','Content-Type':'application/json','X-Respond-With':'html','X-Engine':'browser','X-Detach-Invisibles':'true','X-Respond-Timing':'network-idle','X-Timeout':'90','X-No-Cache':'true'};
+  const revealScript=`document.addEventListener('mutationIdle',()=>{
+    const expand=()=>{
+      const re=/(残り\s*\d+\s*公演|もっと見る|続きを見る|さらに表示|全て表示|すべて表示|もっと読み込む)/;
+      document.querySelectorAll('button,a,[role=button]').forEach(el=>{
+        const label=(el.innerText||el.textContent||'').replace(/\s+/g,' ').trim();
+        if(label && re.test(label) && !el.dataset.setoliExpanded){el.dataset.setoliExpanded='1';el.click();}
+      });
+      if(typeof window.simulateScroll==='function') window.simulateScroll();
+      document.querySelectorAll('*').forEach(el=>{
+        if(el.scrollHeight>el.clientHeight+80 && el.clientHeight>100) el.scrollTop=el.scrollHeight;
+      });
+      window.scrollTo(0,document.body.scrollHeight);
+    };
+    expand();
+    let n=0;const timer=setInterval(()=>{expand();if(++n>=12)clearInterval(timer);},700);
+  });`;
+  const headers={Accept:'application/json','Content-Type':'application/json','X-Respond-With':'html','X-Engine':'browser','X-Respond-Timing':'network-idle','X-Timeout':'90','X-No-Cache':'true'};
   let response;
   try{
     response=await fetch('https://r.jina.ai/',{method:'POST',headers,body:JSON.stringify({url,injectPageScript:[revealScript]})});
@@ -563,30 +578,40 @@ function findLiveUrlsForDate(artistPageText,date){
   const raw=String(artistPageText||'').replace(/\\u00a0/g,' ').replace(/&nbsp;|&#160;/gi,' ').replace(/&amp;/gi,'&').replace(/\\\//g,'/');
   const target=String(date||'').slice(0,10);
   const found=[];
+  const dateRe=/20\d{2}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|20\d{2}\s*[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|20\d{2}\s+\d{1,2}\s*[./-]\s*\d{1,2}/g;
   const add=(id,label)=>{
     if(!id) return;
     const url='https://www.setoli.monster/live/'+id;
     if(!found.some(x=>x.url===url)) found.push({url,label:String(label||'').replace(/\s+/g,' ').trim()});
   };
-  // HTML取得時はDOMの親子関係で日付と公演リンクを対応付ける。
-  // 日付がリンク外にあっても、同じ公演カード内なら取得できる。
+  // HTMLではリンク自身の文字列を最初に確認し、次に最も近い公演カードを調べる。
+  // 一覧全体のように複数公演を含む親要素でも、カード内の公演リンクIDが1種類なら対応付ける。
   if(/<\s*(?:html|body|a)\b/i.test(raw) && typeof DOMParser!=='undefined'){
     try{
       const doc=new DOMParser().parseFromString(raw,'text/html');
       const anchors=[...doc.querySelectorAll('a[href]')];
       const liveAnchors=anchors.map(a=>({a,id:(new URL(a.getAttribute('href'), 'https://www.setoli.monster').pathname.match(/^\/live\/(\d+)/)||[])[1]})).filter(x=>x.id);
       for(const item of liveAnchors){
-        // 公演カード内には会場・曲数など複数のリンクがあるため、
-        // 「liveリンクが1件だけ」という条件は設けない。
-        // 最も近い親要素から順に、含まれる日付が指定日の1種類だけか確認する。
+        const ownText=String(item.a.textContent||'').replace(/\s+/g,' ').trim();
+        if([...ownText.matchAll(dateRe)].some(m=>setoliDateISO(m[0])===target)){
+          add(item.id,ownText);continue;
+        }
         let node=item.a;
         for(let depth=0;node && depth<=10;depth++,node=node.parentElement){
           const cardText=String(node.textContent||'').replace(/\s+/g,' ').trim();
-          const dateTokens=[...cardText.matchAll(/20\d{2}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|20\d{2}\s*[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|20\d{2}\s+\d{1,2}\s*[./-]\s*\d{1,2}/g)];
+          const dateTokens=[...cardText.matchAll(dateRe)];
           const uniqueDates=[...new Set(dateTokens.map(m=>setoliDateISO(m[0])).filter(Boolean))];
-          if(uniqueDates.length===1 && uniqueDates[0]===target){
-            add(item.id,cardText);
-            break;
+          const targetPresent=uniqueDates.includes(target);
+          if(targetPresent){
+            const ids=[...new Set([...node.querySelectorAll('a[href]')].map(a=>{
+              try{return new URL(a.getAttribute('href'),'https://www.setoli.monster').pathname.match(/^\/live\/(\d+)/)?.[1]||'';}catch(_){return '';}
+            }).filter(Boolean))];
+            if(uniqueDates.length===1 || ids.length===1){add(item.id,cardText);break;}
+            // 複数公演を含む親要素では、リンク文字列と日付の距離が短い場合だけ採用。
+            const anchorLabel=ownText;
+            const anchorPos=cardText.indexOf(anchorLabel);
+            const datePos=dateTokens.filter(m=>setoliDateISO(m[0])===target).map(m=>m.index);
+            if(anchorPos>=0 && datePos.some(pos=>Math.abs(pos-anchorPos)<=180)){add(item.id,cardText);break;}
           }
           if(node===doc.body) break;
         }
@@ -594,36 +619,31 @@ function findLiveUrlsForDate(artistPageText,date){
       if(found.length) return found;
     }catch(_){/* HTML解析に失敗した場合は既存のテキスト解析へ */}
   }
-  // 1) 日付を含むリンクそのものから抽出（Markdown・Jina番号付き・HTML）
+  // Markdown・Jinaリンク概要の形式にも対応。
   const patterns=[
     {re:/【\s*\d+\s*[†|｜]\s*([\s\S]*?)】\s*\(\s*(?:https?:\/\/(?:www\.)?setoli\.monster)?(\/live\/(\d+))[^)]*\)/gi,label:1,id:3},
     {re:/\[([^\]\n]{1,1600})\]\(\s*(?:https?:\/\/(?:www\.)?setoli\.monster)?(\/live\/(\d+))[^)]*\)/gi,label:1,id:3},
     {re:/<a\b[^>]*href\s*=\s*["'](?:https?:\/\/(?:www\.)?setoli\.monster)?\/live\/(\d+)[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi,label:2,id:1}
   ];
-  for(let i=0;i<patterns.length;i++){
-    const p=patterns[i];
+  for(const p of patterns){
     for(const m of raw.matchAll(p.re)){
       const label=String(m[p.label]||'').replace(/<[^>]*>/g,' ').replace(/!\[[^\]]*\]\([^)]*\)/g,' ');
-      if(setoliDateISO(label)===target) add(m[p.id],label);
+      if([...label.matchAll(dateRe)].some(d=>setoliDateISO(d[0])===target)) add(m[p.id],label);
     }
   }
-  // 2) Jina JSONのリンク概要をテキスト化した行も含め、同じカード／短い行内でのみ照合
+  // リンクと日付が別要素／別行のときは、短い同一チャンク内でのみ対応付ける。
   if(!found.length){
     const chunks=raw.split(/\n\s*\n|(?=^#{1,5}\s)/m);
     for(const chunk of chunks){
-      const dates=[...chunk.matchAll(/20\d{2}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|20\d{2}\s*[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|20\d{2}\s+\d{1,2}\s*[./-]\s*\d{1,2}/g)];
+      const dates=[...chunk.matchAll(dateRe)];
       if(!dates.some(m=>setoliDateISO(m[0])===target)) continue;
       for(const m of chunk.matchAll(/(?:https?:\\?\/\\?\/(?:www\\?\.)?setoli\\?\.monster)?\\?\/live\\?\/(\d+)/gi)) add(m[1],chunk.slice(0,700));
     }
   }
-  // 3) 最終フォールバックは近接距離を350文字以内に制限。ページ全体の別公演とは結び付けない。
   if(!found.length){
-    const dateRe=/20\d{2}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|20\d{2}\s*[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|20\d{2}\s+\d{1,2}\s*[./-]\s*\d{1,2}/g;
-    const urlRe=/(?:https?:\\?\/\\?\/(?:www\\?\.)?setoli\\?\.monster)?\\?\/live\\?\/(\d+)/gi;
-    const dates=[...raw.matchAll(dateRe)].filter(m=>setoliDateISO(m[0])===target);
-    const urls=[...raw.matchAll(urlRe)];
-    for(const d of dates){
-      const near=urls.filter(u=>Math.abs(u.index-d.index)<=350).sort((a,b)=>Math.abs(a.index-d.index)-Math.abs(b.index-d.index))[0];
+    const urls=[...raw.matchAll(/(?:https?:\\?\/\\?\/(?:www\\?\.)?setoli\\?\.monster)?\\?\/live\\?\/(\d+)/gi)];
+    for(const d of [...raw.matchAll(dateRe)].filter(m=>setoliDateISO(m[0])===target)){
+      const near=urls.filter(u=>Math.abs(u.index-d.index)<=220).sort((a,b)=>Math.abs(a.index-d.index)-Math.abs(b.index-d.index))[0];
       if(near) add(near[1],raw.slice(Math.max(0,Math.min(d.index,near.index)-140),Math.min(raw.length,Math.max(d.index,near.index)+180)));
     }
   }
