@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1220;--panel:#151f30;--line:#29364b;--muted:#9aabc2;--txt:#f4f7fb;--accent:#80b7ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
-header{padding:22px 18px 14px;background:linear-gradient(135deg,#162b49,#101827);border-bottom:1px solid var(--line)}h1{margin:0;font-size:25px;letter-spacing:.08em}header p{margin:4px 0 0;color:var(--muted);font-size:12px}
+header{padding:22px 18px 14px;background:linear-gradient(135deg,#162b49,#101827);border-bottom:1px solid var(--line)}h1{margin:0;font-size:25px;letter-spacing:.08em;display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}.version-tag{font-size:12px;letter-spacing:.04em;color:#c6d9f3;border:1px solid #6686ad;border-radius:5px;padding:1px 7px;font-weight:600}header p{margin:4px 0 0;color:var(--muted);font-size:12px}
 main{max-width:1100px;margin:auto;padding:16px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:15px}.stat,.panel{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px}.stat small{display:block;color:var(--muted)}.stat b{font-size:21px}
 nav{display:flex;gap:7px;overflow:auto;margin:12px 0 15px}button,.tab{border:1px solid var(--line);background:#1b2940;color:var(--txt);border-radius:9px;padding:9px 13px;white-space:nowrap;cursor:pointer}button.active{background:#315783;border-color:#5b91cb}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.toolbar input,.toolbar select,input,textarea{background:#0e1726;color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:10px;min-width:0}
@@ -73,7 +73,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 
 .live-form textarea{width:100%;box-sizing:border-box;resize:vertical;min-height:140px;padding:10px;border:1px solid var(--border,#ccd);border-radius:8px;font:inherit}.setlist-field{grid-column:1/-1}.setlist-source-link{display:inline-block;margin-left:6px;font-size:12px}
 </style></head><body>
-<header><h1>LIVE LOG</h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>チケット代合計</small><b id="sumCost">—</b></div></div>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
@@ -305,14 +305,21 @@ function resolveLivelogArtist(input) {
 }
 function parseSetoliPage(raw, url, requestedArtist, requestedDate) {
   const text=String(raw||'').replace(/\r/g,'');
-  const foundDate=setoliDateISO(text);
-  if(foundDate!==requestedDate) throw new Error(`ページの日付が一致しません（取得：${foundDate||'不明'}）。`);
+  const lines=text.split('\n').map(x=>x.trim()).filter(Boolean);
+  const dateMatches=lines.map((line,index)=>({line,index,date:setoliDateISO(line)})).filter(x=>x.date===requestedDate);
+  const infoIndex=lines.findIndex(x=>/ライブ情報/.test(x));
+  const matchedDateLine=dateMatches.find(x=>infoIndex>=0 && x.index>=infoIndex)
+    || dateMatches.find(x=>/会場|日時|20\d{2}年/.test(x.line))
+    || dateMatches[0];
+  if(!matchedDateLine) {
+    const foundDate=setoliDateISO(text);
+    throw new Error(`ページ内に指定日${requestedDate.replaceAll('-','.')}を確認できません（本文の日付候補：${foundDate||'なし'}）。`);
+  }
   const artistNorm=setoliNormalize(requestedArtist);
   const artistCandidates=[requestedArtist, resolveLivelogArtist(requestedArtist)];
   const hasArtist=artistCandidates.some(a=>a && setoliNormalize(text).includes(setoliNormalize(a)))
     || (artistNorm==='bumpofchicken' && /bump\s+of\s+chicken/i.test(text));
   if(!hasArtist) throw new Error('ページ内で指定したアーティスト名を確認できません。');
-  const lines=text.split('\n').map(x=>x.trim()).filter(Boolean);
   let titleLine=lines.find(x=>/セトリ一覧|セットリスト/.test(x) && /setoli|セトリモンスター/i.test(x)) || '';
   let liveName=titleLine.replace(/^#+\s*/,'').replace(/\s*セトリ一覧[！!]?.*$/,'').replace(/\s*セットリスト.*$/,'').replace(/\s*[|｜-]\s*[^|｜-]+\s*[|｜].*$/,'').trim();
   if(!liveName){
@@ -415,26 +422,73 @@ function transferSetoliRecord(data) {
   setoliStatus.textContent=`転記完了：${data.liveName}／${data.prefecture||'都道府県不明'} ${data.venue||'会場不明'}。セットリスト${data.songs.length}曲中、楽曲一覧の${matched.length}曲に○を付けました。`+(unmatched.length?` 未登録曲：${unmatched.join('、')}`:'');
   document.getElementById('setoliCandidates').classList.add('hidden');
 }
+function normalizeJinaResponse(rawText){
+  let parsed=null;
+  try{parsed=JSON.parse(rawText)}catch(_){ }
+  if(!parsed || typeof parsed!=='object'){
+    const plain=String(rawText||'');
+    if(plain.length<250) throw new Error('取得内容が短すぎます（'+plain.length+'文字）');
+    return plain;
+  }
+  const status=Number(parsed.status||parsed.code||0);
+  const data=parsed.data;
+  if((status>=400 && status<600) || status>=40000 || (parsed.code && Number(parsed.code)>=400)){
+    throw new Error(`Jina Reader応答エラー（${status||parsed.code}）：${parsed.detail||parsed.message||'取得できませんでした'}`);
+  }
+  let content='';
+  if(typeof data==='string') content=data;
+  else if(data && typeof data==='object'){
+    content=String(data.content||data.text||data.markdown||'');
+  }
+  if(!content && typeof parsed.content==='string') content=parsed.content;
+  if(!content && typeof parsed.text==='string') content=parsed.text;
+  const linkRows=[];
+  const addLink=(item)=>{
+    if(!item) return;
+    if(typeof item==='string'){
+      if(/^https?:\/\//i.test(item)) linkRows.push({label:item,url:item});
+      return;
+    }
+    if(Array.isArray(item)){item.forEach(addLink);return;}
+    if(typeof item==='object'){
+      const url=item.url||item.href||item.link||item.target||item.uri;
+      const label=item.text||item.title||item.name||item.label||item.anchorText||item.description||url;
+      if(typeof url==='string' && /^https?:\/\//i.test(url)) linkRows.push({label:String(label||url),url});
+      Object.keys(item).forEach(k=>{if(Array.isArray(item[k])) addLink(item[k]);});
+    }
+  };
+  if(data && typeof data==='object') addLink(data.links||data.linkSummary||data.linksSummary);
+  addLink(parsed.links);
+  if(linkRows.length){
+    content+='\n\n<!-- JINA_LINKS_SUMMARY -->\n'+linkRows.map(x=>`[${x.label.replace(/[\[\]]/g,' ')}](${x.url})`).join('\n');
+  }
+  if(content.length<250) throw new Error('Jina Readerから本文を十分に取得できませんでした（'+content.length+'文字）。');
+  return content;
+}
 async function readViaJina(url){
   const target='https://r.jina.ai/'+url;
   const attempts=[
-    {name:'Jina Reader',url:target},
-    {name:'AllOrigins経由',url:'https://api.allorigins.win/raw?url='+encodeURIComponent(target)},
-    {name:'CORS中継経由',url:'https://proxy.cors.dev/'+target}
+    {name:'Jina Reader JSON',url:target,headers:{Accept:'application/json','X-Respond-With':'markdown','X-With-Links-Summary':'true','X-Retain-Links':'all','X-Timeout':'60'}},
+    {name:'Jina Reader Markdown',url:target,headers:{Accept:'text/plain','X-Respond-With':'markdown','X-Retain-Links':'all','X-Timeout':'60'}},
+    {name:'AllOrigins経由',url:'https://api.allorigins.win/raw?url='+encodeURIComponent(target),headers:{Accept:'text/plain'}},
+    {name:'CORS中継経由',url:'https://proxy.cors.dev/'+target,headers:{Accept:'text/plain'}}
   ];
   const errors=[];
   for(const attempt of attempts){
     try{
-      const response=await fetch(attempt.url,{headers:{Accept:'text/plain'}});
+      const response=await fetch(attempt.url,{headers:attempt.headers});
       if(!response.ok) throw new Error('HTTP '+response.status);
       const body=await response.text();
-      if(body.length<250) throw new Error('取得内容が短すぎます（'+body.length+'文字）');
-      return body;
+      const normalized=normalizeJinaResponse(body);
+      // エラー画面・ブロック画面を正常な公演一覧として扱わない。
+      if(/(access denied|just a moment\.\.\.|cloudflare|403 forbidden)/i.test(normalized.slice(0,1600))
+        && !/\/live\/\d+/.test(normalized)) throw new Error('サイトのブロック／エラー画面が返されました');
+      return normalized;
     }catch(err){
       errors.push(attempt.name+': '+(err&&err.message?err.message:String(err)));
     }
   }
-  throw new Error('外部サイトへの通信に失敗しました。'+errors.join('／')+'。ブラウザの開発者ツールのConsoleにもCORS・通信エラーが出ていないか確認してください。');
+  throw new Error('外部サイトの取得に失敗しました。'+errors.join('／'));
 }
 async function findSetoliArtistPage(artist){
   const normalized=setoliNormalize(artist);
@@ -478,43 +532,46 @@ async function findSetoliArtistPage(artist){
   return {name:artist,url:scored[0].url};
 }
 function findLiveUrlsForDate(artistPageText,date){
-  // Setoli Monsterの公演一覧は、Readerによって通常リンク・入れ子画像リンク・
-  // 相対URL・HTMLのいずれにも変換されるため、リンク文字列の形を固定しない。
   const raw=String(artistPageText||'').replace(/\\u00a0/g,' ')
-    .replace(/&nbsp;|&#160;/gi,' ')
-    .replace(/&amp;/gi,'&')
-    .replace(/\\\//g,'/');
+    .replace(/&nbsp;|&#160;/gi,' ').replace(/&amp;/gi,'&').replace(/\\\//g,'/');
   const target=String(date||'').slice(0,10);
-  const dateRe=/(20\d{2}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|20\d{2}\s*[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|20\d{2}\s+\d{1,2}\s*[./-]\s*\d{1,2})/g;
-  const urlRe=/(?:https?:\\?\/\\?\/(?:www\\?\.)?setoli\\?\.monster)?\\?\/live\\?\/(\d+)(?:[?#][^\\s)\]"']*)?/gi;
-  const dates=[...raw.matchAll(dateRe)].map(m=>({value:setoliDateISO(m[0]),index:m.index,text:m[0]})).filter(x=>x.value);
-  const urls=[...raw.matchAll(urlRe)].map(m=>({url:'https://www.setoli.monster/live/'+m[1],index:m.index,raw:m[0]}));
   const found=[];
-  const add=(url,label)=>{
-    const clean=String(url||'').replace(/[),.;]+$/,'').replace(/\/$/,'');
-    if(clean && !found.some(x=>x.url===clean)) found.push({url:clean,label:String(label||'').replace(/\\s+/g,' ').trim()});
+  const add=(id,label)=>{
+    if(!id) return;
+    const url='https://www.setoli.monster/live/'+id;
+    if(!found.some(x=>x.url===url)) found.push({url,label:String(label||'').replace(/\s+/g,' ').trim()});
   };
-  for(const u of urls){
-    // 公演カードのテキスト構造が変わっても拾えるよう、URLの前後を広めに確認。
-    const nearby=dates.filter(d=>Math.abs(d.index-u.index)<=5000)
-      .sort((a,b)=>Math.abs(a.index-u.index)-Math.abs(b.index-u.index));
-    const match=nearby.find(d=>d.value===target);
-    if(match){
-      const from=Math.max(0,Math.min(match.index,u.index)-180);
-      const to=Math.min(raw.length,Math.max(match.index,u.index)+260);
-      add(u.url,raw.slice(from,to));
+  // 1) 日付を含むリンクそのものから抽出（Markdown・Jina番号付き・HTML）
+  const patterns=[
+    {re:/【\s*\d+\s*[†|｜]\s*([\s\S]*?)】\s*\(\s*(?:https?:\/\/(?:www\.)?setoli\.monster)?(\/live\/(\d+))[^)]*\)/gi,label:1,id:3},
+    {re:/\[([^\]\n]{1,1600})\]\(\s*(?:https?:\/\/(?:www\.)?setoli\.monster)?(\/live\/(\d+))[^)]*\)/gi,label:1,id:3},
+    {re:/<a\b[^>]*href\s*=\s*["'](?:https?:\/\/(?:www\.)?setoli\.monster)?\/live\/(\d+)[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi,label:2,id:1}
+  ];
+  for(let i=0;i<patterns.length;i++){
+    const p=patterns[i];
+    for(const m of raw.matchAll(p.re)){
+      const label=String(m[p.label]||'').replace(/<[^>]*>/g,' ').replace(/!\[[^\]]*\]\([^)]*\)/g,' ');
+      if(setoliDateISO(label)===target) add(m[p.id],label);
     }
   }
-  // URLがリンク先属性として含まれるHTML形式も対象にする。
+  // 2) Jina JSONのリンク概要をテキスト化した行も含め、同じカード／短い行内でのみ照合
   if(!found.length){
-    const htmlLinks=[...raw.matchAll(/href\s*=\s*["']([^"']*\/live\/\d+[^"']*)["']/gi)];
-    for(const link of htmlLinks){
-      const id=link[1].match(/\/live\/(\d+)/i)?.[1];
-      if(!id) continue;
-      const nearby=dates.filter(d=>Math.abs(d.index-link.index)<=5000)
-        .sort((a,b)=>Math.abs(a.index-link.index)-Math.abs(b.index-link.index));
-      const match=nearby.find(d=>d.value===target);
-      if(match) add('https://www.setoli.monster/live/'+id,raw.slice(Math.max(0,link.index-180),Math.min(raw.length,link.index+260)));
+    const chunks=raw.split(/\n\s*\n|(?=^#{1,5}\s)/m);
+    for(const chunk of chunks){
+      const dates=[...chunk.matchAll(/20\d{2}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|20\d{2}\s*[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|20\d{2}\s+\d{1,2}\s*[./-]\s*\d{1,2}/g)];
+      if(!dates.some(m=>setoliDateISO(m[0])===target)) continue;
+      for(const m of chunk.matchAll(/(?:https?:\\?\/\\?\/(?:www\\?\.)?setoli\\?\.monster)?\\?\/live\\?\/(\d+)/gi)) add(m[1],chunk.slice(0,700));
+    }
+  }
+  // 3) 最終フォールバックは近接距離を350文字以内に制限。ページ全体の別公演とは結び付けない。
+  if(!found.length){
+    const dateRe=/20\d{2}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|20\d{2}\s*[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|20\d{2}\s+\d{1,2}\s*[./-]\s*\d{1,2}/g;
+    const urlRe=/(?:https?:\\?\/\\?\/(?:www\\?\.)?setoli\\?\.monster)?\\?\/live\\?\/(\d+)/gi;
+    const dates=[...raw.matchAll(dateRe)].filter(m=>setoliDateISO(m[0])===target);
+    const urls=[...raw.matchAll(urlRe)];
+    for(const d of dates){
+      const near=urls.filter(u=>Math.abs(u.index-d.index)<=350).sort((a,b)=>Math.abs(a.index-d.index)-Math.abs(b.index-d.index))[0];
+      if(near) add(near[1],raw.slice(Math.max(0,Math.min(d.index,near.index)-140),Math.min(raw.length,Math.max(d.index,near.index)+180)));
     }
   }
   return found;
@@ -523,8 +580,11 @@ async function searchSetoliCandidates(artist,date){
   // 検索エンジンのインデックスには依存せず、公式のアーティスト一覧→該当アーティストの公演一覧をたどる。
   const profile=await findSetoliArtistPage(artist);
   const page=await readViaJina(profile.url);
+  if(!/\/live\/\d+/.test(page) && !/公演|ライブ|セトリ|セットリスト/i.test(page)){
+    throw new Error(`${profile.name}の公演一覧として認識できる内容が返りませんでした。取得内容が不完全、またはサイト側の表示形式が変わった可能性があります。`);
+  }
   const matches=findLiveUrlsForDate(page,date);
-  if(!matches.length) throw new Error(`${profile.name}の公演一覧に${date.replaceAll('-','.')}の公演が見つかりません。未登録、またはサイト側に掲載されていない可能性があります。`);
+  if(!matches.length) throw new Error(`${profile.name}の公演一覧は取得できましたが、${date.replaceAll('-','.')}に一致する公演リンクを特定できませんでした。公演未掲載とはまだ断定できません。`);
   return matches.map(x=>({...x,artistName:profile.name}));
 }
 let setoliFoundPages=[];
