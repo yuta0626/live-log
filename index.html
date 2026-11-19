@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.16</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.17</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1220;--panel:#151f30;--line:#29364b;--muted:#9aabc2;--txt:#f4f7fb;--accent:#80b7ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -74,7 +74,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .live-form textarea{width:100%;box-sizing:border-box;resize:vertical;min-height:140px;padding:10px;border:1px solid var(--border,#ccd);border-radius:8px;font:inherit}.setlist-field{grid-column:1/-1}.setlist-source-link{display:inline-block;margin-left:6px;font-size:12px}
 .diagnostic-box{margin-top:12px;padding:12px;border:1px solid #9b7044;border-radius:9px;background:#241d18}.diagnostic-box textarea{width:100%;min-height:190px;resize:vertical;font:12px/1.45 ui-monospace,monospace;white-space:pre-wrap}.diagnostic-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.16</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.17</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>チケット代合計</small><b id="sumCost">—</b></div></div>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
@@ -387,6 +387,26 @@ function parseSetoliPage(raw, url, requestedArtist, requestedDate) {
       addSong(value);
     }
   };
+  // Setoli Readerの実ページ形式: `1![Image ...](画像URL) [曲名](.../song/ID)2![Image ...]...`
+  // 番号の直後に区切り記号や空白がないため、従来の `1 | 曲名` 抽出では拾えない。
+  // 曲リンクのhrefが /song/ID であることを条件にし、画像altや周辺公演リンクを除外する。
+  const numberedSongRows=[...String(section||text).matchAll(/(?:^|\s)(\d{1,3})(?=!?\[)/g)];
+  if(numberedSongRows.length>=3){
+    for(let i=0;i<numberedSongRows.length;i++){
+      const hit=numberedSongRows[i];
+      const start=hit.index+hit[0].length;
+      const end=i+1<numberedSongRows.length?numberedSongRows[i+1].index:String(section||text).length;
+      const row=String(section||text).slice(start,end);
+      const songLinks=[...row.matchAll(/\[([^\]]+)\]\((https?:\/\/[^)]+|\/song\/[^)]+)\)/g)]
+        .filter(m=>/\/song\/\d+(?:[?#)]|$)/.test(m[2]));
+      if(songLinks.length) addSong(songLinks[0][1]);
+      else {
+        // HTML anchor形式で返された場合もsongリンクの表示文字列を採用する。
+        const htmlSong=row.match(/<a\b[^>]*href=["'](?:https?:\/\/www\.setoli\.monster)?\/song\/\d+[^"']*["'][^>]*>([\s\S]*?)<\/a>/i);
+        if(htmlSong) addSong(htmlSong[1].replace(/<[^>]*>/g,' '));
+      }
+    }
+  }
   extractRows(section);
   if(songs.length<3) extractRows(text);
   // 数字付き箇条書きとして返された場合の補助処理。
@@ -434,9 +454,12 @@ function parseSetoliPage(raw, url, requestedArtist, requestedDate) {
       if(plain)addSong(plain);
     }
   }
-  if(songs.length<3){
+  const declaredCountMatch=String(section||text).match(/全\s*(\d{1,3})\s*曲/);
+  const declaredCount=declaredCountMatch?Number(declaredCountMatch[1]):null;
+  if(songs.length<3 || (declaredCount && songs.length!==declaredCount)){
     const excerpt=String(section||text).replace(/\s+/g,' ').slice(0,2200);
-    throw new Error(`セットリストの曲を十分に抽出できませんでした（${songs.length}曲）。取得本文のセットリスト付近: ${excerpt||'空'}`);
+    const countNote=declaredCount?`（ページ表示は全${declaredCount}曲）`:'';
+    throw new Error(`セットリストの曲を十分に抽出できませんでした（${songs.length}曲）${countNote}。取得本文のセットリスト付近: ${excerpt||'空'}`);
   }
   if(!liveName || liveName.length<3) liveName=`${requestedArtist} ${dateJP(requestedDate)}`;
   return {artist:resolveLivelogArtist(requestedArtist), requestedArtist, date:requestedDate, liveName, prefecture, venue, songs, url};
