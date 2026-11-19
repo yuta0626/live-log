@@ -465,6 +465,22 @@ function normalizeJinaResponse(rawText){
   if(content.length<250) throw new Error('Jina Readerから本文を十分に取得できませんでした（'+content.length+'文字）。');
   return content;
 }
+async function readViaJinaHtml(url){
+  // 公演一覧はMarkdownではなくHTMLで取得し、リンクと日付のDOM上の所属関係を保つ。
+  const target='https://r.jina.ai/'+url;
+  const response=await fetch(target,{headers:{Accept:'application/json','X-Respond-With':'html','X-Timeout':'60','X-No-Cache':'true'}});
+  if(!response.ok) throw new Error('Jina Reader HTML HTTP '+response.status);
+  const raw=await response.text();
+  let parsed;
+  try{parsed=JSON.parse(raw)}catch(_){throw new Error('Jina Reader HTML応答をJSONとして解析できませんでした。')}
+  const status=Number(parsed.status||parsed.code||0);
+  if((status>=400 && status<600) || status>=40000 || (parsed.code && Number(parsed.code)>=400)){
+    throw new Error(`Jina Reader HTML応答エラー（${status||parsed.code}）：${parsed.detail||parsed.message||'取得できませんでした'}`);
+  }
+  const html=parsed.data && typeof parsed.data==='object' ? String(parsed.data.content||'') : '';
+  if(html.length<250 || !/<(?:html|body|a)\b/i.test(html)) throw new Error('Jina Readerから公演一覧のHTMLを十分に取得できませんでした。');
+  return html;
+}
 async function readViaJina(url){
   const target='https://r.jina.ai/'+url;
   const attempts=[
@@ -532,8 +548,7 @@ async function findSetoliArtistPage(artist){
   return {name:artist,url:scored[0].url};
 }
 function findLiveUrlsForDate(artistPageText,date){
-  const raw=String(artistPageText||'').replace(/\\u00a0/g,' ')
-    .replace(/&nbsp;|&#160;/gi,' ').replace(/&amp;/gi,'&').replace(/\\\//g,'/');
+  const raw=String(artistPageText||'').replace(/\\u00a0/g,' ').replace(/&nbsp;|&#160;/gi,' ').replace(/&amp;/gi,'&').replace(/\\\//g,'/');
   const target=String(date||'').slice(0,10);
   const found=[];
   const add=(id,label)=>{
@@ -541,6 +556,28 @@ function findLiveUrlsForDate(artistPageText,date){
     const url='https://www.setoli.monster/live/'+id;
     if(!found.some(x=>x.url===url)) found.push({url,label:String(label||'').replace(/\s+/g,' ').trim()});
   };
+  // HTML取得時はDOMの親子関係で日付と公演リンクを対応付ける。
+  // 日付がリンク外にあっても、同じ公演カード内なら取得できる。
+  if(/<\s*(?:html|body|a)\b/i.test(raw) && typeof DOMParser!=='undefined'){
+    try{
+      const doc=new DOMParser().parseFromString(raw,'text/html');
+      const anchors=[...doc.querySelectorAll('a[href]')];
+      const liveAnchors=anchors.map(a=>({a,id:(new URL(a.getAttribute('href'), 'https://www.setoli.monster').pathname.match(/^\/live\/(\d+)/)||[])[1]})).filter(x=>x.id);
+      for(const item of liveAnchors){
+        let node=item.a;
+        for(let depth=0;node && depth<=5;depth++,node=node.parentElement){
+          const cardText=String(node.textContent||'').replace(/\s+/g,' ').trim();
+          const cardLinks=[...node.querySelectorAll('a[href]')].map(a=>(new URL(a.getAttribute('href'),'https://www.setoli.monster').pathname.match(/^\/live\/(\d+)/)||[])[1]).filter(Boolean);
+          if(cardLinks.length===1 && setoliDateISO(cardText)===target){
+            add(item.id,cardText);
+            break;
+          }
+          if(node===doc.body) break;
+        }
+      }
+      if(found.length) return found;
+    }catch(_){/* HTML解析に失敗した場合は既存のテキスト解析へ */}
+  }
   // 1) 日付を含むリンクそのものから抽出（Markdown・Jina番号付き・HTML）
   const patterns=[
     {re:/【\s*\d+\s*[†|｜]\s*([\s\S]*?)】\s*\(\s*(?:https?:\/\/(?:www\.)?setoli\.monster)?(\/live\/(\d+))[^)]*\)/gi,label:1,id:3},
@@ -579,12 +616,25 @@ function findLiveUrlsForDate(artistPageText,date){
 async function searchSetoliCandidates(artist,date){
   // 検索エンジンのインデックスには依存せず、公式のアーティスト一覧→該当アーティストの公演一覧をたどる。
   const profile=await findSetoliArtistPage(artist);
-  const page=await readViaJina(profile.url);
-  if(!/\/live\/\d+/.test(page) && !/公演|ライブ|セトリ|セットリスト/i.test(page)){
-    throw new Error(`${profile.name}の公演一覧として認識できる内容が返りませんでした。取得内容が不完全、またはサイト側の表示形式が変わった可能性があります。`);
+  let page='', matches=[];
+  try{
+    page=await readViaJinaHtml(profile.url);
+    matches=findLiveUrlsForDate(page,date);
+  }catch(_){/* HTML形式が使えない場合はMarkdown方式へ */}
+  // HTMLの取得／照合に失敗したときだけMarkdown方式も試す。
+  if(!matches.length){
+    const markdown=await readViaJina(profile.url);
+    if(!/\/live\/\d+/.test(markdown) && !/公演|ライブ|セトリ|セットリスト/i.test(markdown)){
+      throw new Error(`${profile.name}の公演一覧として認識できる内容が返りませんでした。取得内容が不完全、またはサイト側の表示形式が変わった可能性があります。`);
+    }
+    matches=findLiveUrlsForDate(markdown,date);
+    page=markdown;
   }
-  const matches=findLiveUrlsForDate(page,date);
-  if(!matches.length) throw new Error(`${profile.name}の公演一覧は取得できましたが、${date.replaceAll('-','.')}に一致する公演リンクを特定できませんでした。公演未掲載とはまだ断定できません。`);
+  if(!matches.length){
+    const dateHits=(page.match(/20\d{2}\s*(?:年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|\s+\d{1,2}[./-]\d{1,2})/g)||[]).slice(0,8);
+    const liveCount=(page.match(/\/live\/\d+/g)||[]).length;
+    throw new Error(`${profile.name}の公演一覧は取得できましたが、${date.replaceAll('-','.')}に一致する公演リンクを特定できませんでした（公演リンク候補${liveCount}件／日付表記例：${dateHits.join('、')||'なし'}）。公演未掲載とはまだ断定できません。`);
+  }
   return matches.map(x=>({...x,artistName:profile.name}));
 }
 let setoliFoundPages=[];
