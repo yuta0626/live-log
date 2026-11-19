@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.4</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.5</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1220;--panel:#151f30;--line:#29364b;--muted:#9aabc2;--txt:#f4f7fb;--accent:#80b7ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -73,7 +73,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 
 .live-form textarea{width:100%;box-sizing:border-box;resize:vertical;min-height:140px;padding:10px;border:1px solid var(--border,#ccd);border-radius:8px;font:inherit}.setlist-field{grid-column:1/-1}.setlist-source-link{display:inline-block;margin-left:6px;font-size:12px}
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.4</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.5</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>チケット代合計</small><b id="sumCost">—</b></div></div>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
@@ -466,9 +466,27 @@ function normalizeJinaResponse(rawText){
   return content;
 }
 async function readViaJinaHtml(url){
-  // 公演一覧はMarkdownではなくHTMLで取得し、リンクと日付のDOM上の所属関係を保つ。
-  const target='https://r.jina.ai/'+url;
-  const response=await fetch(target,{headers:{Accept:'application/json','X-Respond-With':'html','X-Engine':'browser','X-Detach-Invisibles':'true','X-Respond-Timing':'network-idle','X-Timeout':'90','X-No-Cache':'true'}});
+  // セトリモンスターは「残り○公演を表示」ボタンの先に過去公演を折りたたんでいる。
+  // X-Detach-Invisiblesだけではクリック式の折りたたみは開かないため、
+  // Jina ReaderのPOST injectPageScriptで表示ボタンを実際に押してからHTML化する。
+  const revealScript=`(async()=>{
+    for(let i=0;i<30;i++){
+      const buttons=[...document.querySelectorAll('button,a,[role="button"],summary')]
+        .filter(el=>/残り\\s*\\d+\\s*公演を表示|もっと表示|さらに表示|続きを表示/.test((el.innerText||el.textContent||'').replace(/\\s+/g,' ').trim()));
+      if(!buttons.length) break;
+      buttons.forEach(el=>el.click());
+      await new Promise(resolve=>setTimeout(resolve,180));
+    }
+  })()`;
+  const headers={Accept:'application/json','Content-Type':'application/json','X-Respond-With':'html','X-Engine':'browser','X-Detach-Invisibles':'true','X-Respond-Timing':'network-idle','X-Timeout':'90','X-No-Cache':'true'};
+  let response;
+  try{
+    response=await fetch('https://r.jina.ai/',{method:'POST',headers,body:JSON.stringify({url,injectPageScript:revealScript})});
+  }catch(postError){
+    // POSTがブラウザのCORS制限等で使えない場合は従来GETへ退避する。
+    const {['Content-Type']:contentType,...getHeaders}=headers;
+    response=await fetch('https://r.jina.ai/'+url,{headers:getHeaders});
+  }
   if(!response.ok) throw new Error('Jina Reader HTML HTTP '+response.status);
   const raw=await response.text();
   let parsed;
@@ -564,11 +582,15 @@ function findLiveUrlsForDate(artistPageText,date){
       const anchors=[...doc.querySelectorAll('a[href]')];
       const liveAnchors=anchors.map(a=>({a,id:(new URL(a.getAttribute('href'), 'https://www.setoli.monster').pathname.match(/^\/live\/(\d+)/)||[])[1]})).filter(x=>x.id);
       for(const item of liveAnchors){
+        // 公演カード内には会場・曲数など複数のリンクがあるため、
+        // 「liveリンクが1件だけ」という条件は設けない。
+        // 最も近い親要素から順に、含まれる日付が指定日の1種類だけか確認する。
         let node=item.a;
-        for(let depth=0;node && depth<=5;depth++,node=node.parentElement){
+        for(let depth=0;node && depth<=10;depth++,node=node.parentElement){
           const cardText=String(node.textContent||'').replace(/\s+/g,' ').trim();
-          const cardLinks=[...node.querySelectorAll('a[href]')].map(a=>(new URL(a.getAttribute('href'),'https://www.setoli.monster').pathname.match(/^\/live\/(\d+)/)||[])[1]).filter(Boolean);
-          if(cardLinks.length===1 && setoliDateISO(cardText)===target){
+          const dateTokens=[...cardText.matchAll(/20\d{2}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|20\d{2}\s*[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|20\d{2}\s+\d{1,2}\s*[./-]\s*\d{1,2}/g)];
+          const uniqueDates=[...new Set(dateTokens.map(m=>setoliDateISO(m[0])).filter(Boolean))];
+          if(uniqueDates.length===1 && uniqueDates[0]===target){
             add(item.id,cardText);
             break;
           }
