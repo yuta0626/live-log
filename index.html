@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.17</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.19</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1220;--panel:#151f30;--line:#29364b;--muted:#9aabc2;--txt:#f4f7fb;--accent:#80b7ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -74,7 +74,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .live-form textarea{width:100%;box-sizing:border-box;resize:vertical;min-height:140px;padding:10px;border:1px solid var(--border,#ccd);border-radius:8px;font:inherit}.setlist-field{grid-column:1/-1}.setlist-source-link{display:inline-block;margin-left:6px;font-size:12px}
 .diagnostic-box{margin-top:12px;padding:12px;border:1px solid #9b7044;border-radius:9px;background:#241d18}.diagnostic-box textarea{width:100%;min-height:190px;resize:vertical;font:12px/1.45 ui-monospace,monospace;white-space:pre-wrap}.diagnostic-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.17</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.19</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>チケット代合計</small><b id="sumCost">—</b></div></div>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
@@ -327,12 +327,21 @@ function parseSetoliPage(raw, url, requestedArtist, requestedDate) {
   const hasArtist=artistCandidates.some(a=>a && setoliNormalize(text).includes(setoliNormalize(a)))
     || (artistNorm==='bumpofchicken' && /bump\s+of\s+chicken/i.test(text));
   if(!hasArtist) throw new Error('ページ内で指定したアーティスト名を確認できません。');
-  let titleLine=lines.find(x=>/セトリ一覧|セットリスト/.test(x) && /setoli|セトリモンスター/i.test(x)) || '';
-  let liveName=titleLine.replace(/^#+\s*/,'').replace(/\s*セトリ一覧[！!]?.*$/,'').replace(/\s*セットリスト.*$/,'').replace(/\s*[|｜-]\s*[^|｜-]+\s*[|｜].*$/,'').trim();
+  // 公演名はSEOタイトル（サイト名・アーティスト名を含む）から取らない。
+  // 公演ページ本文の説明文にある「アーティスト『正式公演名』のセットリスト」を最優先する。
+  let liveName='';
+  const description=lines.find(x=>/行われた.{0,180}「[^」]{2,180}」のセットリスト/.test(x));
+  const quotedTitle=description&&description.match(/行われた.{0,180}「([^」]{2,180})」のセットリスト/);
+  if(quotedTitle) liveName=quotedTitle[1].trim();
   if(!liveName){
-    // Setoliの公演ページではH1が公演名。H1直前のアーティスト名を誤採用しない。
-    const heading=lines.find(x=>/^#\s+/.test(x) && !/セトリ一覧|セットリスト/.test(x));
-    liveName=heading ? heading.replace(/^#\s*/,'').replace(/\s*[|｜].*$/,'').trim() : '';
+    // 説明文がないReader形式では、H1の開催日別ラベルとツアー名リンクを合成する。
+    const headingIndex=lines.findIndex(x=>/^#\s+/.test(x) && !/セトリ一覧|セットリスト/.test(x));
+    const heading=headingIndex>=0?lines[headingIndex].replace(/^#\s*/,'').trim():'';
+    const before=headingIndex>0?lines.slice(Math.max(0,headingIndex-4),headingIndex):[];
+    const tourLine=before.map(x=>x.replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/【[^】]*】/g,' ').replace(/\s+/g,' ').trim())
+      .find(x=>x && /(?:TOUR|ツアー|LIVE|FES|フェス|WILLPOLIS|PATHFINDER|aurora ark|be there)/i.test(x)
+        && !/^(?:BUMP OF CHICKEN|乃木坂46|アーティスト)$/.test(x));
+    liveName=heading?(tourLine?`${tourLine} ${heading}`:heading):'';
   }
   // ページ上部の都道府県表示（北海道・東京都・○○府・○○県）
   const prefLine=lines.find(x=>/^(北海道|東京都|京都府|大阪府|.{2,3}県)$/.test(x));
@@ -343,7 +352,7 @@ function parseSetoliPage(raw, url, requestedArtist, requestedDate) {
   const dateLine=lines.find(x=>x.includes('2026年') || /20\d{2}年\s*\d{1,2}月/.test(x) || /20\d{2}[./-]\d{1,2}[./-]\d{1,2}/.test(x));
   if(dateLine){
     const m=dateLine.match(/(?:20\d{2}年\s*\d{1,2}月\s*\d{1,2}日|20\d{2}[./-]\d{1,2}[./-]\d{1,2})\s+(.+?)(?:\s+(?:予定|投稿者|曲数|全\d+曲).*)?$/);
-    if(m) venue=m[1].trim();
+    if(m) venue=m[1].replace(/【\s*\d+\s*(?:†|&dagger;|&#8224;|&#x2020;)\s*([^】]+)】/g,'$1').replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/\s+/g,' ').trim();
   }
   if(!venue){
     const ix=lines.findIndex(x=>/ライブ情報/.test(x));
@@ -565,37 +574,32 @@ document.getElementById('setoliCopyDiagnostic').addEventListener('click',async()
 });
 
 async function readViaJinaHtml(url){
-  // アーティストページの過去公演がスクロール時に追加読込される場合に備え、
-  // ページ本体とスクロール可能な一覧コンテナを段階的に最下部まで動かす。
-  // 追加読込で高さ／公演リンク数が増えた場合は、安定するまで再度スクロールする。
-  // Jina ReaderのinjectPageScriptは文字列配列で渡す必要がある。
-  // mutationIdle時にJina側が提供するsimulateScroll()を呼び、遅延読込を発火させる。
-  const revealScript=`document.addEventListener('mutationIdle',()=>{if(typeof window.simulateScroll==='function'){window.simulateScroll();}});`;
-  const headers={Accept:'application/json','Content-Type':'application/json','X-Respond-With':'html','X-Engine':'browser','X-Detach-Invisibles':'true','X-Respond-Timing':'network-idle','X-Timeout':'90','X-No-Cache':'true'};
-  let response;
-  try{
-    setoliDiag('公演一覧HTML取得','Jina Reader POST: '+url);
-    response=await fetch('https://r.jina.ai/',{method:'POST',headers,body:JSON.stringify({url,injectPageScript:[revealScript]})});
-  }catch(postError){
-    setoliDiag('公演一覧HTML取得','POST失敗。GETへ切替: '+(postError.message||postError));
-    // POSTがブラウザのCORS制限等で使えない場合は従来GETへ退避する。
-    const {['Content-Type']:contentType,...getHeaders}=headers;
-    response=await fetch('https://r.jina.ai/'+url,{headers:getHeaders});
-    setoliDiag('公演一覧HTML取得','GET HTTP '+response.status);
+  // 公演一覧は「残り○公演を表示」の折りたたみ内に過去公演がある。
+  // スクロールだけでなく、表示ボタンをすべて押してからHTMLを取得する。
+  const revealScript=String.raw`(async()=>{const wait=ms=>new Promise(r=>setTimeout(r,ms));for(let pass=0;pass<18;pass++){let changed=false;const els=[...document.querySelectorAll('button,a,[role="button"],summary')];for(const el of els){const t=(el.innerText||el.textContent||'').replace(/\s+/g,' ').trim();if(/(?:残り\s*\d+\s*公演を表示|もっと表示|続きを表示|すべて表示|さらに表示)/.test(t)){try{el.click();changed=true;}catch(e){}}}if(typeof window.simulateScroll==='function'){try{window.simulateScroll();}catch(e){}}window.scrollTo(0,document.body.scrollHeight);await wait(350);if(!changed&&pass>3)break;}})();`;
+  const headers={Accept:'application/json','Content-Type':'application/json','X-Respond-With':'html','X-Engine':'browser','X-Detach-Invisibles':'false','X-Respond-Timing':'network-idle','X-Timeout':'90','X-No-Cache':'true'};
+  const attempts=[
+    {name:'Jina Reader HTML POST',run:()=>fetch('https://r.jina.ai/',{method:'POST',headers,body:JSON.stringify({url,injectPageScript:[revealScript]})})},
+    {name:'Jina Reader HTML GET',run:()=>{const {['Content-Type']:ct,...h}=headers;return fetch('https://r.jina.ai/'+url,{headers:h});}}
+  ];
+  const errors=[];
+  for(const attempt of attempts){
+    try{
+      setoliDiag('公演一覧HTML取得',attempt.name+': '+url);
+      const response=await attempt.run();
+      setoliDiag('公演一覧HTML取得',attempt.name+' HTTP '+response.status);
+      if(!response.ok) throw new Error('HTTP '+response.status);
+      const raw=await response.text();
+      let parsed;try{parsed=JSON.parse(raw)}catch(_){throw new Error('応答がJSONではありません');}
+      const status=Number(parsed.status||parsed.code||0);
+      if((status>=400&&status<600)||status>=40000||(parsed.code&&Number(parsed.code)>=400)) throw new Error(`Reader応答エラー ${status||parsed.code}`);
+      const html=parsed.data&&typeof parsed.data==='object'?String(parsed.data.content||''):'';
+      if(html.length<250||!/<(?:html|body|a)\b/i.test(html)) throw new Error('HTML不足（'+html.length+'文字）');
+      setoliDiag('公演一覧HTML解析','HTML '+html.length+'文字を取得');
+      return html;
+    }catch(err){const reason=attempt.name+': '+(err&&err.message||err);errors.push(reason);setoliDiag('公演一覧HTML取得失敗',reason);}
   }
-  if(!response.ok){setoliDiag('公演一覧HTML取得','HTTP '+response.status);throw new Error('Jina Reader HTML HTTP '+response.status);}
-  setoliDiag('公演一覧HTML取得','HTTP '+response.status+' 応答受信');
-  const raw=await response.text();
-  let parsed;
-  try{parsed=JSON.parse(raw)}catch(_){throw new Error('Jina Reader HTML応答をJSONとして解析できませんでした。')}
-  const status=Number(parsed.status||parsed.code||0);
-  if((status>=400 && status<600) || status>=40000 || (parsed.code && Number(parsed.code)>=400)){
-    throw new Error(`Jina Reader HTML応答エラー（${status||parsed.code}）：${parsed.detail||parsed.message||'取得できませんでした'}`);
-  }
-  const html=parsed.data && typeof parsed.data==='object' ? String(parsed.data.content||'') : '';
-  if(html.length<250 || !/<(?:html|body|a)\b/i.test(html)){setoliDiag('公演一覧HTML解析','HTML文字数 '+html.length+'。HTML形式と判定できず');throw new Error('Jina Readerから公演一覧のHTMLを十分に取得できませんでした。');}
-  setoliDiag('公演一覧HTML解析','HTML '+html.length+'文字を取得');
-  return html;
+  throw new Error('公演一覧HTMLを取得できませんでした。'+errors.join('／'));
 }
 async function readViaJina(url){
   const target='https://r.jina.ai/'+url;
@@ -691,6 +695,13 @@ function findLiveUrlsForDate(artistPageText,date){
       if(isTarget(label)) add(id,label);
     }
   }
+  // Readerが本文リンクを脚注番号に分離する形式にも対応する。
+  // 例: 【249†2013 9.26 ...】 と [249]: https://www.setoli.monster/live/7318
+  const referenceUrls=new Map();
+  for(const m of raw.matchAll(/^\s*\[(\d+)\]:\s*<?(?:https?:\/\/(?:www\.)?setoli\.monster)?\/?live\/(\d+)[^>\s)]*>?/gim)) referenceUrls.set(m[1],m[2]);
+  for(const m of raw.matchAll(/【\s*(\d+)\s*(?:†|&dagger;|&#8224;|&#x2020;)\s*([^】]+)】/g)){
+    if(isTarget(m[2])&&referenceUrls.has(m[1])) add(referenceUrls.get(m[1]),m[2]);
+  }
   if(found.length) return found;
 
   // 2) HTMLとして取得できた場合：公演カード内に日付と公演リンクがあるかを調べる。
@@ -762,40 +773,31 @@ function findLiveUrlsForDate(artistPageText,date){
   return found;
 }
 async function searchSetoliCandidates(artist,date){
-  // LIVE LOG側の短縮名「BUMP」と正式名「BUMP OF CHICKEN」の両方を同一視する。
-  // この公演は一覧ページのURL抽出に既知の不具合があるため、確認済みURLへ直接進む。
-  const normalizedArtist=setoliNormalize(artist);
-  const isBumpArtist=normalizedArtist==='bump' || normalizedArtist==='bumpofchicken';
+  // 特定の日付や公演IDを固定登録せず、アーティストページ全体から毎回検索する。
   const normalizedDate=setoliDateISO(date);
-  setoliDiag('既知公演の直接照合',`入力=${artist}（正規化=${normalizedArtist}）、日付=${date}（正規化=${normalizedDate}）、BUMP判定=${isBumpArtist}`);
-  if(isBumpArtist && normalizedDate==='2013-08-09'){
-    const direct={url:'https://www.setoli.monster/live/7313',label:'2013 8.9 金 単発 Live at QVC Marine Field QVCマリンフィールド 13曲 セトリあり',artistName:'BUMP OF CHICKEN'};
-    setoliDiag('公演URL特定成功','既知の公演URLへ直接移動: '+direct.url);
-    return [direct];
-  }
-  // それ以外の公演は公式アーティスト一覧→公演一覧から動的に特定する。
+  if(!normalizedDate) throw new Error('公演日をYYYY-MM-DD形式として認識できません。');
   const profile=await findSetoliArtistPage(artist);
-  let page='', matches=[];
+  setoliDiag('公演一覧検索方式','固定URLではなく、アーティストページの公演一覧を動的に解析');
+  let page='',matches=[],htmlError='';
   try{
     page=await readViaJinaHtml(profile.url);
     matches=findLiveUrlsForDate(page,date);
-  }catch(_){/* HTML形式が使えない場合はMarkdown方式へ */}
-  // HTMLの取得／照合に失敗したときだけMarkdown方式も試す。
+    setoliDiag('公演一覧HTML照合',`HTML ${page.length}文字／指定日候補 ${matches.length}件`);
+  }catch(err){htmlError=err&&err.message||String(err);setoliDiag('公演一覧HTML照合失敗',htmlError);}
+  // HTML展開に失敗した場合、Markdown本文とリンク脚注も解析する。
   if(!matches.length){
-    const markdown=await readViaJina(profile.url);
-    if(!/\/live\/\d+/.test(markdown) && !/公演|ライブ|セトリ|セットリスト/i.test(markdown)){
-      throw new Error(`${profile.name}の公演一覧として認識できる内容が返りませんでした。取得内容が不完全、またはサイト側の表示形式が変わった可能性があります。`);
-    }
-    matches=findLiveUrlsForDate(markdown,date);
-    page=markdown;
+    try{
+      const markdown=await readViaJina(profile.url);
+      setoliDiag('公演一覧Markdown取得',`Markdown ${markdown.length}文字／指定日文字列=${markdown.includes(normalizedDate.replaceAll('-','.'))?'あり':'なし'}`);
+      matches=findLiveUrlsForDate(markdown,date);
+      page=markdown;
+    }catch(err){setoliDiag('公演一覧Markdown取得失敗',err&&err.message||err);}
   }
   if(!matches.length){
-    const dateHits=(page.match(/20\d{2}\s*(?:年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|\s+\d{1,2}[./-]\d{1,2})/g)||[]).slice(0,8);
-    const uniqueIds=[...new Set([...page.matchAll(/(?:https?:\/\/(?:www\.)?setoli\.monster)?\/live\/(\d+)/gi)].map(m=>m[1]))];
-    const dateContext=[...page.matchAll(/20\d{2}\s*(?:年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|\s+\d{1,2}[./-]\d{1,2})/g)]
-      .filter(m=>setoliDateISO(m[0])===setoliDateISO(date))
-      .slice(0,3).map(m=>page.slice(Math.max(0,m.index-180),Math.min(page.length,m.index+420)).replace(/\s+/g,' '));
-    throw new Error(`${profile.name}の公演一覧から${date.replaceAll('-','.')}のリンクを特定できませんでした（重複除去後の公演URL候補：${uniqueIds.length}件／先頭5件：${uniqueIds.slice(0,5).map(id=>'/live/'+id).join('、')||'なし'}／指定日を含む箇所：${dateContext.join(' | ')||'なし'}／日付表記例：${dateHits.join('、')||'なし'}）。公演未掲載とは断定していません。`);
+    const dateHits=(page.match(/20\d{2}\s*(?:年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|\s+\d{1,2}[./-]\d{1,2})/g)||[]).slice(0,10);
+    const uniqueIds=[...new Set([...page.matchAll(/(?:https?:\/\/(?:www\.)?setoli\.monster)?\/?live\/(\d+)/gi)].map(m=>m[1]))];
+    const targetPresent=[...page.matchAll(/20\d{2}\s*(?:年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|\s+\d{1,2}[./-]\d{1,2})/g)].some(m=>setoliDateISO(m[0])===normalizedDate);
+    throw new Error(`${profile.name}の公演一覧から${normalizedDate.replaceAll('-','.')}の公演リンクを特定できませんでした（取得形式=${page.includes('<html')?'HTML':'Markdown／テキスト'}／公演URL候補=${uniqueIds.length}件／指定日文字列=${targetPresent?'あり':'なし'}／日付例=${dateHits.join('、')||'なし'}${htmlError?'／HTML取得エラー='+htmlError:''}）。公演未掲載とは断定していません。`);
   }
   return matches.map(x=>({...x,artistName:profile.name}));
 }
