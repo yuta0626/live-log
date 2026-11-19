@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.6</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.7</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1220;--panel:#151f30;--line:#29364b;--muted:#9aabc2;--txt:#f4f7fb;--accent:#80b7ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -73,7 +73,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 
 .live-form textarea{width:100%;box-sizing:border-box;resize:vertical;min-height:140px;padding:10px;border:1px solid var(--border,#ccd);border-radius:8px;font:inherit}.setlist-field{grid-column:1/-1}.setlist-source-link{display:inline-block;margin-left:6px;font-size:12px}
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.6</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.7</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>チケット代合計</small><b id="sumCost">—</b></div></div>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
@@ -469,47 +469,13 @@ async function readViaJinaHtml(url){
   // アーティストページの過去公演がスクロール時に追加読込される場合に備え、
   // ページ本体とスクロール可能な一覧コンテナを段階的に最下部まで動かす。
   // 追加読込で高さ／公演リンク数が増えた場合は、安定するまで再度スクロールする。
-  const revealScript=`(async()=>{
-    const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-    const liveCount=()=>document.querySelectorAll('a[href*="/live/"]').length;
-    const scrollables=()=>{
-      const all=[...document.querySelectorAll('body *')];
-      return all.filter(el=>{
-        const st=getComputedStyle(el);
-        return /(auto|scroll)/.test(st.overflowY) && el.scrollHeight>el.clientHeight+80;
-      });
-    };
-    let stable=0, previousHeight=0, previousLinks=0;
-    for(let i=0;i<90 && stable<5;i++){
-      const containers=scrollables();
-      // 画面全体を少しずつ下げ、IntersectionObserver等の遅延読込を発火させる
-      window.scrollBy(0,Math.max(500,Math.floor(window.innerHeight*0.85)));
-      // 独立した公演一覧コンテナがある場合も、その末尾までスクロールする
-      for(const el of containers){
-        el.scrollTop=Math.min(el.scrollHeight,el.scrollTop+Math.max(450,Math.floor(el.clientHeight*0.85)));
-      }
-      // 旧式の「残りの公演を表示」ボタンも併用
-      const buttons=[...document.querySelectorAll('button,a,[role="button"],summary')]
-        .filter(el=>/残り\\s*\\d+\\s*公演を表示|もっと表示|さらに表示|続きを表示/.test((el.innerText||el.textContent||'').replace(/\\s+/g,' ').trim()));
-      for(const el of buttons){try{el.click();}catch(_){}}
-      await wait(450);
-      // ページ末尾へ到達。追加取得が始まる時間を確保する
-      window.scrollTo(0,document.documentElement.scrollHeight);
-      for(const el of scrollables()){el.scrollTop=el.scrollHeight;}
-      await wait(650);
-      const height=Math.max(document.documentElement.scrollHeight,document.body?document.body.scrollHeight:0);
-      const links=liveCount();
-      if(height===previousHeight && links===previousLinks && !buttons.length) stable++;
-      else stable=0;
-      previousHeight=height;
-      previousLinks=links;
-    }
-    window.scrollTo(0,0);
-  })()`;
+  // Jina ReaderのinjectPageScriptは文字列配列で渡す必要がある。
+  // mutationIdle時にJina側が提供するsimulateScroll()を呼び、遅延読込を発火させる。
+  const revealScript=`document.addEventListener('mutationIdle',()=>{if(typeof window.simulateScroll==='function'){window.simulateScroll();}});`;
   const headers={Accept:'application/json','Content-Type':'application/json','X-Respond-With':'html','X-Engine':'browser','X-Detach-Invisibles':'true','X-Respond-Timing':'network-idle','X-Timeout':'90','X-No-Cache':'true'};
   let response;
   try{
-    response=await fetch('https://r.jina.ai/',{method:'POST',headers,body:JSON.stringify({url,injectPageScript:revealScript})});
+    response=await fetch('https://r.jina.ai/',{method:'POST',headers,body:JSON.stringify({url,injectPageScript:[revealScript]})});
   }catch(postError){
     // POSTがブラウザのCORS制限等で使えない場合は従来GETへ退避する。
     const {['Content-Type']:contentType,...getHeaders}=headers;
