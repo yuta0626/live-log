@@ -703,7 +703,7 @@ async function searchSetoliLiveUrls(artist,date){
       const normalized=normalizeJinaResponse(body).replace(/\\u002f/gi,'/');
       const ids=new Set();
       for(const m of normalized.matchAll(/https?[/][/]((?:www[.])?setoli[.]monster)[/]live[/](\d+)/gi)) ids.add(m[2]);
-      for(const m of normalized.matchAll(/(?:^|\s|\\()[/]?live[/](\d+)(?=\s|[)#?]|$)/g)) ids.add(m[1]);
+      for(const m of normalized.matchAll(/(?:^|\s|\()[/]?live[/](\d+)(?=\s|[)#?]|$)/g)) ids.add(m[1]);
       for(const id of ids){
         const url='https://www.setoli.monster/live/'+id;
         if(!found.some(x=>x.url===url)) found.push({url,label:query});
