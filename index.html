@@ -831,12 +831,12 @@ async function searchSetoliCandidates(artist,date){
     }
   }
   if(!matches.length){
-    const targetRows=page.split(/\\n/).filter(line=>setoliDateISO(line)===normalizedDate).slice(0,8);
+    const targetRows=page.split(/\n/).filter(line=>setoliDateISO(line)===normalizedDate).slice(0,8);
     const summaryAt=page.indexOf('<!-- JINA_LINKS_SUMMARY -->');
     const summaryText=summaryAt>=0?page.slice(summaryAt):'';
-    const summaryRelevant=summaryText.split(/\\n/).filter(line=>/QVC|Marine|Live at/i.test(line)).slice(0,20);
+    const summaryRelevant=summaryText.split(/\n/).filter(line=>/QVC|Marine|Live at/i.test(line)).slice(0,20);
     setoliDiag('Markdown照合詳細','対象日行='+JSON.stringify(targetRows)+'／リンク概要該当行='+JSON.stringify(summaryRelevant)+'／リンク概要有無='+(summaryAt>=0?'あり':'なし'));
-    const dateHits=(page.match(/20\\d{2}\\s*(?:年\\s*\\d{1,2}\\s*月\\s*\\d{1,2}\\s*日|[./-]\\s*\\d{1,2}\\s*[./-]\\s*\\d{1,2}|\\s+\\d{1,2}[./-]\\d{1,2})/g)||[]).slice(0,12);(page.match(/20\d{2}\s*(?:年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|\s+\d{1,2}[./-]\d{1,2})/g)||[]).slice(0,12);
+    const dateHits=(page.match(/20\d{2}\s*(?:年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|\s+\d{1,2}[./-]\d{1,2})/g)||[]).slice(0,12);
     const uniqueIds=[...new Set([...page.matchAll(/(?:https?:\/\/(?:www\.)?setoli\.monster)?\/?live\/(\d+)/gi)].map(m=>m[1]))];
     const targetPresent=[...page.matchAll(/20\d{2}\s*(?:年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|\s+\d{1,2}[./-]\d{1,2})/g)].some(m=>setoliDateISO(m[0])===normalizedDate);
     throw new Error(profile.name+'の公演一覧から'+normalizedDate.replaceAll('-','.')+'の公演リンクを特定できませんでした（HTML／Markdown照合失敗・Markdown '+page.length+'文字／公演URL候補='+uniqueIds.length+'件／指定日文字列='+(targetPresent?'あり':'なし')+'／日付例='+(dateHits.join('、')||'なし')+'）。');
