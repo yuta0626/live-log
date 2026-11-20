@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.26</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.27</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1220;--panel:#151f30;--line:#29364b;--muted:#9aabc2;--txt:#f4f7fb;--accent:#80b7ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -74,7 +74,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .live-form textarea{width:100%;box-sizing:border-box;resize:vertical;min-height:140px;padding:10px;border:1px solid var(--border,#ccd);border-radius:8px;font:inherit}.setlist-field{grid-column:1/-1}.setlist-source-link{display:inline-block;margin-left:6px;font-size:12px}
 .diagnostic-box{margin-top:12px;padding:12px;border:1px solid #9b7044;border-radius:9px;background:#241d18}.diagnostic-box textarea{width:100%;min-height:190px;resize:vertical;font:12px/1.45 ui-monospace,monospace;white-space:pre-wrap}.diagnostic-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.26</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.27</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>チケット代合計</small><b id="sumCost">—</b></div></div>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
@@ -707,17 +707,30 @@ function findLiveUrlsInSitemap(sitemapText,artist,date){
 function findLiveUrlsInArtistHTML(html,date){
   const doc=new DOMParser().parseFromString(String(html||''),'text/html');
   const target=setoliDateISO(date), found=[];
+  const add=(id,label)=>{
+    id=String(id||'').trim();if(!/^\d+$/.test(id))return;
+    const url='https://www.setoli.monster/live/'+id;
+    if(!found.some(x=>x.url===url))found.push({url,label:String(label||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,500)});
+  };
+  // Setoli's actual event-row structure: year and month/day are separate elements.
+  for(const row of doc.querySelectorAll('.event-row')){
+    const year=row.querySelector('.event-date-year')?.textContent?.trim()||'';
+    const md=row.querySelector('.event-date-md')?.textContent?.trim()||'';
+    if(setoliDateISO(year+' '+md)!==target)continue;
+    const a=row.querySelector('a.event-row-main-link[href],a[href*="/live/"]');
+    if(!a)continue;
+    try{const u=new URL(a.getAttribute('href'),'https://www.setoli.monster');const id=(u.pathname.match(/^\/live\/(\d+)/)||[])[1];if(id)add(id,row.textContent);}catch(_){}
+  }
+  if(found.length)return found;
   const anchors=[...doc.querySelectorAll('a[href]')].map(a=>{
-    try{const u=new URL(a.getAttribute('href'),'https://www.setoli.monster');const m=u.pathname.match(/^\/live\/(\d+)/);return m?{a,id:m[1]}:null;}catch(_){return null;}
+    try{const u=new URL(a.getAttribute('href'),'https://www.setoli.monster');const id=(u.pathname.match(/^\/live\/(\d+)/)||[])[1];return id?{a,id}:null;}catch(_){return null;}
   }).filter(Boolean);
   for(const item of anchors){
-    let node=item.a;
-    for(let depth=0;node&&depth<10;depth++,node=node.parentElement){
-      const text=String(node.textContent||'').replace(/\s+/g,' ');
-      const dates=[...text.matchAll(/20\d{2}\s*(?:年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|\s+\d{1,2}[./-]\d{1,2})/g)];
-      if(!dates.some(m=>setoliDateISO(m[0])===target))continue;
-      const links=[...node.querySelectorAll('a[href]')].filter(a=>{try{return /^\/live\/\d+/.test(new URL(a.getAttribute('href'),'https://www.setoli.monster').pathname)}catch(_){return false}});
-      if(links.length===1){const url='https://www.setoli.monster/live/'+item.id;if(!found.some(x=>x.url===url))found.push({url,label:text.slice(0,500)});break;}
+    for(let node=item.a,depth=0;node&&depth<10;node=node.parentElement,depth++){
+      const year=node.querySelector?.('.event-date-year')?.textContent?.trim()||'';
+      const md=node.querySelector?.('.event-date-md')?.textContent?.trim()||'';
+      if(setoliDateISO(year+' '+md)!==target)continue;
+      add(item.id,node.textContent);break;
     }
   }
   return found;
@@ -747,6 +760,21 @@ function findLiveUrlsForDate(artistPageText,date){
   const refLabelRe=/\[([^\]\n]{1,5000})\]\s*\[(\d+)\]/g;
   for(const m of raw.matchAll(refLabelRe)) if(isTarget(m[1])&&referenceUrls.has(m[2])) add(referenceUrls.get(m[2]),m[1]);
   if(found.length) return found;
+  // Reader Markdown can put "2013 8.9" on the event line while URLs
+  // are listed separately in the appended Jina links summary.
+  const targetLines=raw.split(/\n/).filter(line=>isTarget(line));
+  const summaryStart=raw.indexOf('<!-- JINA_LINKS_SUMMARY -->');
+  const summary=summaryStart>=0?raw.slice(summaryStart):raw;
+  const summaryLinks=[...summary.matchAll(/\[([^\]\n]{1,500})\]\(\s*(?:https?:\/\/(?:www\.)?setoli\.monster)?\/?live\/(\d+)(?:[^)]*)\)/gi)];
+  const normLinkLabel=value=>setoliNormalize(String(value||'').replace(/<[^>]*>/g,' ').replace(/\[[^\]]*\]/g,' ').replace(/\b(?:単発|セトリあり|\d+曲)\b/g,' '));
+  for(const line of targetLines){
+    const row=normLinkLabel(line);
+    for(const link of summaryLinks){
+      const label=normLinkLabel(link[1]);
+      if(label.length>=4&&(row.includes(label)||label.includes(row.slice(0,Math.min(row.length,24))))){add(link[2],line);break;}
+    }
+  }
+  if(found.length)return found;
   const dateHits=[...raw.matchAll(dateRe)].filter(m=>isTarget(m[0]));
   for(const d of dateHits){
     const context=raw.slice(Math.max(0,d.index-1200),Math.min(raw.length,d.index+d[0].length+1800));
