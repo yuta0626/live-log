@@ -700,7 +700,7 @@ async function searchSetoliLiveUrls(artist,date){
       setoliDiag('公演URL補完検索','Jina Search HTTP '+response.status);
       if(!response.ok) throw new Error('HTTP '+response.status);
       const body=await response.text();
-      const normalized=normalizeJinaResponse(body).replace(/\\u002f/gi,'/');
+      const normalized=body.replaceAll("\\/","/").replaceAll("\\u002f","/");
       const ids=new Set();
       for(const m of normalized.matchAll(/https?[/][/]((?:www[.])?setoli[.]monster)[/]live[/](\d+)/gi)) ids.add(m[2]);
       for(const m of normalized.matchAll(/(?:^|\s|\()[/]?live[/](\d+)(?=\s|[)#?]|$)/g)) ids.add(m[1]);
