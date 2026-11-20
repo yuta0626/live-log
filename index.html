@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.24</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.25</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1220;--panel:#151f30;--line:#29364b;--muted:#9aabc2;--txt:#f4f7fb;--accent:#80b7ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -83,7 +83,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
   <div class="charttitle">セットリストを検索して転記</div>
   <div class="toolbar">
     <label style="min-width:180px;flex:1">アーティスト名
-      <input id="setoliArtist" placeholder="例：BUMP OF CHICKEN、乃木坂46" autocomplete="off">
+      <input id="setoliArtist" list="setoliArtistOptions" placeholder="例：BUMP OF CHICKEN、乃木坂46" autocomplete="on"><datalist id="setoliArtistOptions"></datalist>
     </label>
     <label style="min-width:170px;flex:1">日時
       <input id="setoliDate" type="date">
@@ -704,13 +704,23 @@ function findLiveUrlsInSitemap(sitemapText,artist,date){
   }
   return found;
 }
-async function searchSetoliLiveUrls(artist,date){
-  setoliDiag('公演URL補完検索','検索エンジンではなくセトリモンスターのサイトマップから公演を照合します。');
-  const sitemap=await readViaJina('https://www.setoli.monster/site-map');
-  setoliDiag('サイトマップ取得','Markdown '+sitemap.length+'文字を取得');
-  const matches=findLiveUrlsInSitemap(sitemap,artist,date);
-  setoliDiag('サイトマップ日付照合',matches.length?'一致 '+matches.length+'件':'指定アーティスト・日付の一致なし');
-  return matches;
+function findLiveUrlsInArtistHTML(html,date){
+  const doc=new DOMParser().parseFromString(String(html||''),'text/html');
+  const target=setoliDateISO(date), found=[];
+  const anchors=[...doc.querySelectorAll('a[href]')].map(a=>{
+    try{const u=new URL(a.getAttribute('href'),'https://www.setoli.monster');const m=u.pathname.match(/^\\/live\\/(\\d+)/);return m?{a,id:m[1]}:null;}catch(_){return null;}
+  }).filter(Boolean);
+  for(const item of anchors){
+    let node=item.a;
+    for(let depth=0;node&&depth<10;depth++,node=node.parentElement){
+      const text=String(node.textContent||'').replace(/\\s+/g,' ');
+      const dates=[...text.matchAll(/20\\d{2}\\s*(?:年\\s*\\d{1,2}\\s*月\\s*\\d{1,2}\\s*日|[./-]\\s*\\d{1,2}\\s*[./-]\\s*\\d{1,2}|\\s+\\d{1,2}[./-]\\d{1,2})/g)];
+      if(!dates.some(m=>setoliDateISO(m[0])===target))continue;
+      const links=[...node.querySelectorAll('a[href]')].filter(a=>{try{return /^\\/live\\/\\d+/.test(new URL(a.getAttribute('href'),'https://www.setoli.monster').pathname)}catch(_){return false}});
+      if(links.length===1){const url='https://www.setoli.monster/live/'+item.id;if(!found.some(x=>x.url===url))found.push({url,label:text.slice(0,500)});break;}
+    }
+  }
+  return found;
 }
 function findLiveUrlsForDate(artistPageText,date){
   const raw=String(artistPageText||'').replace(/\\u00a0/g,' ').replace(/&nbsp;|&#160;/gi,' ').replace(/&amp;/gi,'&').replace(/\\\//g,'/');
@@ -775,11 +785,26 @@ async function searchSetoliCandidates(artist,date){
   setoliDiag('公演一覧検索方式','アーティストページのMarkdownを取得し、日付と公演リンクの参照関係を照合');
   let page='',matches=[];
   try{
-    page=await readViaJina(profile.url);
-    const hasDate=[...page.matchAll(/20\d{2}\s*(?:年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|\s+\d{1,2}[./-]\d{1,2})/g)].some(m=>setoliDateISO(m[0])===normalizedDate);
-    setoliDiag('公演一覧Markdown取得','Markdown '+page.length+'文字／指定日文字列='+(hasDate?'あり':'なし'));
-    matches=findLiveUrlsForDate(page,date);
+    setoliDiag('公演一覧HTML取得','過去公演の折りたたみも展開して日付と公演リンクを照合します。');
+    try{
+      const html=await readViaJinaHtml(profile.url);
+      setoliDiag('公演一覧HTML取得成功','HTML '+html.length+'文字');
+      matches=findLiveUrlsInArtistHTML(html,date);
+      setoliDiag('公演一覧HTML日付照合',matches.length?'一致 '+matches.length+'件':'HTML内で一致なし');
+    }catch(htmlError){
+      setoliDiag('公演一覧HTML取得失敗','Markdown方式へ切り替えます：'+(htmlError.message||htmlError));
+    }
     if(!matches.length){
+      page=await readViaJina(profile.url);
+      const hasDate=[...page.matchAll(/20\\d{2}\\s*(?:年\\s*\\d{1,2}\\s*月\\s*\\d{1,2}\\s*日|[./-]\\s*\\d{1,2}\\s*[./-]\\s*\\d{1,2}|\\s+\\d{1,2}[./-]\\d{1,2})/g)].some(m=>setoliDateISO(m[0])===normalizedDate);
+      setoliDiag('公演一覧Markdown取得','Markdown '+page.length+'文字／指定日文字列='+(hasDate?'あり':'なし'));
+      matches=findLiveUrlsForDate(page,date);
+    }
+  }catch(err){
+    setoliDiag('公演一覧取得失敗',err&&err.message||err);
+    throw new Error('アーティストの公演一覧を取得できませんでした。'+(err&&err.message||err));
+  }
+  if(!matches.length){
       setoliDiag('公演一覧日付照合','一覧内のリンク対応付けに失敗。検索エンジン経由の公演URL補完へ切り替えます。');
       matches=await searchSetoliLiveUrls(profile.name,date);
       if(matches.length) setoliDiag('公演URL補完検索成功','候補 '+matches.length+'件: '+matches.map(x=>x.url).join(', '));
@@ -844,6 +869,21 @@ async function fetchSetoliAndTransfer(){
     showSetoliDiagnostic(err);
   }finally{button.disabled=false;}
 }
+const setoliArtistHistoryKey='liveLogSetoliArtistHistory';
+function getSetoliArtistHistory(){try{return JSON.parse(localStorage.getItem(setoliArtistHistoryKey)||'[]').filter(x=>typeof x==='string'&&x.trim())}catch(_){return []}}
+function refreshSetoliArtistOptions(){
+  const values=[...new Set([...getSetoliArtistHistory(),...allExpenses.map(x=>String(x.artist||'').trim()).filter(Boolean)])].slice(0,100);
+  document.getElementById('setoliArtistOptions').innerHTML=values.map(x=>'<option value="'+esc(x)+'"></option>').join('');
+}
+function rememberSetoliArtist(value){
+  const name=String(value||'').trim();if(!name)return;
+  const old=getSetoliArtistHistory().filter(x=>setoliNormalize(x)!==setoliNormalize(name));
+  try{localStorage.setItem(setoliArtistHistoryKey,JSON.stringify([name,...old].slice(0,50)))}catch(_){}
+  refreshSetoliArtistOptions();
+}
+document.getElementById('setoliArtist').addEventListener('change',e=>rememberSetoliArtist(e.target.value));
+document.getElementById('setoliTransferBtn').addEventListener('click',()=>rememberSetoliArtist(document.getElementById('setoliArtist').value));
+refreshSetoliArtistOptions();
 document.getElementById('setoliTransferBtn').addEventListener('click',fetchSetoliAndTransfer);
 document.getElementById('setoliConfirmBtn').addEventListener('click',()=>{
  const i=Number(document.getElementById('setoliCandidateSelect').value);
