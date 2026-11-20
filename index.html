@@ -708,15 +708,15 @@ function findLiveUrlsInArtistHTML(html,date){
   const doc=new DOMParser().parseFromString(String(html||''),'text/html');
   const target=setoliDateISO(date), found=[];
   const anchors=[...doc.querySelectorAll('a[href]')].map(a=>{
-    try{const u=new URL(a.getAttribute('href'),'https://www.setoli.monster');const m=u.pathname.match(/^\\/live\\/(\\d+)/);return m?{a,id:m[1]}:null;}catch(_){return null;}
+    try{const u=new URL(a.getAttribute('href'),'https://www.setoli.monster');const m=u.pathname.match(/^\/live\/(\d+)/);return m?{a,id:m[1]}:null;}catch(_){return null;}
   }).filter(Boolean);
   for(const item of anchors){
     let node=item.a;
     for(let depth=0;node&&depth<10;depth++,node=node.parentElement){
-      const text=String(node.textContent||'').replace(/\\s+/g,' ');
-      const dates=[...text.matchAll(/20\\d{2}\\s*(?:年\\s*\\d{1,2}\\s*月\\s*\\d{1,2}\\s*日|[./-]\\s*\\d{1,2}\\s*[./-]\\s*\\d{1,2}|\\s+\\d{1,2}[./-]\\d{1,2})/g)];
+      const text=String(node.textContent||'').replace(/\s+/g,' ');
+      const dates=[...text.matchAll(/20\d{2}\s*(?:年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|\s+\d{1,2}[./-]\d{1,2})/g)];
       if(!dates.some(m=>setoliDateISO(m[0])===target))continue;
-      const links=[...node.querySelectorAll('a[href]')].filter(a=>{try{return /^\\/live\\/\\d+/.test(new URL(a.getAttribute('href'),'https://www.setoli.monster').pathname)}catch(_){return false}});
+      const links=[...node.querySelectorAll('a[href]')].filter(a=>{try{return /^\/live\/\d+/.test(new URL(a.getAttribute('href'),'https://www.setoli.monster').pathname)}catch(_){return false}});
       if(links.length===1){const url='https://www.setoli.monster/live/'+item.id;if(!found.some(x=>x.url===url))found.push({url,label:text.slice(0,500)});break;}
     }
   }
@@ -777,47 +777,36 @@ function findLiveUrlsForDate(artistPageText,date){
   return found;
 }
 async function searchSetoliCandidates(artist,date){
-  // HTML用Reader APIはHTTP 401となるため、取得に成功しているMarkdown経路を先に使う。
   const normalizedDate=setoliDateISO(date);
-  if(!normalizedDate) throw new Error('公演日をYYYY-MM-DD形式として認識できません。');
+  if(!normalizedDate)throw new Error('公演日をYYYY-MM-DD形式として認識できません。');
   const profile=await findSetoliArtistPage(artist);
   setoliStatus.textContent=profile.name+'の公演一覧から'+normalizedDate.replaceAll('-','.')+'の公演を照合しています…';
-  setoliDiag('公演一覧検索方式','アーティストページのMarkdownを取得し、日付と公演リンクの参照関係を照合');
+  setoliDiag('公演一覧検索方式','ブラウザー展開後のアーティストページHTMLから日付と公演リンクを直接対応付けます。');
   let page='',matches=[];
   try{
-    setoliDiag('公演一覧HTML取得','過去公演の折りたたみも展開して日付と公演リンクを照合します。');
-    try{
-      const html=await readViaJinaHtml(profile.url);
-      setoliDiag('公演一覧HTML取得成功','HTML '+html.length+'文字');
-      matches=findLiveUrlsInArtistHTML(html,date);
-      setoliDiag('公演一覧HTML日付照合',matches.length?'一致 '+matches.length+'件':'HTML内で一致なし');
-    }catch(htmlError){
-      setoliDiag('公演一覧HTML取得失敗','Markdown方式へ切り替えます：'+(htmlError.message||htmlError));
-    }
-    if(!matches.length){
-      page=await readViaJina(profile.url);
-      const hasDate=[...page.matchAll(/20\\d{2}\\s*(?:年\\s*\\d{1,2}\\s*月\\s*\\d{1,2}\\s*日|[./-]\\s*\\d{1,2}\\s*[./-]\\s*\\d{1,2}|\\s+\\d{1,2}[./-]\\d{1,2})/g)].some(m=>setoliDateISO(m[0])===normalizedDate);
-      setoliDiag('公演一覧Markdown取得','Markdown '+page.length+'文字／指定日文字列='+(hasDate?'あり':'なし'));
-      matches=findLiveUrlsForDate(page,date);
-    }
-  }catch(err){
-    setoliDiag('公演一覧取得失敗',err&&err.message||err);
-    throw new Error('アーティストの公演一覧を取得できませんでした。'+(err&&err.message||err));
+    setoliDiag('公演一覧HTML取得','過去公演の折りたたみも展開して取得します。');
+    const html=await readViaJinaHtml(profile.url);
+    setoliDiag('公演一覧HTML取得成功','HTML '+html.length+'文字');
+    matches=findLiveUrlsInArtistHTML(html,date);
+    setoliDiag('公演一覧HTML日付照合',matches.length?'一致 '+matches.length+'件':'HTML内で一致なし');
+  }catch(htmlError){
+    setoliDiag('公演一覧HTML取得失敗','Markdown方式へ切り替えます：'+(htmlError.message||htmlError));
   }
   if(!matches.length){
-      setoliDiag('公演一覧日付照合','一覧内のリンク対応付けに失敗。検索エンジン経由の公演URL補完へ切り替えます。');
-      matches=await searchSetoliLiveUrls(profile.name,date);
-      if(matches.length) setoliDiag('公演URL補完検索成功','候補 '+matches.length+'件: '+matches.map(x=>x.url).join(', '));
+    try{
+      page=await readViaJina(profile.url);
+      const hasDate=[...page.matchAll(/20\d{2}\s*(?:年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|\s+\d{1,2}[./-]\d{1,2})/g)].some(m=>setoliDateISO(m[0])===normalizedDate);
+      setoliDiag('公演一覧Markdown取得','Markdown '+page.length+'文字／指定日文字列='+(hasDate?'あり':'なし'));
+      matches=findLiveUrlsForDate(page,date);
+    }catch(err){
+      setoliDiag('公演一覧Markdown取得失敗',err&&err.message||err);
     }
-  }catch(err){
-    setoliDiag('公演一覧Markdown取得失敗',err&&err.message||err);
-    throw new Error('アーティストの公演一覧を取得できませんでした。'+(err&&err.message||err));
   }
   if(!matches.length){
     const dateHits=(page.match(/20\d{2}\s*(?:年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|\s+\d{1,2}[./-]\d{1,2})/g)||[]).slice(0,12);
     const uniqueIds=[...new Set([...page.matchAll(/(?:https?:\/\/(?:www\.)?setoli\.monster)?\/?live\/(\d+)/gi)].map(m=>m[1]))];
     const targetPresent=[...page.matchAll(/20\d{2}\s*(?:年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|\s+\d{1,2}[./-]\d{1,2})/g)].some(m=>setoliDateISO(m[0])===normalizedDate);
-    throw new Error(profile.name+'の公演一覧から'+normalizedDate.replaceAll('-','.')+'の公演リンクを特定できませんでした（Markdown '+page.length+'文字／公演URL候補='+uniqueIds.length+'件／指定日文字列='+(targetPresent?'あり':'なし')+'／日付例='+(dateHits.join('、')||'なし')+'）。公演未掲載とは断定していません。');
+    throw new Error(profile.name+'の公演一覧から'+normalizedDate.replaceAll('-','.')+'の公演リンクを特定できませんでした（HTML／Markdown照合失敗・Markdown '+page.length+'文字／公演URL候補='+uniqueIds.length+'件／指定日文字列='+(targetPresent?'あり':'なし')+'／日付例='+(dateHits.join('、')||'なし')+'）。');
   }
   setoliDiag('公演一覧日付照合','指定日 '+normalizedDate+' の公演URL候補 '+matches.length+'件');
   return matches.map(x=>({...x,artistName:profile.name}));
