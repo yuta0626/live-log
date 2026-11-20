@@ -682,25 +682,25 @@ async function findSetoliArtistPage(artist){
   return {name:artist,url:scored[0].url};
 }
 function findLiveUrlsInSitemap(sitemapText,artist,date){
-  const raw=String(sitemapText||'').replace(/\\r/g,'');
+  const raw=String(sitemapText||'').replace(/\r/g,'');
   const target=setoliDateISO(date)||String(date||'').slice(0,10);
   const artistKey=setoliNormalize(artist);
   const refs=new Map();
-  for(const m of raw.matchAll(/^\\s*\\[(\\d+)\\]:\\s*<?(?:https?:\\/\\/(?:www\\.)?setoli\\.monster)?\\/?live\\/(\\d+)(?:[^>\\s)]*)>?/gim)) refs.set(m[1],m[2]);
+  for(const m of raw.matchAll(/^\s*\[(\d+)\]:\s*<?(?:https?:\/\/(?:www\.)?setoli\.monster)?\/?live\/(\d+)(?:[^>\s)]*)>?/gim)) refs.set(m[1],m[2]);
   const found=[];
   const add=(id,label)=>{
-    if(!/^\\d+$/.test(String(id||''))) return;
+    if(!/^\d+$/.test(String(id||''))) return;
     const url='https://www.setoli.monster/live/'+id;
-    if(!found.some(x=>x.url===url)) found.push({url,label:String(label||'').replace(/<[^>]*>/g,' ').replace(/\\s+/g,' ').trim()});
+    if(!found.some(x=>x.url===url)) found.push({url,label:String(label||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim()});
   };
-  const isTargetLine=line=>[...line.matchAll(/20\\d{2}\\s*(?:年\\s*\\d{1,2}\\s*月\\s*\\d{1,2}\\s*日|[./-]\\s*\\d{1,2}\\s*[./-]\\s*\\d{1,2}|\\s+\\d{1,2}[./-]\\d{1,2})/g)].some(m=>setoliDateISO(m[0])===target);
-  for(const line of raw.split(/\\n/)){
+  const isTargetLine=line=>[...line.matchAll(/20\d{2}\s*(?:年\s*\d{1,2}\s*月\s*\d{1,2}\s*日|[./-]\s*\d{1,2}\s*[./-]\s*\d{1,2}|\s+\d{1,2}[./-]\d{1,2})/g)].some(m=>setoliDateISO(m[0])===target);
+  for(const line of raw.split(/\n/)){
     if(!isTargetLine(line)) continue;
-    const plain=line.replace(/!\\[[^\\]]*\\]\\([^)]*\\)/g,' ').replace(/<[^>]*>/g,' ');
+    const plain=line.replace(/!\[[^\]]*\]\([^)]*\)/g,' ').replace(/<[^>]*>/g,' ');
     if(!setoliNormalize(plain).includes(artistKey)) continue;
-    for(const m of line.matchAll(/\\[[^\\]\\n]{1,1000}\\]\\(\\s*(?:https?:\\/\\/(?:www\\.)?setoli\\.monster)?\\/?live\\/(\\d+)(?:[^)]*)\\)/gi)) add(m[1],line);
-    for(const m of line.matchAll(/【\\s*(\\d+)\\s*(?:†|&dagger;|&#8224;|&#x2020;|\\|｜)/g)) if(refs.has(m[1])) add(refs.get(m[1]),line);
-    for(const m of line.matchAll(/(?:https?:\\/\\/(?:www\\.)?setoli\\.monster)?\\/?live\\/(\\d+)/gi)) add(m[1],line);
+    for(const m of line.matchAll(/\[[^\]\n]{1,1000}\]\(\s*(?:https?:\/\/(?:www\.)?setoli\.monster)?\/?live\/(\d+)(?:[^)]*)\)/gi)) add(m[1],line);
+    for(const m of line.matchAll(/【\s*(\d+)\s*(?:†|&dagger;|&#8224;|&#x2020;|\|｜)/g)) if(refs.has(m[1])) add(refs.get(m[1]),line);
+    for(const m of line.matchAll(/(?:https?:\/\/(?:www\.)?setoli\.monster)?\/?live\/(\d+)/gi)) add(m[1],line);
   }
   return found;
 }
