@@ -69,7 +69,7 @@ def numbered_tracks(text: str) -> list[str]:
     for line in text.splitlines():
         line = line.strip()
         # Both labels' official pages use numbered CD track rows.
-        match = re.match(r"^[*・\-]?\s*(?:CD\s*)?(?:DISC\s*\d+\s*)?(\d{1,2})\s*[.．、:：]\s*(.+?)\s*$", line, re.I)
+        match = re.match(r"^[*・\-]?\s*(?:CD\s*)?(?:DISC\s*\d+\s*)?(\d{1,2})\s*[.．、:：]\s+(.+?)\s*$", line, re.I)
         if not match:
             match = re.match(r"^(\d{1,2})\s+(.+?)\s*$", line)
         if not match:
