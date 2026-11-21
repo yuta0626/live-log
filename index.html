@@ -967,30 +967,18 @@ function liveFansClean(value){
     .replace(/[|｜]/g,' ').replace(/\s+/g,' ').trim();
 }
 function findLiveFansEventIds(raw){
-  // Bing/Jinaの検索結果はJSONエスケープ・URLエンコード・Bing転送URLの場合がある。
   const variants=[String(raw||'')];
-  for(let pass=0;pass<2;pass++){
-    const source=variants[variants.length-1];
-    let decoded=source.replace(/\\\\u002f/gi,'/').replace(/\\\\\//g,'/')
-      .replace(/&amp;|&#38;/gi,'&').replace(/&#x2f;|&#47;/gi,'/')
-      .replace(/\\\\u003a/gi,':').replace(/\\\\u0026/gi,'&');
+  const addVariant=value=>{if(typeof value==='string'&&value.length&&!variants.includes(value))variants.push(value);};
+  for(let pass=0;pass<4&&pass<variants.length;pass++){
+    const source=variants[pass];
+    let decoded=source.replace(/\\u002f/gi,'/').replace(/\\\//g,'/').replace(/&amp;|&#38;/gi,'&').replace(/&#x2f;|&#47;/gi,'/').replace(/\\u003a/gi,':').replace(/\\u0026/gi,'&').replace(/&quot;|&#34;/gi,'"');
     try{decoded=decodeURIComponent(decoded);}catch(_){}
-    if(decoded!==source)variants.push(decoded);
+    addVariant(decoded);
+    for(const m of source.matchAll(/[?&](?:uddg|url|target|r)=([^&"'<>\\s]+)/gi)){try{addVariant(decodeURIComponent(m[1]));}catch(_){addVariant(m[1]);}}
+    for(const m of source.matchAll(/[?&]u=a1([A-Za-z0-9_-]+)/g)){try{let x=m[1].replace(/-/g,'+').replace(/_/g,'/');while(x.length%4)x+='=';addVariant(atob(x));}catch(_){ }}
   }
-  for(const source of [...variants]){
-    for(const m of source.matchAll(/[?&]u=a1([A-Za-z0-9_-]+)/g)){
-      try{let x=m[1].replace(/-/g,'+').replace(/_/g,'/');while(x.length%4)x+='=';const value=atob(x);if(value)variants.push(value);}catch(_){}
-    }
-  }
-  const ids=[];
-  const add=id=>{if(/^\d+$/.test(String(id))&&!ids.includes(String(id)))ids.push(String(id));};
-  for(const source of variants){
-    const value=source.replace(/\\\\\//g,'/').replace(/\\\\u002f/gi,'/');
-    for(const m of value.matchAll(/(?:https?:\/\/)?(?:www\.)?livefans\.jp\/events\/(\d+)/gi))add(m[1]);
-    if(/livefans\.jp/i.test(value)){
-      for(const m of value.matchAll(/(?:href\s*=\s*["']|\]\()\s*\/?events\/(\d+)/gi))add(m[1]);
-    }
-  }
+  const ids=[],add=id=>{if(/^\d+$/.test(String(id))&&!ids.includes(String(id)))ids.push(String(id));};
+  for(const source of variants){const value=source.replace(/\\\//g,'/').replace(/\\u002f/gi,'/');for(const m of value.matchAll(/(?:https?:\/\/)?(?:www\.)?livefans\.jp\/events\/(\d+)/gi))add(m[1]);for(const m of value.matchAll(/(?:href\s*=\s*["']|\]\()\s*\/?events\/(\d+)/gi))add(m[1]);}
   return ids;
 }
 function parseLiveFansEvent(raw,url,requestedArtist,requestedDate){
@@ -1046,30 +1034,12 @@ function parseLiveFansEvent(raw,url,requestedArtist,requestedDate){
   return {date:requestedDate,artist:catalogArtist,liveName:liveName||requestedArtist+' '+requestedDate,
     prefecture:prefecture,venue:venue,songs:songs,source:'LiveFans',sourceUrl:url};
 }
-async function searchLiveFansViaJina(query){
-  const url='https://s.jina.ai/'+encodeURIComponent(query);
-  setoliDiag('Jina検索開始','検索API s.jina.ai：'+query);
-  const response=await fetch(url,{headers:{Accept:'application/json','X-No-Cache':'true','X-Timeout':'60'}});
-  setoliDiag('Jina検索応答','s.jina.ai HTTP '+response.status);
-  if(!response.ok) throw new Error('s.jina.ai HTTP '+response.status);
-  const raw=await response.text();
-  let parsed=null;
-  try{parsed=JSON.parse(raw)}catch(_){}
-  const urls=[],seen=new Set();
-  const visit=(value,depth)=>{
-    if(depth>8||value==null||urls.length>250)return;
-    if(typeof value==='string'){
-      if(/livefans|bing\.com\/ck\/a/i.test(value)&&!seen.has(value)){seen.add(value);urls.push(value);}
-      return;
-    }
-    if(Array.isArray(value)){value.slice(0,100).forEach(x=>visit(x,depth+1));return;}
-    if(typeof value==='object') Object.values(value).forEach(x=>visit(x,depth+1));
-  };
-  if(parsed)visit(parsed,0);
-  const ids=findLiveFansEventIds([raw,...urls].join('\n'));
-  const titles=[];
-  if(parsed&&Array.isArray(parsed.data))parsed.data.slice(0,5).forEach(x=>{if(x&&typeof x==='object')titles.push(String(x.title||x.name||'').slice(0,100));});
-  setoliDiag('Jina検索結果解析','応答 '+raw.length+'文字／JSON '+(parsed?'解析成功':'以外')+'／抽出URL文字列 '+urls.length+'件／公演ID '+ids.length+'件'+(titles.length?'／結果見出し：'+titles.join(' | '):''));
+async function searchLiveFansViaPage(query,engine){
+  const url=engine==='DuckDuckGo'?'https://html.duckduckgo.com/html/?q='+encodeURIComponent(query):'https://www.bing.com/search?q='+encodeURIComponent(query);
+  setoliDiag('検索ページ取得',engine+'検索ページをJina Reader経由で取得：'+query);
+  const body=await readViaJina(url),ids=findLiveFansEventIds(body),matches=[...body.matchAll(/livefans/gi)];
+  const samples=matches.slice(-5).map(m=>{const p=m.index;return body.slice(Math.max(0,p-100),Math.min(body.length,p+220)).replace(/\s+/g,' ');});
+  setoliDiag(engine+'検索結果解析','本文 '+body.length+'文字／LiveFans表記 '+matches.length+'箇所／公演ID '+ids.length+'件'+(samples.length?'／後方の該当箇所：'+samples.join(' || '):''));
   return ids;
 }
 async function searchLiveFansData(artist,date){
@@ -1088,32 +1058,11 @@ async function searchLiveFansData(artist,date){
   const ids=[];
   const searchErrors=[];
   for(let i=0;i<queryTexts.length;i++){
-    try{
-      const found=await searchLiveFansViaJina(queryTexts[i]);
-      ids.push(...found);
-      if(ids.length)break;
-    }catch(searchError){
-      const reason=(searchError.message||String(searchError));
-      searchErrors.push(reason);
-      setoliDiag('Jina検索失敗','検索 '+(i+1)+'：'+reason);
+    for(const engine of ['DuckDuckGo','Bing']){
+      try{const found=await searchLiveFansViaPage(queryTexts[i],engine);ids.push(...found);if(ids.length)break;}
+      catch(searchError){const reason=searchError.message||String(searchError);searchErrors.push(engine+' '+(i+1)+'：'+reason);setoliDiag(engine+'検索失敗',reason);}
     }
-    // Jina検索で候補が得られない場合は、従来のBing検索も補助的に確認する。
-    const searchUrl='https://www.bing.com/search?q='+encodeURIComponent(queryTexts[i]);
-    try{
-      setoliDiag('LIVE FANS公演検索','Bing検索 '+(i+1)+'/'+queryTexts.length+'：'+queryTexts[i]);
-      const result=await readViaJina(searchUrl);
-      const found=findLiveFansEventIds(result);
-      const positions=[...result.matchAll(/livefans/gi)].slice(0,4).map(m=>{
-        const p=m.index;return result.slice(Math.max(0,p-100),Math.min(result.length,p+180)).replace(/\s+/g,' ');
-      });
-      setoliDiag('LIVE FANS検索結果解析','取得 '+result.length+'文字／LiveFans表記 '+(result.match(/livefans/gi)||[]).length+'箇所／公演URL候補 '+found.length+'件'+(positions.length?'／周辺：'+positions.join(' || '):''));
-      ids.push(...found);
-      if(ids.length)break;
-    }catch(searchError){
-      const reason=(searchError.message||String(searchError));
-      searchErrors.push(reason);
-      setoliDiag('LIVE FANS検索エンジン失敗','Bing '+(i+1)+'：'+reason);
-    }
+    if(ids.length)break;
   }
   const unique=[...new Set(ids)].slice(0,8);
   setoliDiag('LIVE FANS公演候補','公演ページ候補 '+unique.length+'件: '+unique.join(', '));
