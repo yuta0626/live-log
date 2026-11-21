@@ -118,18 +118,18 @@ def collect_bump() -> list[dict]:
             tracks = numbered_tracks(text)
             if release and tracks:
                 pages_with_tracks += 1
-                for title in tracks:
+                for track_index, title in enumerate(tracks, start=1):
                     key = key_title(title)
                     item = songs.get(key)
                     if item is None or release < item["releaseDate"]:
-                        songs[key] = {"title": title, "releaseDate": release, "source": url}
+                        songs[key] = {"title": title, "releaseDate": release, "trackIndex": track_index, "source": url}
         except Exception as exc:
             print(f"WARN BUMP detail skipped {url}: {exc}", file=sys.stderr)
         if index % 8 == 0:
             time.sleep(0.4)
     if pages_with_tracks < 15 or len(songs) < 80:
         raise RuntimeError(f"BUMP extraction incomplete: pages={pages_with_tracks}, tracks={len(songs)}")
-    return sorted(songs.values(), key=lambda x: (x["releaseDate"], x["title"]))
+    return sorted(songs.values(), key=lambda x: (x["releaseDate"], x.get("trackIndex", 999), x["title"]))
 
 
 def collect_nogizaka() -> list[dict]:
