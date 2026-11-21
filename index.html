@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.33</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.34</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1220;--panel:#151f30;--line:#29364b;--muted:#9aabc2;--txt:#f4f7fb;--accent:#80b7ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -74,7 +74,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .live-form textarea{width:100%;box-sizing:border-box;resize:vertical;min-height:140px;padding:10px;border:1px solid var(--border,#ccd);border-radius:8px;font:inherit}.setlist-field{grid-column:1/-1}.setlist-source-link{display:inline-block;margin-left:6px;font-size:12px}
 .diagnostic-box{margin-top:12px;padding:12px;border:1px solid #9b7044;border-radius:9px;background:#241d18}.diagnostic-box textarea{width:100%;min-height:190px;resize:vertical;font:12px/1.45 ui-monospace,monospace;white-space:pre-wrap}.diagnostic-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.33</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.34</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>チケット代合計</small><b id="sumCost">—</b></div></div>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
@@ -600,36 +600,45 @@ async function readViaJinaEventList(url){
   return normalized;
 }
 async function readViaJinaHtml(url){
-  // まずJina Readerの標準GETでHTML全体を要求する。
-  // 旧実装のX-Engine指定／FormData POSTは401になったため、余分な指定を外す。
+  // HTML形式はJSONではなく本文そのものを受け取る。Accept: application/json
+  // では data.content が空になる応答があったため text/plain を指定する。
   const jinaTarget='https://r.jina.ai/'+url;
+  const errors=[];
   try{
-    setoliDiag('公演一覧HTML取得','Jina Reader HTML GET（標準エンジン）を試します。');
+    setoliDiag('公演一覧HTML取得','Jina Reader HTML GET（HTML本文を直接受信）を試します。');
     const response=await fetch(jinaTarget,{headers:{
-      Accept:'application/json',
+      Accept:'text/plain',
       'X-Respond-With':'html',
       'X-Detach-Invisibles':'false',
+      'X-Respond-Timing':'mutation-idle',
       'X-No-Cache':'true',
       'X-Timeout':'90'
     }});
     setoliDiag('公演一覧HTML取得','Jina Reader HTML GET HTTP '+response.status);
     if(!response.ok) throw new Error('HTTP '+response.status);
-    const html=normalizeJinaResponse(await response.text());
-    if(html.length>250&&/<(?:html|body|a)\b/i.test(html)&&/event-row|event-date-year|\/live\//i.test(html)){
-      setoliDiag('公演一覧HTML解析','HTML '+html.length+'文字を取得');
+    const raw=await response.text();
+    let html=raw;
+    try{
+      const parsed=JSON.parse(raw);
+      const data=parsed&&parsed.data;
+      html=typeof data==='string'?data:String(data&&typeof data==='object'?(data.content||data.html||data.text||''):(parsed.content||parsed.html||parsed.text||''));
+    }catch(_){}
+    if(html.length>250&&/<(?:html|body|a|div)\b/i.test(html)&&/event-row|event-date-year|\/live\//i.test(html)){
+      setoliDiag('公演一覧HTML解析','HTML '+html.length+'文字を取得（HTML本文を直接解析）');
       return html;
     }
-    throw new Error('HTML内に公演一覧要素がありません（'+html.length+'文字）');
+    const keys=(()=>{try{const p=JSON.parse(raw);return Object.keys(p.data||p).join(',')}catch(_){return 'JSON以外の本文'}})();
+    throw new Error('HTML本文を取得できません（'+html.length+'文字／応答項目='+keys+'）');
   }catch(err){
+    errors.push('Jina Reader HTML GET: '+(err&&err.message||err));
     setoliDiag('Jina Reader HTML GET失敗',err&&err.message||err);
   }
-  // Jina Readerで取得できない場合のみ、外部CORS中継を試す。
+  // ReaderがHTMLを返せない場合のみ、公開CORS中継を試す。
   const proxyAttempts=[
     {name:'AllOrigins（Setoli HTML直接取得）',url:'https://api.allorigins.win/raw?url='+encodeURIComponent(url)},
     {name:'Corsproxy.io（Setoli HTML直接取得）',url:'https://corsproxy.io/?url='+encodeURIComponent(url)},
     {name:'CodeTabs（Setoli HTML直接取得）',url:'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(url)}
   ];
-  const errors=[];
   for(const attempt of proxyAttempts){
     try{
       setoliDiag('公演一覧HTML取得',attempt.name+': '+url);
@@ -646,26 +655,6 @@ async function readViaJinaHtml(url){
       const reason=attempt.name+': '+(err&&err.message||err);
       errors.push(reason);setoliDiag('公演一覧HTML取得失敗',reason);
     }
-  }
-  // 直接HTML取得が利用できない場合に限り、Jina Readerも試す。
-  const revealScript=String.raw`(async()=>{const wait=ms=>new Promise(r=>setTimeout(r,ms));for(let pass=0;pass<18;pass++){let changed=false;const els=[...document.querySelectorAll('button,a,[role="button"],summary')];for(const el of els){const t=(el.innerText||el.textContent||'').replace(/\s+/g,' ').trim();if(/(?:残り\s*\d+\s*公演を表示|もっと表示|続きを表示|すべて表示|さらに表示)/.test(t)){try{el.click();changed=true;}catch(e){}}}if(typeof window.simulateScroll==='function'){try{window.simulateScroll();}catch(e){}}window.scrollTo(0,document.body.scrollHeight);await wait(350);if(!changed&&pass>3)break;}})();`;
-  const headers={Accept:'application/json','X-Respond-With':'html','X-Engine':'browser','X-Detach-Invisibles':'false','X-Respond-Timing':'network-idle','X-Timeout':'35','X-No-Cache':'true'};
-  const attempts=[
-    {name:'Jina Reader HTML POST（FormData・展開スクリプト付き）',run:()=>{const form=new FormData();form.append('url',url);form.append('injectPageScript',revealScript);return fetch('https://r.jina.ai/',{method:'POST',headers,body:form});}},
-    {name:'Jina Reader HTML GET',run:()=>{const {['Content-Type']:ct,...h}=headers;return fetch('https://r.jina.ai/'+url,{headers:h});}}
-  ];
-  for(const attempt of attempts){
-    try{
-      setoliDiag('公演一覧HTML取得',attempt.name+': '+url);
-      const response=await attempt.run();setoliDiag('公演一覧HTML取得',attempt.name+' HTTP '+response.status);
-      if(!response.ok) throw new Error('HTTP '+response.status);
-      const raw=await response.text();let parsed;try{parsed=JSON.parse(raw)}catch(_){throw new Error('応答がJSONではありません');}
-      const status=Number(parsed.status||parsed.code||0);
-      if((status>=400&&status<600)||status>=40000||(parsed.code&&Number(parsed.code)>=400)) throw new Error('Reader応答エラー '+(status||parsed.code));
-      const html=parsed.data&&typeof parsed.data==='object'?String(parsed.data.content||''):'';
-      if(html.length<250||!/<(?:html|body|a)\b/i.test(html)) throw new Error('HTML不足（'+html.length+'文字）');
-      setoliDiag('公演一覧HTML解析','HTML '+html.length+'文字を取得');return html;
-    }catch(err){const reason=attempt.name+': '+(err&&err.message||err);errors.push(reason);setoliDiag('公演一覧HTML取得失敗',reason);}
   }
   throw new Error('公演一覧HTMLを取得できませんでした。'+errors.join('／'));
 }
@@ -866,27 +855,27 @@ async function searchSetoliCandidates(artist,date){
   if(!normalizedDate)throw new Error('公演日をYYYY-MM-DD形式として認識できません。');
   const profile=await findSetoliArtistPage(artist);
   setoliStatus.textContent=profile.name+'の公演一覧から'+normalizedDate.replaceAll('-','.')+'の公演を照合しています…';
-  setoliDiag('公演一覧検索方式','ブラウザー展開後のアーティストページHTMLから日付と公演リンクを直接対応付けます。');
+  setoliDiag('公演一覧検索方式','公演一覧HTMLの.event-rowから日付と公演リンクを直接対応付けます。');
   let page='',matches=[];
-  // 最初に公演一覧コンテナだけを抽出する。通常のReader出力は
-  // 長いページで古い公演行が欠落するため、本文全体より先に試す。
+  // 最初にHTMLを取得する。Markdownでは折りたたまれた過去公演行が欠落するため、
+  // HTML本文を直接受け取り、Setoli本来の.event-row構造を解析する。
   try{
-    page=await readViaJinaEventList(profile.url);
-    matches=findLiveUrlsForDate(page,date);
-    setoliDiag('公演一覧限定日付照合',matches.length?'一致 '+matches.length+'件':'対象日の公演行が見つかりません');
-  }catch(targetError){
-    setoliDiag('公演一覧限定取得失敗','従来方式へ切り替えます：'+(targetError.message||targetError));
-    page='';
+    const html=await readViaJinaHtml(profile.url);
+    setoliDiag('公演一覧HTML取得成功','HTML '+html.length+'文字');
+    matches=findLiveUrlsInArtistHTML(html,date);
+    setoliDiag('公演一覧HTML日付照合',matches.length?'一致 '+matches.length+'件':'HTML内で一致なし');
+  }catch(htmlError){
+    setoliDiag('公演一覧HTML取得失敗','Markdown方式へ切り替えます：'+(htmlError.message||htmlError));
   }
+  // HTMLを取得できない環境では、Readerの全体Markdownを使って補完する。
   if(!matches.length){
     try{
-      setoliDiag('公演一覧HTML取得','限定Markdownで見つからないためHTML取得を試します。');
-      const html=await readViaJinaHtml(profile.url);
-      setoliDiag('公演一覧HTML取得成功','HTML '+html.length+'文字');
-      matches=findLiveUrlsInArtistHTML(html,date);
-      setoliDiag('公演一覧HTML日付照合',matches.length?'一致 '+matches.length+'件':'HTML内で一致なし');
-    }catch(htmlError){
-      setoliDiag('公演一覧HTML取得失敗','Markdown方式へ切り替えます：'+(htmlError.message||htmlError));
+      page=await readViaJinaEventList(profile.url);
+      matches=findLiveUrlsForDate(page,date);
+      setoliDiag('公演一覧限定日付照合',matches.length?'一致 '+matches.length+'件':'対象日の公演行が見つかりません');
+    }catch(targetError){
+      setoliDiag('公演一覧限定取得失敗','通常Markdownへ切り替えます：'+(targetError.message||targetError));
+      page='';
     }
   }
   if(!matches.length){
