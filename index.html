@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.128</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.129</title>
 <style>
 :root{color-scheme:dark;--bg:#080d17;--panel:#111b2b;--line:#34445a;--muted:#a7b4c7;--txt:#f4f3ee;--accent:#c6a96b;--gold:#c6a96b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -18%,#25344b 0%,#111a29 38%,#080d17 78%);background-attachment:fixed;color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -188,7 +188,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 }
 
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.128</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.129</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
 <section id="live" class="panel"><div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>費用</small><b id="sumCost">—</b></div></div><h2>実績・費用</h2>
@@ -199,7 +199,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
       <input id="setoliArtist" list="setoliArtistOptions" placeholder="例：BUMP OF CHICKEN、乃木坂46" autocomplete="on"><datalist id="setoliArtistOptions"></datalist>
     </label>
     <label style="min-width:170px;flex:1">日時
-      <input id="setoliDate" type="date">
+      <input id="setoliDate" type="date" min="0001-01-01" max="9999-12-31">
     </label>
   </div>
   <div class="live-actions">
@@ -225,7 +225,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
     <textarea id="setoliManualText" rows="7" style="width:100%;margin-top:8px" placeholder="公演ページ本文を貼り付け"></textarea>
     <button type="button" class="secondary-btn" id="setoliManualTransferBtn">貼り付け内容から転記</button>
   </details>
-</div><div class="toolbar"><input id="liveSearch" placeholder="アーティスト・会場・日付で検索"><select id="artistFilter"><option value="">全アーティスト</option><option value="BUMP">BUMP</option><option value="乃木坂">乃木坂</option><option value="__OTHER__">その他</option></select></div><div class="toolbar data-toolbar"><button type="button" class="secondary-btn" id="exportDataBtn">データ書き出し</button><button type="button" class="secondary-btn" id="importDataBtn">データ読み込み</button><input type="file" id="importDataFile" accept="application/json,.json" hidden></div><form id="liveForm" class="live-form hidden"><h3 id="liveFormTitle">ライブ情報を編集</h3><label>日付<input type="date" id="lfDate" required></label><label>アーティスト<input id="lfArtist" list="artistOptions" required placeholder="例：BUMP"><datalist id="artistOptions"><option value="BUMP"><option value="乃木坂"><option value="小田和正"></datalist></label><label>都道府県<input id="lfPref" placeholder="例：東京"></label><label>会場<input id="lfVenue" placeholder="会場名"></label><label>ライブ名<input id="lfName" placeholder="ライブ・ツアー名"></label><label class="setlist-field">セットリスト（1曲1行）<textarea id="lfSetlist" rows="8" placeholder="曲名を1曲ずつ改行して入力
+</div><div class="toolbar"><input id="liveSearch" placeholder="アーティスト・会場・日付で検索"><select id="artistFilter"><option value="">全アーティスト</option><option value="BUMP">BUMP</option><option value="乃木坂">乃木坂</option><option value="__OTHER__">その他</option></select></div><div class="toolbar data-toolbar"><button type="button" class="secondary-btn" id="exportDataBtn">データ書き出し</button><button type="button" class="secondary-btn" id="importDataBtn">データ読み込み</button><input type="file" id="importDataFile" accept="application/json,.json" hidden></div><form id="liveForm" class="live-form hidden"><h3 id="liveFormTitle">ライブ情報を編集</h3><label>日付<input type="date" min="0001-01-01" max="9999-12-31" id="lfDate" required></label><label>アーティスト<input id="lfArtist" list="artistOptions" required placeholder="例：BUMP"><datalist id="artistOptions"><option value="BUMP"><option value="乃木坂"><option value="小田和正"></datalist></label><label>都道府県<input id="lfPref" placeholder="例：東京"></label><label>会場<input id="lfVenue" placeholder="会場名"></label><label>ライブ名<input id="lfName" placeholder="ライブ・ツアー名"></label><label class="setlist-field">セットリスト（1曲1行）<textarea id="lfSetlist" rows="8" placeholder="曲名を1曲ずつ改行して入力
 例：
 天体観測
 カルマ"></textarea></label><div class="form-actions"><button type="button" class="secondary-btn" id="lfSetlistSearch">セットリスト掲載サイトを検索</button><span class="muted">検索結果を確認し、セットリストをフォームへ入力して保存します。</span></div><label>チケット代<input type="number" min="0" step="1" id="lfTicket"></label><label>ツアー代<input type="number" min="0" step="1" id="lfTour" placeholder="交通・宿泊セット"><small class="muted">入力時は交通費・宿泊費を合計に含めません</small></label><label>交通費<input type="number" min="0" step="1" id="lfTransport"></label><label>宿泊費<input type="number" min="0" step="1" id="lfLodging"></label><label>備考<textarea id="lfNote" rows="2" placeholder="補足・メモ"></textarea></label><div class="form-actions"><button type="submit" class="primary-btn" id="lfSave">保存</button><button type="button" class="secondary-btn" id="lfCancel">キャンセル</button><span class="muted" id="lfHint"></span></div></form><h2 class="section-subtitle">実績一覧</h2>
@@ -393,7 +393,8 @@ function renderSummaries(){
  const sum=(items,fn)=>items.reduce((a,x)=>a+fn(x),0);
  const years=[...new Set(scopedExpenses.map(x=>normalizeDate(x.date).slice(0,4)).filter(Boolean))].sort();
  const prefs=[...new Set(scopedExpenses.map(x=>String(x.prefecture||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ja'));
- const venues=[...new Set(scopedExpenses.map(x=>String(x.venue||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ja'));
+ const canonicalVenue=name=>{const v=String(name||'').trim();return v.startsWith('幕張メッセ')?'幕張メッセ':v;};
+ const venues=[...new Set(scopedExpenses.map(x=>canonicalVenue(x.venue)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ja'));
  const row=(label,value)=>'<div class="summary-row"><span>'+esc(label)+'</span><b>'+esc(value)+'</b></div>';
  const financeRow=(name,count,mainLabel,mainValue,ticketValue=null)=>'<div class="summary-row summary-financial-row"><span class="summary-financial-name">'+esc(name)+'</span><span class="summary-financial-count">'+esc(count||'')+'</span><span class="summary-financial-main-label">'+esc(mainLabel)+'</span><b class="summary-financial-main-value">'+esc(mainValue)+'</b><span class="summary-financial-ticket-label">'+(ticketValue===null?'':'（チケット')+'</span><b class="summary-financial-ticket-value">'+(ticketValue===null?'':esc(ticketValue)+'）')+'</b></div>';
  const vertical=(items,metric,format)=>{
@@ -405,7 +406,7 @@ function renderSummaries(){
  };
  const artistLegend=()=>'<div class="vchart-legend">'+focusArtists.map((a,i)=>'<span><i style="background:'+(i===0?'#df4b57':'#b56bd1')+'"></i>'+esc(a)+'</span>').join('')+'</div>';
  const stackedCategory=(items,metric,chartClass='')=>{
-  const vals=items.map(item=>focusArtists.map(a=>sum(scopedExpenses.filter(x=>x.artist===a&&String(x[item.field]||'').trim()===item.name),metric)));
+  const vals=items.map(item=>focusArtists.map(a=>sum(scopedExpenses.filter(x=>x.artist===a&&(item.field==='venue'?canonicalVenue(x.venue):String(x[item.field]||'').trim())===item.name),metric)));
   const totals=vals.map(v=>v.reduce((a,b)=>a+b,0)),max=Math.max(1,...totals);
   const venueLabels=chartClass==='venue-stack-chart'?items.map(x=>String(x.name||'')):[];const venueCanvas=chartClass==='venue-stack-chart'?document.createElement('canvas'):null;const venueCtx=venueCanvas?.getContext('2d');if(venueCtx)venueCtx.font='9px sans-serif';const venueLabelWidth=venueCtx?Math.max(0,...venueLabels.map(x=>venueCtx.measureText(x).width)):0;const venueLabelChars=venueLabels.length?Math.max(0,...venueLabels.map(x=>[...x].length)):0;const venueLabelHeight=venueLabels.length?Math.max(12,Math.ceil(venueLabelWidth*0.8660254+44)):12;const venueChartHeight=220+venueLabelHeight;
   return '<div class="vchart category-stack-chart '+chartClass+'"'+(chartClass==='venue-stack-chart'?' style="--venue-label-left:'+Math.ceil(venueLabelChars*2.5+4)+'px;--venue-label-height:'+venueLabelHeight+'px;--venue-chart-height:'+venueChartHeight+'px"':'')+'>'+items.map((item,i)=>{
@@ -427,7 +428,7 @@ function renderSummaries(){
  document.getElementById('prefTotals').innerHTML='<div class="summary-list">'+prefs.map(p=>{const xs=scopedExpenses.filter(x=>String(x.prefecture||'').trim()===p);return financeRow(p,xs.length+'回','費用',yen(sum(xs,calcTotal)))}).join('')+'</div>'+
   '<div class="summary-visuals"><h4 class="charttitle">回数</h4>'+stackedCategory(prefs.map(name=>({name,field:'prefecture'})),x=>1)+
   '<h4 class="charttitle" style="margin-top:16px">費用</h4>'+stackedCategory(prefs.map(name=>({name,field:'prefecture'})),calcTotal)+'</div>';
- document.getElementById('venueTotals').innerHTML='<div class="summary-list">'+venues.map(v=>{const xs=scopedExpenses.filter(x=>String(x.venue||'').trim()===v);return financeRow(v,xs.length+'回','費用',yen(sum(xs,calcTotal)))}).join('')+'</div>'+
+ document.getElementById('venueTotals').innerHTML='<div class="summary-list">'+venues.map(v=>{const xs=scopedExpenses.filter(x=>canonicalVenue(x.venue)===v);return financeRow(v,xs.length+'回','費用',yen(sum(xs,calcTotal)))}).join('')+'</div>'+
   '<div class="summary-visuals"><h4 class="charttitle">回数</h4>'+stackedCategory(venues.map(name=>({name,field:'venue'})),x=>1,'venue-stack-chart')+
   '<h4 class="charttitle" style="margin-top:16px">費用</h4>'+stackedCategory(venues.map(name=>({name,field:'venue'})),calcTotal,'venue-stack-chart')+'</div>';
  document.getElementById('yearTotals').innerHTML='<div class="summary-list">'+years.map(y=>{const xs=scopedExpenses.filter(x=>normalizeDate(x.date).startsWith(y));return financeRow(y+'年',xs.length+'回','総費用',yen(sum(xs,calcTotal)),yen(sum(xs,ticketCost)))}).join('')+'</div>'+
