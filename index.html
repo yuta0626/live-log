@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.60</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.61</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1220;--panel:#151f30;--line:#29364b;--muted:#9aabc2;--txt:#f4f7fb;--accent:#80b7ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -7,7 +7,7 @@ header{padding:22px 18px 14px;background:linear-gradient(135deg,#162b49,#101827)
 main{max-width:1100px;margin:auto;padding:16px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:15px}.stat,.panel{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px}.stat small{display:block;color:var(--muted)}.stat b{font-size:21px}
 nav{display:flex;gap:7px;overflow:auto;margin:12px 0 15px}button,.tab{border:1px solid var(--line);background:#1b2940;color:var(--txt);border-radius:9px;padding:9px 13px;white-space:nowrap;cursor:pointer}button.active{background:#315783;border-color:#5b91cb}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.toolbar input,.toolbar select,input,textarea{background:#0e1726;color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:10px;min-width:0}
-.toolbar input{flex:1;min-width:170px}.live-name-edit{width:190px;min-width:140px;padding:6px 8px;font-size:12px}.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:10px}table{width:100%;border-collapse:collapse;min-width:680px;font-size:13px}th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{background:#1d2a3e;color:#cbd9eb;position:sticky;top:0}td.num{text-align:right;font-variant-numeric:tabular-nums}.muted{color:var(--muted)}.pill{font-size:11px;border:1px solid #45617f;border-radius:99px;padding:2px 7px;color:#b8d6ff}
+.toolbar input{flex:1;min-width:170px}.live-name-edit{width:190px;min-width:140px;padding:6px 8px;font-size:12px}.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:10px}.live-records-wrap{max-height:55vh;overscroll-behavior:contain}table{width:100%;border-collapse:collapse;min-width:680px;font-size:13px}th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{background:#1d2a3e;color:#cbd9eb;position:sticky;top:0}td.num{text-align:right;font-variant-numeric:tabular-nums}.muted{color:var(--muted)}.pill{font-size:11px;border:1px solid #45617f;border-radius:99px;padding:2px 7px;color:#b8d6ff}
 h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);margin:10px 0}.hidden{display:none}
 .live-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}.primary-btn,.secondary-btn,.edit-btn{border:1px solid #45617f;border-radius:8px;padding:8px 12px;background:#243a56;color:#eaf2ff;cursor:pointer}.secondary-btn{background:#172538}.edit-btn{padding:5px 9px;font-size:11px}.live-form{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:10px;padding:14px;margin:10px 0 14px;border:1px solid var(--line);border-radius:12px;background:#121e30}.live-form label{display:flex;flex-direction:column;gap:5px;color:#aebfd4;font-size:12px}.live-form input{width:100%;min-width:0;padding:8px;border:1px solid #405674;border-radius:7px;background:#0e1928;color:#eef5ff}.live-form .form-actions{grid-column:1/-1;display:flex;gap:8px;align-items:center}.live-form h3{grid-column:1/-1;margin:0;font-size:15px}@media(max-width:650px){.live-form{grid-template-columns:repeat(2,minmax(0,1fr))}}.songlist{display:grid;grid-template-columns:1fr auto;gap:0 12px}.songlist div{padding:7px 2px;border-bottom:1px solid var(--line)}.count{color:#b8d6ff;font-variant-numeric:tabular-nums}
  
@@ -75,29 +75,29 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .diagnostic-box{margin-top:12px;padding:12px;border:1px solid #9b7044;border-radius:9px;background:#241d18}.diagnostic-box textarea{width:100%;min-height:190px;resize:vertical;font:12px/1.45 ui-monospace,monospace;white-space:pre-wrap}.diagnostic-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
 
 #liveForm.hidden{display:none!important}
-.vchart{display:flex;align-items:flex-end;gap:10px;min-height:190px;padding:14px 8px 4px;overflow-x:auto;border-bottom:1px solid var(--line)}
-.vchart-col{flex:1 0 54px;min-width:54px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:180px;gap:5px}
+.vchart{display:flex;align-items:flex-end;gap:12px;min-height:235px;padding:14px 10px 4px;overflow-x:auto;border-bottom:1px solid var(--line)}
+.vchart-col{flex:0 0 78px;min-width:78px;width:78px;display:grid;grid-template-rows:16px 130px 58px;justify-items:center;align-items:end;height:220px;gap:4px}
 .vchart-value{font-size:10px;color:#d7e6f7;white-space:nowrap;font-variant-numeric:tabular-nums}
 .vchart-stack{width:min(34px,70%);height:130px;display:flex;flex-direction:column;justify-content:flex-end;background:#26354b;border-radius:5px 5px 0 0;overflow:hidden}
 .vchart-segment{width:100%;min-height:0}
-.vchart-label{font-size:10px;color:#cbd9eb;text-align:center;white-space:nowrap;max-width:90px;overflow:hidden;text-overflow:ellipsis}
+.vchart-label{display:block;width:74px;height:54px;font-size:9px;line-height:1.2;color:#cbd9eb;text-align:center;white-space:normal;overflow-wrap:anywhere;word-break:break-word;overflow:hidden}
 .vchart-legend{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 2px;font-size:10px;color:var(--muted)}
 .vchart-legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:middle}
 .song-vchart-wrap{overflow-x:auto;padding:8px 4px 0}
-.song-vchart{display:flex;align-items:flex-end;gap:8px;min-width:max-content;height:330px;padding:8px 8px 0;border-bottom:1px solid var(--line)}
-.song-vcol{width:46px;flex:0 0 46px;height:100%;display:grid;grid-template-rows:16px 205px 100px;justify-items:center;align-items:end;gap:0}
-.song-vvalue{font-size:10px;color:#d7e6f7}
+.song-vchart{display:flex;align-items:flex-end;gap:10px;min-width:max-content;height:380px;padding:8px 8px 0;border-bottom:1px solid var(--line)}
+.song-vcol{width:66px;flex:0 0 66px;height:100%;display:grid;grid-template-rows:16px 205px 145px;justify-items:center;align-items:end;gap:0}
+.song-vvalue{font-size:10px;color:#d7e6f7}.matrix-lock-btn{display:block;margin:5px auto 0;padding:3px 6px;font-size:10px;white-space:nowrap}
 .song-vbar-track{height:205px;width:22px;display:flex;align-items:flex-end;background:#26354b;border-radius:4px 4px 0 0;overflow:hidden}
 .song-vbar{width:100%;border-radius:4px 4px 0 0;background:var(--barcolor,#65a9ed)}
-.song-vlabel-slot{width:46px;height:100px;position:relative;overflow:visible}.song-vlabel{position:absolute;left:2px;bottom:0;display:block;width:150px;font-size:9px;line-height:1;color:#cbd9eb;white-space:nowrap;text-align:left;transform:rotate(-45deg);transform-origin:left bottom}
+.song-vlabel-slot{width:66px;height:145px;position:relative;overflow:visible}.song-vlabel{position:absolute;right:50%;bottom:0;display:block;width:max-content;max-width:170px;font-size:9px;line-height:1;color:#cbd9eb;white-space:nowrap;text-align:right;transform:rotate(-65deg);transform-origin:right bottom}
 .matrixwrap th.live-col{width:112px;min-width:112px;max-width:112px;white-space:normal;text-align:center;vertical-align:top}
-.live-head{display:flex;flex-direction:column;align-items:center;gap:4px;min-height:94px}
+.live-head{display:grid;grid-template-rows:16px 42px 34px 14px;justify-items:center;align-items:start;row-gap:3px;height:118px;min-height:118px}
 .live-head .live-date{font-weight:700;color:#f1f6ff}
-.live-head .live-title{font-size:10px;line-height:1.3;font-weight:600;white-space:normal;overflow-wrap:anywhere;max-height:39px;overflow:hidden}
-.live-head .live-venue{font-size:10px;line-height:1.25;color:var(--muted);white-space:normal;overflow-wrap:anywhere;max-height:32px;overflow:hidden}.live-head .live-song-count{font-size:10px;color:#9fc7f3;font-weight:700}
-@media(max-width:560px){.vchart{gap:7px}.vchart-col{flex-basis:48px;min-width:48px}.matrixwrap th.live-col{width:104px;min-width:104px;max-width:104px}.live-head{min-height:100px}}
+.live-head .live-title{font-size:10px;line-height:1.3;font-weight:600;white-space:normal;overflow-wrap:anywhere;height:42px;max-height:42px;overflow:hidden}
+.live-head .live-venue{font-size:10px;line-height:1.25;color:var(--muted);white-space:normal;overflow-wrap:anywhere;height:34px;max-height:34px;overflow:hidden}.live-head .live-song-count{font-size:10px;color:#9fc7f3;font-weight:700;height:14px;line-height:14px}
+@media(max-width:560px){.vchart{gap:10px}.vchart-col{flex-basis:78px;min-width:78px}.matrixwrap th.live-col{width:104px;min-width:104px;max-width:104px}.live-head{height:118px;min-height:118px}}
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.60</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.61</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>費用</small><b id="sumCost">—</b></div></div>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
@@ -144,14 +144,14 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 <div class="summary-card"><h3>都道府県別回数・費用</h3><div id="prefTotals"></div></div>
 <div class="summary-card"><h3>会場別合計</h3><div id="venueTotals"></div></div><div class="summary-card"><h3>年別回数</h3><div id="yearTotals"></div></div><div class="summary-card"><h3>年別費用</h3><div id="yearCosts"></div></div>
 </div>
-<div class="tablewrap"><table><thead><tr><th>日付</th><th>アーティスト</th><th>ライブ名</th><th>都道府県</th><th>会場</th><th>セットリスト</th><th>チケット</th><th>ツアー</th><th>交通</th><th>宿泊</th><th>合計</th><th>操作</th></tr></thead><tbody id="liveBody"></tbody></table></div>
+<div class="tablewrap live-records-wrap" id="liveRecordsWrap"><table><thead><tr><th>日付</th><th>アーティスト</th><th>ライブ名</th><th>都道府県</th><th>会場</th><th>セットリスト</th><th>チケット</th><th>ツアー</th><th>交通</th><th>宿泊</th><th>合計</th><th>操作</th></tr></thead><tbody id="liveBody"></tbody></table></div>
 </section>
 <section id="songs" class="panel hidden">
 <h2>演奏曲記録</h2>
 <div class="toolbar">
 <select id="songArtist"><option>BUMP</option><option>乃木坂</option></select>
 <select id="songSort"><option value="release">リリース順</option><option value="count">披露回数順</option></select>
-<input id="songSearch" placeholder="曲名で検索"><button type="button" id="songMatrixLock" class="secondary-btn" aria-pressed="true">🔒 編集ロック中</button>
+<input id="songSearch" placeholder="曲名で検索">
 </div>
 <div class="chartbox"><div class="charttitle">全曲・披露回数ランキング</div><div id="songChart" class="bars"></div></div>
 <div class="tablewrap matrixwrap"><table id="songMatrix"><thead id="songHead"></thead><tbody id="songBody"></tbody></table></div>
@@ -208,11 +208,12 @@ addedExpenses.forEach((x,i)=>{const item={...x,_id:x._id||`added-${i}`};if(item.
 const artistColors={'BUMP':'#df4b57','乃木坂':'#b56bd1','小田和正':'#62bd83'};
 const dateJP=s=>{const d=normalizeDate(s);return d?d.replaceAll('-','.'):''};
 const cleanLiveName=value=>String(value||'').replace(/(?:^|\s)\S+\s+\d+日目(?=\s|$)/g,' ').replace(/(?:^|\s)\S*\d+日目(?=\s|$)/g,' ').replace(/\s+/g,' ').trim();
+const normalizeVenueName=value=>{const v=String(value||'').replace(/\s+/g,' ').trim();return /幕張メッセ/.test(v)?'幕張メッセ':v};
 const liveByDate={};
 const rebuildLiveIndex=()=>{Object.keys(liveByDate).forEach(k=>delete liveByDate[k]);allExpenses.forEach(x=>{const d=normalizeDate(x.date);if(d)liveByDate[`${x.artist}::${d}`]=x})};
 const saveAdded=()=>{localStorage.setItem('liveLogAddedExpenses',JSON.stringify(allExpenses.filter(x=>String(x._id).startsWith('added-'))))};
 const saveOverrides=()=>{const obj={};allExpenses.filter(x=>String(x._id).startsWith('base-')).forEach(x=>{const i=x._id.slice(5);obj[x._id]={year:x.year,date:x.date,artist:x.artist,prefecture:x.prefecture,liveName:x.liveName,venue:x.venue,ticket:x.ticket,tour:x.tour??x.transportLodging,transport:x.transport,lodging:x.lodging,transportLodging:null,total:calcTotal(x),setlist:x.setlist||''}});localStorage.setItem('liveLogExpenseOverrides',JSON.stringify(obj))};
-const normalizeStoredLiveNames=()=>{let changed=false;allExpenses.forEach(x=>{const next=cleanLiveName(x.liveName);if(next!==String(x.liveName||'')){x.liveName=next;changed=true}});if(changed){try{saveAdded();saveOverrides()}catch(_){}}};
+const normalizeStoredLiveNames=()=>{let changed=false;allExpenses.forEach(x=>{const next=cleanLiveName(x.liveName),venue=normalizeVenueName(x.venue);if(next!==String(x.liveName||'')){x.liveName=next;changed=true}if(venue!==String(x.venue||'')){x.venue=venue;changed=true}});if(changed){try{saveAdded();saveOverrides()}catch(_){}}};
 const numVal=v=>typeof v==='number'&&Number.isFinite(v)?v:0;
 const ticketCost=x=>numVal(x.ticket);
 const otherCost=x=>{
@@ -277,18 +278,21 @@ function renderSongs(){
  const sort=document.getElementById('songSort').value;
  const source=imported.songs[artist]||[];
  let rows=source.map((x,i)=>({...x,releaseIndex:i}));
+ const setlistDates=new Map();
+ allExpenses.filter(x=>x.artist===artist&&x.setlist).forEach(live=>String(live.setlist).split(/\r?\n/).forEach(title=>{const key=setoliNormalize(title);if(!key)return;if(!setlistDates.has(key))setlistDates.set(key,new Set());setlistDates.get(key).add(normalizeDate(live.date))}));
  const dates=[...new Set([...source.flatMap(x=>(x.performed||[]).map(normalizeDate)),...allExpenses.filter(x=>x.artist===artist).map(x=>normalizeDate(x.date))].filter(Boolean))].sort();
- rows.forEach(x=>{const baseDates=new Set((x.performed||[]).map(normalizeDate));x.count=dates.reduce((n,d)=>{const v=savedSongMarks[artist+'::'+x.title+'::'+d];return n+((v===true||(v===undefined&&baseDates.has(d)))?1:0)},0)});
+ rows.forEach(x=>{const baseDates=new Set((x.performed||[]).map(normalizeDate)),recordDates=setlistDates.get(setoliNormalize(x.title))||new Set();x.count=dates.reduce((n,d)=>{const v=savedSongMarks[artist+'::'+x.title+'::'+d],base=baseDates.has(d)||recordDates.has(d);return n+((v===true||(v===undefined&&base))?1:0)},0)});
  rows=rows.filter(x=>x.title.toLowerCase().includes(q));
  if(sort==='count') rows.sort((a,b)=>(b.count||0)-(a.count||0)||a.releaseIndex-b.releaseIndex);
  const liveSongCount=d=>{const live=liveByDate[artist+'::'+d];if(live?.setlist&&String(live.setlist).trim())return String(live.setlist).trim().split(/\r?\n/).filter(Boolean).length;return source.reduce((n,song)=>{const key=artist+'::'+song.title+'::'+d,base=(song.performed||[]).map(normalizeDate).includes(d),v=savedSongMarks[key];return n+((v===true||(v===undefined&&base))?1:0)},0)};
- const header='<tr><th>楽曲</th><th>披露回数</th>'+dates.map(d=>{
+ const header='<tr><th>楽曲 <button type="button" id="songMatrixLock" class="secondary-btn matrix-lock-btn" aria-pressed="'+songMatrixLocked+'">'+(songMatrixLocked?'🔒 ロック中':'🔓 ロック解除中')+'</button></th><th>披露回数</th>'+dates.map(d=>{
   const live=liveByDate[artist+'::'+d],liveName=cleanLiveName(live?.liveName)||'ライブ名未登録',venue=live?.venue||'会場未登録';
   return '<th class="live-col"><div class="live-head"><span class="live-date">'+dateJP(d)+'</span><span class="live-title">'+esc(liveName)+'</span><span class="live-venue">'+esc(venue)+'</span><span class="live-song-count">'+liveSongCount(d)+'曲</span></div></th>';
  }).join('')+'</tr>';
  document.getElementById('songHead').innerHTML=header;
  document.getElementById('songBody').innerHTML=rows.map(x=>{
-  const played=new Set((x.performed||[]).map(normalizeDate)),markKey=d=>artist+'::'+x.title+'::'+d;
+  const played=new Set((x.performed||[]).map(normalizeDate)),recordDates=setlistDates.get(setoliNormalize(x.title))||new Set(),markKey=d=>artist+'::'+x.title+'::'+d;
+  recordDates.forEach(d=>played.add(d));
   dates.forEach(d=>{if(savedSongMarks[markKey(d)]===true)played.add(d);if(savedSongMarks[markKey(d)]===false)played.delete(d)});
   return '<tr><td>'+esc(x.title)+'</td><td class="num">'+(Number(x.count)||0)+'回</td>'+dates.map(d=>'<td class="'+(played.has(d)?'mark':'no-mark')+'">'+(songMatrixLocked?(played.has(d)?'○':'—'):'<button class="song-mark-toggle" data-artist="'+esc(artist)+'" data-song="'+esc(x.title)+'" data-date="'+esc(d)+'" title="披露有無を切替">'+(played.has(d)?'○':'—')+'</button>')+'</td>').join('')+'</tr>';
  }).join('')||'<tr><td colspan="'+(dates.length+2)+'">該当する楽曲はありません</td></tr>';
@@ -297,10 +301,7 @@ function renderSongs(){
   const value=Number(x.count)||0,height=value/max*100;
   return '<div class="song-vcol"><span class="song-vvalue">'+value+'</span><div class="song-vbar-track"><div class="song-vbar" style="height:'+height+'%;--barcolor:'+color+'"></div></div><div class="song-vlabel-slot"><span class="song-vlabel" title="'+esc(x.title)+'">'+esc(x.title)+'</span></div></div>';
  }).join('')+'</div></div>';
- const lockButton=document.getElementById('songMatrixLock');
- lockButton.textContent=songMatrixLocked?'🔒 編集ロック中':'🔓 ロック解除中';
- lockButton.setAttribute('aria-pressed',String(songMatrixLocked));
- lockButton.classList.toggle('active',!songMatrixLocked);
+
 }
 document.querySelectorAll('#tabs button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('active',x===b));['live','songs'].forEach(id=>document.getElementById(id).classList.toggle('hidden',id!==b.dataset.tab));}));
 document.getElementById('lfCancel').addEventListener('click',closeLiveForm);
@@ -310,7 +311,7 @@ form.addEventListener('submit',e=>{
  const val=id=>document.getElementById(id).value.trim();
  const num=id=>val(id)===''?null:Number(val(id));
  const date=val('lfDate');if(!date)return;
- const record={date,year:Number(date.slice(0,4)),artist:val('lfArtist'),prefecture:val('lfPref'),liveName:val('lfName'),venue:val('lfVenue'),ticket:num('lfTicket'),transport:num('lfTransport'),tour:num('lfTour'),lodging:num('lfLodging'),setlist:document.getElementById('lfSetlist').value.trim()};
+ const record={date,year:Number(date.slice(0,4)),artist:val('lfArtist'),prefecture:val('lfPref'),liveName:cleanLiveName(val('lfName')),venue:normalizeVenueName(val('lfVenue')),ticket:num('lfTicket'),transport:num('lfTransport'),tour:num('lfTour'),lodging:num('lfLodging'),setlist:document.getElementById('lfSetlist').value.trim()};
  record.total=calcTotal(record);
  if(editingLiveId){
   const target=allExpenses.find(x=>x._id===editingLiveId);
@@ -339,7 +340,8 @@ document.getElementById('artistFilter').addEventListener('change',renderLive);
 document.getElementById('songArtist').addEventListener('change',renderSongs);
 document.getElementById('songSort').addEventListener('change',renderSongs);
 document.getElementById('songSearch').addEventListener('input',renderSongs);
-document.getElementById('songMatrixLock').addEventListener('click',()=>{
+document.getElementById('songHead').addEventListener('click',e=>{
+ const button=e.target.closest('#songMatrixLock');if(!button)return;
  songMatrixLocked=!songMatrixLocked;
  try{localStorage.setItem('liveLogSongMatrixLocked',JSON.stringify(songMatrixLocked));}catch(_){}
  renderSongs();
@@ -357,8 +359,8 @@ document.getElementById('songBody').addEventListener('click',e=>{
 });
 // セトリモンスターからアーティスト名・公演日で検索して転記
 const setoliStatus = document.getElementById('setoliStatus');
-const setoliNormalize = value => String(value || '').normalize('NFKC').toLowerCase()
-  .replace(/[\s　!！?？…・.。〜～「」『』（）()［］\[\]：:]/g, '');
+const setoliNormalize = value => String(value || '').normalize('NFKD').replace(/\p{M}/gu,'').normalize('NFKC').toLowerCase()
+  .replace(/[\p{P}\p{S}\s　]/gu, '');
 const setoliDateISO = raw => {
   const m=String(raw||'').match(/(20\d{2})年\s*(\d{1,2})月\s*(\d{1,2})日/)
     || String(raw||'').match(/(20\d{2})\s*[./-]\s*(\d{1,2})[./-]\s*(\d{1,2})/)
@@ -592,7 +594,7 @@ function parseSetoliPage(raw, url, requestedArtist, requestedDate) {
     throw new Error(`セットリストの曲を十分に抽出できませんでした（${songs.length}曲）${countNote}。取得本文のセットリスト付近: ${excerpt||'空'}`);
   }
   if(!liveName || liveName.length<3) liveName=`${requestedArtist} ${dateJP(requestedDate)}`;
-  return {artist:resolveLivelogArtist(requestedArtist), requestedArtist, date:requestedDate, liveName, prefecture, venue, songs, url};
+  return {artist:resolveLivelogArtist(requestedArtist), requestedArtist, date:requestedDate, liveName:cleanLiveName(liveName), prefecture, venue:normalizeVenueName(venue), songs, url};
 }
 function transferSetoliRecord(data) {
   const artist=data.artist;
@@ -606,9 +608,9 @@ function transferSetoliRecord(data) {
   });
   let record=allExpenses.find(x=>x.artist===artist && normalizeDate(x.date)===data.date);
   if(record){
-    Object.assign(record,{liveName:cleanLiveName(data.liveName),prefecture:data.prefecture||record.prefecture||'',venue:data.venue||record.venue||'',setlist:data.songs.join('\n')});
+    Object.assign(record,{liveName:cleanLiveName(data.liveName),prefecture:data.prefecture||record.prefecture||'',venue:normalizeVenueName(data.venue||record.venue||''),setlist:data.songs.join('\n')});
   }else{
-    record={_id:`added-setoli-${Date.now()}`,date:data.date,year:Number(data.date.slice(0,4)),artist,prefecture:data.prefecture||'',liveName:cleanLiveName(data.liveName),venue:data.venue||'',ticket:null,transport:null,lodging:null,total:0,setlist:data.songs.join('\n')};
+    record={_id:`added-setoli-${Date.now()}`,date:data.date,year:Number(data.date.slice(0,4)),artist,prefecture:data.prefecture||'',liveName:cleanLiveName(data.liveName),venue:normalizeVenueName(data.venue||''),ticket:null,transport:null,lodging:null,total:0,setlist:data.songs.join('\n')};
     allExpenses.push(record);
   }
   try{saveAdded();saveOverrides();localStorage.setItem('liveLogSongMarks',JSON.stringify(savedSongMarks));}
