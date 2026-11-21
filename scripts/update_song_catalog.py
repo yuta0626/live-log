@@ -165,7 +165,7 @@ def collect_nogizaka() -> list[dict]:
             time.sleep(0.4)
     if pages_with_tracks < 30 or len(songs) < 150:
         raise RuntimeError(f"Nogizaka extraction incomplete: pages={pages_with_tracks}, tracks={len(songs)}")
-    return sorted(songs.values(), key=lambda x: (x["releaseDate"], x["title"]))
+    return sorted(songs.values(), key=lambda x: (x["releaseDate"], x.get("trackIndex", 999), x["title"]))
 
 
 def main() -> None:
