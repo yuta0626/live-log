@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.118</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.119</title>
 <style>
 :root{color-scheme:dark;--bg:#080d17;--panel:#111b2b;--line:#34445a;--muted:#a7b4c7;--txt:#f4f3ee;--accent:#c6a96b;--gold:#c6a96b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -18%,#25344b 0%,#111a29 38%,#080d17 78%);background-attachment:fixed;color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -748,17 +748,76 @@ function setoliOfficialPrefecture(text){
 function setoliOfficialDateVenue(text,date){
   const [y,m,d]=String(date||'').slice(0,10).split('-').map(Number);
   if(!y||!m||!d)return null;
-  const source=String(text||'').replace(/\r/g,' ').replace(/\s+/g,' ').replace(/　/g,' ').trim();
+  const source=String(text||'').replace(/&nbsp;|&#160;/gi,' ').replace(/　/g,' ').replace(/\r/g,' ').replace(/\s+/g,' ').trim();
   const dateToken=new RegExp(y+'\\s*年\\s*0?'+m+'\\s*月\\s*0?'+d+'\\s*日');
   const hit=source.match(dateToken);
   if(!hit)return null;
   let rest=source.slice(hit.index+hit[0].length);
-  rest=rest.split(new RegExp('(?:'+y+'\\s*年\\s*\\d{1,2}\\s*月\\s*\\d{1,2}\\s*日|OPEN|開場|START|開演)'))[0].trim();
+  // 日付直後の曜日表記（木）（木曜日）を除去してから都道府県・会場を解析する。
+  rest=rest.replace(/^\s*(?:（[^）]{1,8}）|\([^)]{1,8}\))\s*/,'');
+  rest=rest.split(new RegExp('(?:'+y+'\\s*年\\s*\\d{1,2}\\s*月\\s*\\d{1,2}\\s*日|OPEN\\s*[/／]\\s*START|開場|開演|BOC\\s+TICKET)','i'))[0].trim();
   rest=rest.replace(/^[|｜・:：,、\s]+/,'').trim();
-  const prefMatch=rest.match(/^(北海道|東京都|京都府|大阪府|[一-龯]{2,3}県)\s*/);
+  const prefMatch=rest.match(/^(北海道|東京都|京都府|大阪府|[一-龯]{2,3}県)\s*(.*)$/);
   const prefecture=prefMatch?prefMatch[1].replace(/(都|府|県)$/,''):'';
-  const venue=prefMatch?rest.slice(prefMatch[0].length).trim():rest;
-  return venue?{venue,prefecture}:null;
+  const venue=prefMatch?prefMatch[2].trim():rest;
+  if(!venue)return null;
+  return {venue,prefecture};
+}
+async function fetchOfficialBumpPerformance(date){
+  const year=Number(String(date||'').slice(0,4));
+  const listUrl='https://www.bumpofchicken.com/live_information?sort=desc';
+  const list=await readViaJina(listUrl);
+  const candidates=[];
+  const seen=new Set();
+  const add=(url,label,context)=>{
+    let absolute='';
+    try{absolute=new URL(url,'https://www.bumpofchicken.com').href;}catch(_){return;}
+    if(!/^https:\/\/www\.bumpofchicken\.com\/live_information\/\d+\/?$/.test(absolute))return;
+    if(seen.has(absolute))return;
+    seen.add(absolute);
+    candidates.push({url:absolute,title:String(label||'').replace(/\s+/g,' ').trim(),context:String(context||'')});
+  };
+  // Jina ReaderのMarkdownリンク（絶対URL・相対URLの両方）を抽出。
+  const markdownLink=/\[([^\]\n]{1,300})\]\(\s*(https?:\/\/www\.bumpofchicken\.com)?(\/live_information\/\d+\/?)(?:[?#][^)]*)?\s*\)/gi;
+  for(const m of list.matchAll(markdownLink)){
+    const context=list.slice(Math.max(0,m.index-220),Math.min(list.length,m.index+m[0].length+260));
+    if((m[1]+' '+context).includes(String(year)))add((m[2]||'https://www.bumpofchicken.com')+m[3],m[1],context);
+  }
+  // Markdownのリンク概要や本文中にURLだけが出る形式も拾う。
+  const urlPattern=/(?:https?:\/\/www\.bumpofchicken\.com)?\/live_information\/\d+\/?(?:[?#][^\s)\]]*)?/gi;
+  for(const m of list.matchAll(urlPattern)){
+    const context=list.slice(Math.max(0,m.index-300),Math.min(list.length,m.index+m[0].length+300));
+    if(!context.includes(String(year)))continue;
+    const before=list.slice(Math.max(0,m.index-350),m.index);
+    const labelMatch=before.match(/\[([^\]\n]{1,300})\]\s*$/);
+    add(m[0],labelMatch?labelMatch[1]:'',context);
+  }
+  // 参照形式のMarkdownリンクも補完する。
+  if(!candidates.length){
+    const refLinks=/^\s*\[(\d+)\]:\s*<?(https?:\/\/www\.bumpofchicken\.com)?(\/live_information\/\d+\/?)[^>\s)]*>?/gim;
+    const refs=new Map();
+    for(const m of list.matchAll(refLinks))refs.set(m[1],(m[2]||'https://www.bumpofchicken.com')+m[3]);
+    for(const m of list.matchAll(/\[([^\]\n]{1,300})\]\s*\[(\d+)\]/g)){
+      if(m[1].includes(String(year))&&refs.has(m[2]))add(refs.get(m[2]),m[1],m[0]);
+    }
+  }
+  setoliDiag('公式LIVE一覧解析','公式一覧から'+year+'年の個別ページ候補を'+candidates.length+'件抽出しました。');
+  // 一覧にある同年の全公演ページを確認し、指定日が実際に載っているページを特定する。
+  for(const item of candidates){
+    const page=await readViaJina(item.url);
+    const title=(page.match(/^#\s+(.+)$/m)||[])[1]?.trim()||item.title;
+    const schedule=setoliOfficialDateVenue(page,date);
+    if(schedule){
+      return {
+        liveName:title,
+        venue:schedule.venue,
+        prefecture:schedule.prefecture,
+        url:item.url,
+        source:'BUMP OF CHICKEN公式LIVE'
+      };
+    }
+  }
+  return null;
 }
 async function fetchOfficialBumpPerformance(date){
   const year=Number(String(date||'').slice(0,4));
