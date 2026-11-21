@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.48</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.49</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1220;--panel:#151f30;--line:#29364b;--muted:#9aabc2;--txt:#f4f7fb;--accent:#80b7ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -74,7 +74,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .live-form textarea{width:100%;box-sizing:border-box;resize:vertical;min-height:140px;padding:10px;border:1px solid var(--border,#ccd);border-radius:8px;font:inherit}.setlist-field{grid-column:1/-1}.setlist-source-link{display:inline-block;margin-left:6px;font-size:12px}
 .diagnostic-box{margin-top:12px;padding:12px;border:1px solid #9b7044;border-radius:9px;background:#241d18}.diagnostic-box textarea{width:100%;min-height:190px;resize:vertical;font:12px/1.45 ui-monospace,monospace;white-space:pre-wrap}.diagnostic-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.48</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.49</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>チケット代合計</small><b id="sumCost">—</b></div></div>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
@@ -141,7 +141,7 @@ const imported={"expenses":[],"songs":{"BUMP":[{"title":"BUMP OF CHICKENのテ�
 const yen=n=>typeof n==='number'?n.toLocaleString('ja-JP')+'円':'—';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // 日付表記をYYYY-MM-DDに統一（Excel由来のYYYY-M/Dとdate inputのISO形式に対応）
-// 修正ver.48：演奏履歴を全消去。楽曲名の一覧は残し、披露回数と披露日だけ初期化する。
+// 修正ver.49：演奏履歴を全消去。楽曲名の一覧は残し、披露回数と披露日だけ初期化する。
 Object.values(imported.songs||{}).forEach(list=>{if(Array.isArray(list))list.forEach(song=>{song.count=0;song.performed=[]})});
 const normalizeDate=value=>{
  if(value==null)return '';
@@ -153,7 +153,7 @@ const normalizeDate=value=>{
  return s;
 };
 const safeLoad=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||'null')??fallback}catch(e){return fallback}};
-// 修正ver.48：参加記録と演奏履歴を初期化済み。既存ブラウザの演奏履歴も一度だけ消去する。
+// 修正ver.49：参加記録と演奏履歴を初期化済み。既存ブラウザの演奏履歴も一度だけ消去する。
 const liveLogWipeKey='liveLogParticipationWipedV35';
 if(localStorage.getItem(liveLogWipeKey)!=='1'){
   ['liveLogAddedExpenses','liveLogExpenseOverrides','liveLogLiveNames','liveLogSongMarks'].forEach(key=>localStorage.removeItem(key));
@@ -327,6 +327,38 @@ function resolveLivelogArtist(input) {
   return keys.find(k=>setoliNormalize(k)===q)
     || keys.find(k=>q.includes(setoliNormalize(k))||setoliNormalize(k).includes(q)) || input.trim();
 }
+const setoliPrefectureCache=new Map();
+async function lookupSetoliPrefecture(venue){
+  const name=String(venue||'').trim();
+  if(!name)return '';
+  const key=setoliNormalize(name);
+  if(setoliPrefectureCache.has(key))return setoliPrefectureCache.get(key);
+  const aliases={'qvcマリンフィールド':'ZOZOマリンスタジアム'};
+  const query=aliases[key]||name;
+  try{
+    const url='https://nominatim.openstreetmap.org/search?'+new URLSearchParams({
+      q:query+', Japan',format:'jsonv2',addressdetails:'1',limit:'5',countrycodes:'jp'
+    }).toString();
+    const response=await fetch(url,{headers:{'Accept-Language':'ja'}});
+    if(!response.ok)throw new Error('位置検索HTTP '+response.status);
+    const results=await response.json();
+    const prefectures=[...new Set((Array.isArray(results)?results:[])
+      .filter(x=>x&&x.address&&x.address.state)
+      .filter(x=>{
+        const n=setoliNormalize(x.name||'');
+        const d=setoliNormalize(x.display_name||'');
+        const q=setoliNormalize(query);
+        return n===q||n.includes(q)||q.includes(n)||d.includes(q);
+      })
+      .map(x=>String(x.address.state).replace(/(都|府|県)$/,'')))];
+    const value=prefectures.length===1?prefectures[0]:'';
+    setoliPrefectureCache.set(key,value);
+    return value;
+  }catch(e){
+    setoliPrefectureCache.set(key,'');
+    return '';
+  }
+}
 function parseSetoliPage(raw, url, requestedArtist, requestedDate) {
   const text=String(raw||'').replace(/\r/g,'');
   const lines=text.split('\n').map(x=>x.trim()).filter(Boolean);
@@ -360,20 +392,36 @@ function parseSetoliPage(raw, url, requestedArtist, requestedDate) {
         && !/^(?:BUMP OF CHICKEN|乃木坂46|アーティスト)$/.test(x));
     liveName=heading?(tourLine?`${tourLine} ${heading}`:heading):'';
   }
-  // ページ上部の都道府県表示（北海道・東京都・○○府・○○県）
-  const prefLine=lines.find(x=>/^(北海道|東京都|京都府|大阪府|.{2,3}県)$/.test(x));
-  let prefecture=prefLine||'';
-  prefecture=prefecture.replace(/都$/,'').replace(/府$/,'').replace(/県$/,'');
-  // 日付と同じ行に続く会場名を抽出
+  // 都道府県は、公演ページ内に明記されている場合だけ採用する。
+  const cleanVenue=value=>String(value||'')
+    .replace(/【\s*\d+\s*(?:†|&dagger;|&#8224;|&#x2020;)\s*([^】]+)】/g,'$1')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g,'$1')
+    .replace(/<a\b[^>]*>([\s\S]*?)<\/a>/gi,'$1')
+    .replace(/<[^>]*>/g,' ')
+    .replace(/&nbsp;|&#160;/gi,' ').replace(/&amp;/gi,'&')
+    .replace(/\s+(?:予定|投稿者|曲数|全\d+曲).*$/,'')
+    .replace(/\s+/g,' ').trim();
+  const prefLine=lines.map(x=>cleanVenue(x)).find(x=>/^(北海道|東京都|京都府|大阪府|.{2,3}県)$/.test(x));
+  let prefecture=(prefLine||'').replace(/都$/,'').replace(/府$/,'').replace(/県$/,'');
+  // 会場欄を最優先。Readerのリンク表記がMarkdown・HTML・独自記法でも文字列化する。
   let venue='';
-  const dateLine=lines.find(x=>x.includes('2026年') || /20\d{2}年\s*\d{1,2}月/.test(x) || /20\d{2}[./-]\d{1,2}[./-]\d{1,2}/.test(x));
-  if(dateLine){
-    const m=dateLine.match(/(?:20\d{2}年\s*\d{1,2}月\s*\d{1,2}日|20\d{2}[./-]\d{1,2}[./-]\d{1,2})\s+(.+?)(?:\s+(?:予定|投稿者|曲数|全\d+曲).*)?$/);
-    if(m) venue=m[1].replace(/【\s*\d+\s*(?:†|&dagger;|&#8224;|&#x2020;)\s*([^】]+)】/g,'$1').replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/\s+/g,' ').trim();
+  const infoIx=lines.findIndex(x=>/ライブ情報/.test(x));
+  if(infoIx>=0){
+    for(let i=infoIx;i<Math.min(lines.length,infoIx+14);i++){
+      if(/^会場\s*$/.test(cleanVenue(lines[i]))){
+        for(let j=i+1;j<Math.min(lines.length,i+4);j++){
+          const candidate=cleanVenue(lines[j]);
+          if(candidate && !/^(日時|曲数|ライブ情報)$/.test(candidate)){venue=candidate;break;}
+        }
+        break;
+      }
+    }
   }
-  if(!venue){
-    const ix=lines.findIndex(x=>/ライブ情報/.test(x));
-    if(ix>=0){const v=lines.slice(ix,ix+8).findIndex(x=>/^会場$/.test(x));if(v>=0)venue=lines[ix+v+1]||'';}
+  // 会場欄が取れない場合のみ、公演日と同じ行から補完する。
+  if(!venue && matchedDateLine){
+    const dateLine=matchedDateLine.line;
+    const m=dateLine.match(/(?:20\d{2}年\s*\d{1,2}月\s*\d{1,2}日|20\d{2}[./-]\d{1,2}[./-]\d{1,2})\s+(.+?)(?:\s+(?:予定|投稿者|曲数|全\d+曲).*)?$/);
+    if(m) venue=cleanVenue(m[1]);
   }
   // セトリモンスターのセットリスト抽出。
   // Reader側で改行・表セル・HTMLエンティティの形が変わっても、番号+縦棒を境界として曲名を切り出す。
@@ -944,6 +992,12 @@ async function fetchSetoliAndTransfer(){
         if(!data.prefecture){
           const pref=candidate.label.match(/(北海道|東京都|京都府|大阪府|[一-龯ぁ-んァ-ヶ]{2,4}県)/);
           if(pref) data.prefecture=pref[1].replace(/都$/,'').replace(/府$/,'').replace(/県$/,'');
+        }
+        if(!data.prefecture && data.venue){
+          data.prefecture=await lookupSetoliPrefecture(data.venue);
+          setoliDiag('開催地補完',data.prefecture
+            ? `会場名「${data.venue}」から都道府県「${data.prefecture}」を特定しました。`
+            : `会場名「${data.venue}」から都道府県を特定できませんでした。誤入力防止のため空欄のままにします。`);
         }
         found.push({data,label:`${data.date}｜${data.liveName}｜${data.prefecture||'都道府県不明'} ${data.venue}`});
       }catch(e){errors.push(`${candidate.url}: ${e.message||e}`);setoliDiag('候補公演の処理失敗',`${candidate.url}: ${e.message||e}`);}
