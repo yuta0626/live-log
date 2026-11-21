@@ -154,11 +154,11 @@ def collect_nogizaka() -> list[dict]:
             tracks = numbered_tracks(text)
             if release and tracks:
                 pages_with_tracks += 1
-                for title in tracks:
+                for track_index, title in enumerate(tracks, start=1):
                     key = key_title(title)
                     item = songs.get(key)
                     if item is None or release < item["releaseDate"]:
-                        songs[key] = {"title": title, "releaseDate": release, "source": url}
+                        songs[key] = {"title": title, "releaseDate": release, "trackIndex": track_index, "source": url}
         except Exception as exc:
             print(f"WARN Nogizaka detail skipped {url}: {exc}", file=sys.stderr)
         if index % 8 == 0:
