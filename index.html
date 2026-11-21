@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.125</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.126</title>
 <style>
 :root{color-scheme:dark;--bg:#080d17;--panel:#111b2b;--line:#34445a;--muted:#a7b4c7;--txt:#f4f3ee;--accent:#c6a96b;--gold:#c6a96b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -18%,#25344b 0%,#111a29 38%,#080d17 78%);background-attachment:fixed;color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -188,7 +188,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 }
 
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.125</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.126</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
 <section id="live" class="panel"><div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>費用</small><b id="sumCost">—</b></div></div><h2>実績・費用</h2>
@@ -749,17 +749,20 @@ function setoliOfficialDateVenue(text,date){
   const [y,m,d]=String(date||'').slice(0,10).split('-').map(Number);
   if(!y||!m||!d)return null;
   const source=String(text||'').replace(/&nbsp;|&#160;/gi,' ').replace(/　/g,' ').replace(/\r/g,' ').replace(/\s+/g,' ').trim();
-  const dateToken=new RegExp(y+'\\s*年\\s*0?'+m+'\\s*月\\s*0?'+d+'\\s*日');
+  // 公式ページは「2023/2/18(土)」と「2016年7月16日（土）」の両表記がある。
+  const dateToken=new RegExp(y+'\\s*[年./-]\\s*0?'+m+'\\s*[月./-]\\s*0?'+d+'\\s*日?');
   const hit=source.match(dateToken);
   if(!hit)return null;
   let rest=source.slice(hit.index+hit[0].length);
   // 日付直後の曜日表記（木）（木曜日）を除去してから都道府県・会場を解析する。
-  rest=rest.replace(/^\s*(?:（[^）]{1,8}）|\([^)]{1,8}\))\s*/,'');
-  rest=rest.split(new RegExp('(?:'+y+'\\s*年\\s*\\d{1,2}\\s*月\\s*\\d{1,2}\\s*日|\\bOPEN\\b|開場|開演|BOC\\s+TICKET)','i'))[0].trim();
-  rest=rest.replace(/^[|｜・:：,、\s]+/,'').trim();
-  const prefMatch=rest.match(/^(北海道|東京都|京都府|大阪府|[一-龯]{2,3}県)\s*(.*)$/);
-  const prefecture=prefMatch?prefMatch[1].replace(/(都|府|県)$/,''):'';
-  const venue=prefMatch?prefMatch[2].trim():rest;
+  rest=rest.replace(/^\\s*(?:（[^）]{1,8}）|\\([^)]{1,8}\\))\\s*/,'');
+  rest=rest.split(new RegExp('(?:'+y+'\\s*[年./-]\\s*\\d{1,2}\\s*[月./-]\\s*\\d{1,2}\\s*日?|\\bOPEN\\b|開場|開演|BOC\\s+TICKET)','i'))[0].trim();
+  rest=rest.replace(/^[|｜・:：,、\\s]+/,'').trim();
+  // 公式一覧の「福岡公演」「東京公演」など、開催地＋公演という表記も都道府県として読む。
+  const regionMatch=rest.match(/^(北海道|東京都|京都府|大阪府|[一-龯]{2,3})(?:都|府|県)?公演\\s*(.*)$/);
+  const prefMatch=regionMatch?null:rest.match(/^(北海道|東京都|京都府|大阪府|[一-龯]{2,3}県)\\s*(.*)$/);
+  const prefecture=regionMatch?regionMatch[1].replace(/(都|府|県)$/,''):prefMatch?prefMatch[1].replace(/(都|府|県)$/,''):'';
+  const venue=regionMatch?regionMatch[2].trim():prefMatch?prefMatch[2].trim():rest;
   if(!venue)return null;
   return {venue,prefecture};
 }
