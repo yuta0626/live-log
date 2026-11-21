@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.39</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.40</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1220;--panel:#151f30;--line:#29364b;--muted:#9aabc2;--txt:#f4f7fb;--accent:#80b7ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -74,7 +74,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .live-form textarea{width:100%;box-sizing:border-box;resize:vertical;min-height:140px;padding:10px;border:1px solid var(--border,#ccd);border-radius:8px;font:inherit}.setlist-field{grid-column:1/-1}.setlist-source-link{display:inline-block;margin-left:6px;font-size:12px}
 .diagnostic-box{margin-top:12px;padding:12px;border:1px solid #9b7044;border-radius:9px;background:#241d18}.diagnostic-box textarea{width:100%;min-height:190px;resize:vertical;font:12px/1.45 ui-monospace,monospace;white-space:pre-wrap}.diagnostic-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.39</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.40</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>チケット代合計</small><b id="sumCost">—</b></div></div>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
@@ -141,7 +141,7 @@ const imported={"expenses":[],"songs":{"BUMP":[{"title":"BUMP OF CHICKENのテ�
 const yen=n=>typeof n==='number'?n.toLocaleString('ja-JP')+'円':'—';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // 日付表記をYYYY-MM-DDに統一（Excel由来のYYYY-M/Dとdate inputのISO形式に対応）
-// 修正ver.39：演奏履歴を全消去。楽曲名の一覧は残し、披露回数と披露日だけ初期化する。
+// 修正ver.40：演奏履歴を全消去。楽曲名の一覧は残し、披露回数と披露日だけ初期化する。
 Object.values(imported.songs||{}).forEach(list=>{if(Array.isArray(list))list.forEach(song=>{song.count=0;song.performed=[]})});
 const normalizeDate=value=>{
  if(value==null)return '';
@@ -153,7 +153,7 @@ const normalizeDate=value=>{
  return s;
 };
 const safeLoad=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||'null')??fallback}catch(e){return fallback}};
-// 修正ver.39：参加記録と演奏履歴を初期化済み。既存ブラウザの演奏履歴も一度だけ消去する。
+// 修正ver.40：参加記録と演奏履歴を初期化済み。既存ブラウザの演奏履歴も一度だけ消去する。
 const liveLogWipeKey='liveLogParticipationWipedV35';
 if(localStorage.getItem(liveLogWipeKey)!=='1'){
   ['liveLogAddedExpenses','liveLogExpenseOverrides','liveLogLiveNames','liveLogSongMarks'].forEach(key=>localStorage.removeItem(key));
@@ -999,16 +999,18 @@ function parseLiveFansEvent(raw,url,requestedArtist,requestedDate){
     const m=venueLine.match(/[@＠]\s*(.+?)\s*[（(]\s*(?:北海道|東京都|京都府|大阪府|青森県|岩手県|宮城県|秋田県|山形県|福島県|茨城県|栃木県|群馬県|埼玉県|千葉県|神奈川県|新潟県|富山県|石川県|福井県|山梨県|長野県|岐阜県|静岡県|愛知県|三重県|滋賀県|兵庫県|奈良県|和歌山県|鳥取県|島根県|岡山県|広島県|山口県|徳島県|香川県|愛媛県|高知県|福岡県|佐賀県|長崎県|熊本県|大分県|宮崎県|鹿児島県|沖縄県)\s*[）)]/);
     venue=m?liveFansClean(m[1]):'';
   }
-  const headings=lines.filter(line=>/^#{2,6}\s+/.test(line)).map(line=>liveFansClean(line.replace(/^#+\s*/,'')));
-  let liveName='';
-  for(const h of headings){
+  const setlistHeadingIndex=lines.findIndex(line=>/セットリスト/.test(line));
+  const headings=lines.slice(0,setlistHeadingIndex>=0?setlistHeadingIndex:lines.length)
+    .filter(line=>/^#{2,6}\s+/.test(line)).map(line=>liveFansClean(line.replace(/^#+\s*/,'')));
+  const artistHeadingKeys=[requestedArtist,catalogArtist];
+  if(setoliNormalize(catalogArtist)==='bump') artistHeadingKeys.push('BUMP OF CHICKEN');
+  if(setoliNormalize(catalogArtist)==='乃木坂') artistHeadingKeys.push('乃木坂46');
+  const artistHeadingNorms=artistHeadingKeys.map(setoliNormalize);
+  let liveName=headings.find(h=>{
     const nh=setoliNormalize(h);
-    if(!h||/セットリスト|レビュー|観たレポ|関連商品|関連記事|編集部/.test(h)) continue;
-    if(nh===setoliNormalize(requestedArtist)||nh===setoliNormalize(catalogArtist)) continue;
-    if(nh.includes(setoliNormalize(requestedArtist))||nh.includes(setoliNormalize(catalogArtist))){
-      liveName=h;break;
-    }
-  }
+    return h&&!/セットリスト|レビュー|観たレポ|関連商品|関連記事|編集部/.test(h)
+      && artistHeadingNorms.some(k=>k&&nh.includes(k)&&nh!==k);
+  })||'';
   if(!liveName){
     const dateIndex=lines.indexOf(dateLine);
     const prior=lines.slice(Math.max(0,dateIndex-8),dateIndex);
