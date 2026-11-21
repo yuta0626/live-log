@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.58</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.59</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1220;--panel:#151f30;--line:#29364b;--muted:#9aabc2;--txt:#f4f7fb;--accent:#80b7ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -97,7 +97,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .live-head .live-venue{font-size:10px;line-height:1.25;color:var(--muted);white-space:normal;overflow-wrap:anywhere;max-height:32px;overflow:hidden}.live-head .live-song-count{font-size:10px;color:#9fc7f3;font-weight:700}
 @media(max-width:560px){.vchart{gap:7px}.vchart-col{flex-basis:48px;min-width:48px}.matrixwrap th.live-col{width:104px;min-width:104px;max-width:104px}.live-head{min-height:100px}}
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.58</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.59</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>費用</small><b id="sumCost">—</b></div></div>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
@@ -212,6 +212,8 @@ const liveByDate={};
 const rebuildLiveIndex=()=>{Object.keys(liveByDate).forEach(k=>delete liveByDate[k]);allExpenses.forEach(x=>{const d=normalizeDate(x.date);if(d)liveByDate[`${x.artist}::${d}`]=x})};
 const saveAdded=()=>{localStorage.setItem('liveLogAddedExpenses',JSON.stringify(allExpenses.filter(x=>String(x._id).startsWith('added-'))))};
 const saveOverrides=()=>{const obj={};allExpenses.filter(x=>String(x._id).startsWith('base-')).forEach(x=>{const i=x._id.slice(5);obj[x._id]={year:x.year,date:x.date,artist:x.artist,prefecture:x.prefecture,liveName:x.liveName,venue:x.venue,ticket:x.ticket,tour:x.tour??x.transportLodging,transport:x.transport,lodging:x.lodging,transportLodging:null,total:calcTotal(x),setlist:x.setlist||''}});localStorage.setItem('liveLogExpenseOverrides',JSON.stringify(obj))};
+const normalizeStoredLiveNames=()=>{let changed=false;allExpenses.forEach(x=>{const next=cleanLiveName(x.liveName);if(next!==String(x.liveName||'')){x.liveName=next;changed=true}});if(changed){try{saveAdded();saveOverrides()}catch(_){}}};
+normalizeStoredLiveNames();
 const numVal=v=>typeof v==='number'&&Number.isFinite(v)?v:0;
 const ticketCost=x=>numVal(x.ticket);
 const otherCost=x=>{
@@ -604,9 +606,9 @@ function transferSetoliRecord(data) {
   });
   let record=allExpenses.find(x=>x.artist===artist && normalizeDate(x.date)===data.date);
   if(record){
-    Object.assign(record,{liveName:data.liveName,prefecture:data.prefecture||record.prefecture||'',venue:data.venue||record.venue||'',setlist:data.songs.join('\n')});
+    Object.assign(record,{liveName:cleanLiveName(data.liveName),prefecture:data.prefecture||record.prefecture||'',venue:data.venue||record.venue||'',setlist:data.songs.join('\n')});
   }else{
-    record={_id:`added-setoli-${Date.now()}`,date:data.date,year:Number(data.date.slice(0,4)),artist,prefecture:data.prefecture||'',liveName:data.liveName,venue:data.venue||'',ticket:null,transport:null,lodging:null,total:0,setlist:data.songs.join('\n')};
+    record={_id:`added-setoli-${Date.now()}`,date:data.date,year:Number(data.date.slice(0,4)),artist,prefecture:data.prefecture||'',liveName:cleanLiveName(data.liveName),venue:data.venue||'',ticket:null,transport:null,lodging:null,total:0,setlist:data.songs.join('\n')};
     allExpenses.push(record);
   }
   try{saveAdded();saveOverrides();localStorage.setItem('liveLogSongMarks',JSON.stringify(savedSongMarks));}
