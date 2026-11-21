@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.89</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.90</title>
 <style>
 :root{color-scheme:dark;--bg:#080d17;--panel:#111b2b;--line:#34445a;--muted:#a7b4c7;--txt:#f4f3ee;--accent:#c6a96b;--gold:#c6a96b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -18%,#25344b 0%,#111a29 38%,#080d17 78%);background-attachment:fixed;color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -102,7 +102,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 @media(max-width:560px){.live-records-wrap{max-height:38vh}.vchart{gap:10px}.vchart-col{flex-basis:78px;min-width:78px}.matrixwrap th.live-col{width:104px;min-width:104px;max-width:104px}.live-head{height:81px;min-height:81px}}
 .setlist-modal{position:fixed;inset:0;z-index:1000;background:#000b;display:none;align-items:center;justify-content:center;padding:16px}.setlist-modal.open{display:flex}.setlist-dialog{width:min(620px,100%);max-height:88vh;display:flex;flex-direction:column;background:linear-gradient(145deg,#172337,#101827);border:1px solid #776344;border-radius:13px;box-shadow:0 18px 60px #0009;padding:16px}.setlist-dialog h3{margin:0 0 10px;font-size:16px}.setlist-content{overflow:auto;max-height:70vh;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;padding:12px;border:1px solid var(--line);border-radius:8px;background:#0b1422;color:var(--txt)}.setlist-dialog-actions{display:flex;justify-content:flex-end;margin-top:12px}
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.89</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.90</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
 <section id="live" class="panel"><div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>費用</small><b id="sumCost">—</b></div></div><h2>実績・費用</h2>
@@ -590,7 +590,7 @@ function parseSetoliPage(raw, url, requestedArtist, requestedDate) {
   // Setoli Readerの実ページ形式: `1![Image ...](画像URL) [曲名](.../song/ID)2![Image ...]...`
   // 番号の直後に区切り記号や空白がないため、従来の `1 | 曲名` 抽出では拾えない。
   // 曲リンクのhrefが /song/ID であることを条件にし、画像altや周辺公演リンクを除外する。
-  const numberedSongRows=[...String(section||text).matchAll(/(?:^|\s)(\d{1,3})(?=!?\[)/g)];
+  const numberedSongRows=[...String(section||text).matchAll(/(?:^|[\s)\]])(\d{1,3})(?=!?\[)/g)];
   if(numberedSongRows.length>=3){
     for(let i=0;i<numberedSongRows.length;i++){
       const hit=numberedSongRows[i];
