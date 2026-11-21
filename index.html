@@ -268,13 +268,14 @@ function renderSummaries(){
    return '<div class="vchart-col"><span class="vchart-value">'+esc(format(value))+'</span><div class="vchart-stack"><div class="vchart-segment" style="height:'+height+'%;background:#70a9ed"></div></div><span class="vchart-label" title="'+esc(item[0])+'">'+esc(item[0])+'</span></div>';
   }).join('')+'</div>';
  };
+ const artistLegend=()=>'<div class="vchart-legend">'+focusArtists.map((a,i)=>'<span><i style="background:'+(i===0?'#df4b57':'#b56bd1')+'"></i>'+esc(a)+'</span>').join('')+'</div>';
  const stackedCategory=(items,metric)=>{
   const vals=items.map(item=>focusArtists.map(a=>sum(scopedExpenses.filter(x=>x.artist===a&&String(x[item.field]||'').trim()===item.name),metric)));
   const totals=vals.map(v=>v.reduce((a,b)=>a+b,0)),max=Math.max(1,...totals);
   return '<div class="vchart category-stack-chart">'+items.map((item,i)=>{
    const pair=vals[i];
    return '<div class="vchart-col"><span class="vchart-value">'+esc(yenOrCount(totals[i],metric))+'</span><div class="vchart-stack">'+pair.map((v,j)=>'<div class="vchart-segment" style="height:'+(v/max*100)+'%;background:'+(j===0?'#df4b57':'#b56bd1')+'">'+(v>0?'<span>'+esc(metric===calcTotal||metric===ticketCost?Number(v).toLocaleString('ja-JP'):String(v))+'</span>':'')+'</div>').join('')+'</div><span class="vchart-label" title="'+esc(item.name)+'">'+esc(item.name)+'</span></div>';
-  }).join('')+'</div><div class="vchart-legend"><span><i style="background:#df4b57"></i>BUMP</span><span><i style="background:#b56bd1"></i>乃木坂</span></div>';
+  }).join('')+'</div>'+artistLegend();
  };
  const stackedYears=metric=>{
   const totals=years.map(y=>focusArtists.reduce((n,a)=>n+sum(scopedExpenses.filter(x=>x.artist===a&&normalizeDate(x.date).startsWith(y)),metric),0));
@@ -282,7 +283,7 @@ function renderSummaries(){
   return '<div class="vchart">'+years.map((y,yi)=>{
    const vals=focusArtists.map(a=>sum(scopedExpenses.filter(x=>x.artist===a&&normalizeDate(x.date).startsWith(y)),metric));
    return '<div class="vchart-col"><span class="vchart-value">'+esc(yenOrCount(totals[yi],metric))+'</span><div class="vchart-stack">'+vals.map((v,i)=>'<div class="vchart-segment" style="height:'+(v/max*100)+'%;background:'+(i===0?'#df4b57':'#b56bd1')+'">'+(v>0?'<span>'+esc(metric===calcTotal||metric===ticketCost?Number(v).toLocaleString('ja-JP'):String(v))+'</span>':'')+'</div>').join('')+'</div><span class="vchart-label">'+esc(y)+'</span></div>';
-  }).join('')+'</div><div class="vchart-legend"><span><i style="background:#df4b57"></i>BUMP</span><span><i style="background:#b56bd1"></i>乃木坂</span></div>';
+  }).join('')+'</div>'+artistLegend();
  };
  const yenOrCount=(v,fn)=>fn===ticketCost||fn===calcTotal?yen(v):v+'回';
  document.getElementById('artistCounts').innerHTML=focusArtists.map(a=>row(a,byArtist(a).length+'回')).join('');
