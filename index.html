@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.63</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.64</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1220;--panel:#151f30;--line:#29364b;--muted:#9aabc2;--txt:#f4f7fb;--accent:#80b7ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -15,7 +15,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .artist-BUMP{color:#ffc1c1;background:#5a1b24;border:1px solid #c94b58}
 .artist-乃木坂{color:#f0c5ff;background:#48215d;border:1px solid #a45cc4}
 .artist-小田和正{color:#c8f1d2;background:#19452d;border:1px solid #4e9b67}
-.chartbox{margin:12px 0 16px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#101a2a}
+ .chartbox{margin:12px 0 8px;padding:8px;border:1px solid var(--line);border-radius:10px;background:#101a2a}
 .charttitle{font-weight:700;margin-bottom:9px}.bars{display:grid;gap:7px}
 .barrow{display:grid;grid-template-columns:minmax(105px,1.2fr) 3fr 35px;gap:8px;align-items:center;font-size:12px}
 .barlabel{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bartrack{height:12px;background:#25344a;border-radius:99px;overflow:hidden}.barfill{height:100%;border-radius:99px;background:var(--barcolor,#65a9ed)}
@@ -81,18 +81,18 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .vchart{display:flex;align-items:flex-end;gap:12px;min-height:235px;padding:14px 10px 4px;overflow-x:auto;border-bottom:1px solid var(--line)}
 .vchart-col{flex:0 0 78px;min-width:78px;width:78px;display:grid;grid-template-rows:16px 130px 58px;justify-items:center;align-items:end;height:220px;gap:4px}
 .vchart-value{font-size:10px;color:#d7e6f7;white-space:nowrap;font-variant-numeric:tabular-nums}
-.vchart-stack{width:min(34px,70%);height:130px;display:flex;flex-direction:column;justify-content:flex-end;background:#26354b;border-radius:5px 5px 0 0;overflow:hidden}
-.vchart-segment{width:100%;min-height:0}
+.vchart-stack{width:min(34px,70%);height:130px;display:flex;flex-direction:column-reverse;justify-content:flex-end;background:#26354b;border-radius:5px 5px 0 0;overflow:hidden}
+.vchart-segment{width:100%;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;color:#fff;font-size:8px;font-weight:700;line-height:1;text-align:center}.vchart-segment span{display:block;max-width:100%;overflow:hidden;overflow-wrap:anywhere}
 .vchart-label{display:block;width:74px;height:54px;font-size:9px;line-height:1.2;color:#cbd9eb;text-align:center;white-space:normal;overflow-wrap:anywhere;word-break:break-word;overflow:hidden}
 .vchart-legend{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 2px;font-size:10px;color:var(--muted)}
 .vchart-legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:middle}
-.song-vchart-wrap{overflow-x:auto;padding:8px 4px 0}
-.song-vchart{display:flex;align-items:flex-end;gap:8px;min-width:max-content;height:275px;padding:2px 8px 0;border-bottom:1px solid var(--line)}
-.song-vcol{width:66px;flex:0 0 66px;height:100%;display:grid;grid-template-rows:16px 185px 65px;justify-items:center;align-items:end;gap:0}
+.song-vchart-wrap{overflow-x:auto;padding:0 4px 0}
+.song-vchart{display:flex;align-items:flex-end;gap:8px;min-width:max-content;height:224px;padding:0 8px 0;border-bottom:1px solid var(--line)}
+.song-vcol{width:66px;flex:0 0 66px;height:100%;display:grid;grid-template-rows:16px 185px 14px;justify-items:center;align-items:end;gap:0}
 .song-vvalue{font-size:10px;color:#d7e6f7}.matrix-tools{display:flex;justify-content:flex-start;margin:0 0 7px}.matrix-tools .matrix-lock-btn{display:inline-block;margin:0;padding:5px 9px;font-size:11px;white-space:nowrap}
 .song-vbar-track{height:185px;width:22px;display:flex;align-items:flex-end;background:#26354b;border-radius:4px 4px 0 0;overflow:hidden}
 .song-vbar{width:100%;border-radius:4px 4px 0 0;background:var(--barcolor,#65a9ed)}
-.song-vlabel-slot{width:66px;height:65px;position:relative;overflow:visible}.song-vlabel{position:absolute;right:50%;bottom:0;display:block;width:max-content;max-width:170px;font-size:9px;line-height:1;color:#cbd9eb;white-space:nowrap;text-align:right;transform:rotate(-65deg);transform-origin:right bottom}
+.song-vlabel-slot{width:66px;height:14px;position:relative;overflow:visible}.song-vlabel{position:absolute;right:50%;bottom:0;display:block;width:max-content;max-width:170px;font-size:9px;line-height:1;color:#cbd9eb;white-space:nowrap;text-align:right;transform:rotate(-65deg);transform-origin:right bottom}
 .matrixwrap th.live-col{width:112px;min-width:112px;max-width:112px;white-space:normal;text-align:center;vertical-align:top}
 .live-head{display:grid;grid-template-rows:16px 36px 28px 14px;justify-items:center;align-items:start;row-gap:0;height:94px;min-height:94px;padding:0}
 .live-head .live-date{font-weight:700;color:#f1f6ff}
@@ -100,7 +100,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .live-head .live-venue{font-size:10px;line-height:1.25;color:var(--muted);white-space:normal;overflow-wrap:anywhere;height:28px;max-height:28px;overflow:hidden;border-bottom:1px solid #34445c;padding-bottom:1px;width:100%}.live-head .live-song-count{font-size:10px;color:#9fc7f3;font-weight:700;height:14px;line-height:14px;padding-top:2px}
 @media(max-width:560px){.live-records-wrap{max-height:38vh}.vchart{gap:10px}.vchart-col{flex-basis:78px;min-width:78px}.matrixwrap th.live-col{width:104px;min-width:104px;max-width:104px}.live-head{height:118px;min-height:118px}}
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.63</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.64</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
 <section id="live" class="panel"><div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>費用</small><b id="sumCost">—</b></div></div><h2>実績・費用</h2>
@@ -237,7 +237,7 @@ function renderLive(){
  let q=document.getElementById('liveSearch').value.toLowerCase(),a=document.getElementById('artistFilter').value;
  let rows=allExpenses.filter(x=>(!a||x.artist===a)&&[x.date,x.artist,x.prefecture,x.venue,x.liveName].join(' ').toLowerCase().includes(q));
  rows.sort((x,y)=>normalizeDate(x.date).localeCompare(normalizeDate(y.date)));
- document.getElementById('liveBody').innerHTML=rows.map(x=>`<tr><td>${esc(dateJP(x.date))}</td><td><span class="artist-tag artist-${esc(x.artist)}">${esc(x.artist)}</span></td><td>${esc(cleanLiveName(x.liveName)||'—')}</td><td>${esc(x.prefecture||'—')}</td><td>${esc(x.venue||'—')}</td><td>${x.setlist&&x.setlist.trim()?`<button type="button" class="edit-btn" data-view-setlist="${esc(x._id)}">セトリ表示（${x.setlist.trim().split(/\r?\n/).filter(Boolean).length}曲）</button>`:'—'}</td><td class="num">${yen(x.ticket)}</td><td class="num">${yen(x.tour??x.transportLodging)}</td><td class="num">${yen(x.transport)}</td><td class="num">${yen(x.lodging)}</td><td class="num">${yen(calcTotal(x))}</td><td class="live-note-cell">${esc(x.note||'—')}</td><td><button type="button" class="edit-btn data-edit-id="${esc(x._id)}">編集</button></td></tr>`).join('')||'<tr><td colspan="13">該当する記録はありません</td></tr>';
+ document.getElementById('liveBody').innerHTML=rows.map(x=>`<tr><td>${esc(dateJP(x.date))}</td><td><span class="artist-tag artist-${esc(x.artist)}">${esc(x.artist)}</span></td><td>${esc(cleanLiveName(x.liveName)||'—')}</td><td>${esc(x.prefecture||'—')}</td><td>${esc(x.venue||'—')}</td><td>${x.setlist&&x.setlist.trim()?`<button type="button" class="edit-btn" data-view-setlist="${esc(x._id)}">セトリ表示（${x.setlist.trim().split(/\r?\n/).filter(Boolean).length}曲）</button>`:'—'}</td><td class="num">${yen(x.ticket)}</td><td class="num">${yen(x.tour??x.transportLodging)}</td><td class="num">${yen(x.transport)}</td><td class="num">${yen(x.lodging)}</td><td class="num">${yen(calcTotal(x))}</td><td class="live-note-cell">${esc(x.note||'—')}</td><td><button type="button" class="edit-btn" data-edit-id="${esc(x._id)}">編集</button></td></tr>`).join('')||'<tr><td colspan="13">該当する記録はありません</td></tr>';
 }
 
 function renderSummaries(){
@@ -260,7 +260,7 @@ function renderSummaries(){
   const max=Math.max(1,...totals);
   return '<div class="vchart">'+years.map((y,yi)=>{
    const vals=focusArtists.map(a=>sum(allExpenses.filter(x=>x.artist===a&&normalizeDate(x.date).startsWith(y)),metric));
-   return '<div class="vchart-col"><span class="vchart-value">'+esc(yenOrCount(totals[yi],metric))+'</span><div class="vchart-stack">'+vals.map((v,i)=>'<div class="vchart-segment" style="height:'+(v/max*100)+'%;background:'+(i===0?'#df4b57':'#b56bd1')+'"></div>').join('')+'</div><span class="vchart-label">'+esc(y)+'</span></div>';
+   return '<div class="vchart-col"><span class="vchart-value">'+esc(yenOrCount(totals[yi],metric))+'</span><div class="vchart-stack">'+vals.map((v,i)=>'<div class="vchart-segment" style="height:'+(v/max*100)+'%;background:'+(i===0?'#df4b57':'#b56bd1')+'">'+(vals.every(n=>n>0)?'<span>'+esc((i===0?'BUMP ':'乃木坂 ')+(metric===ticketCost||metric===calcTotal?yen(v):v+'回'))+'</span>':'')+'</div>').join('')+'</div><span class="vchart-label">'+esc(y)+'</span></div>';
   }).join('')+'</div><div class="vchart-legend"><span><i style="background:#df4b57"></i>BUMP</span><span><i style="background:#b56bd1"></i>乃木坂</span></div>';
  };
  const yenOrCount=(v,fn)=>fn===ticketCost||fn===calcTotal?yen(v):v+'回';
@@ -272,9 +272,9 @@ function renderSummaries(){
  document.getElementById('venueTotals').innerHTML='<div class="summary-list">'+venues.map(v=>{const xs=allExpenses.filter(x=>String(x.venue||'').trim()===v);return row(v,xs.length+'回 ／ 費用 '+yen(sum(xs,calcTotal)))}).join('')+'</div>'+
   '<div class="summary-visuals"><h4 class="charttitle">回数</h4>'+vertical(venues.map(v=>[v,allExpenses.filter(x=>String(x.venue||'').trim()===v).length]),x=>x[1],v=>v+'回')+
   '<h4 class="charttitle" style="margin-top:16px">費用</h4>'+vertical(venues.map(v=>[v,sum(allExpenses.filter(x=>String(x.venue||'').trim()===v),calcTotal)]),x=>x[1],yen)+'</div>';
- document.getElementById('yearTotals').innerHTML=years.map(y=>row(y+'年',allExpenses.filter(x=>normalizeDate(x.date).startsWith(y)).length+'回')).join('')+
-  stackedYears(xs=>1);
- document.getElementById('yearCosts').innerHTML=years.map(y=>row(y+'年','チケット '+yen(sum(allExpenses.filter(x=>normalizeDate(x.date).startsWith(y)),ticketCost))+' ／ 総費用 '+yen(sum(allExpenses.filter(x=>normalizeDate(x.date).startsWith(y)),calcTotal)))).join('')+
+ document.getElementById('yearTotals').innerHTML='<div class="summary-list">'+years.map(y=>row(y+'年',allExpenses.filter(x=>normalizeDate(x.date).startsWith(y)).length+'回')).join('')+'</div>'+
+  '<h4 class="charttitle">回数</h4>'+stackedYears(xs=>1);
+ document.getElementById('yearCosts').innerHTML='<div class="summary-list">'+years.map(y=>row(y+'年','チケット '+yen(sum(allExpenses.filter(x=>normalizeDate(x.date).startsWith(y)),ticketCost))+' ／ 総費用 '+yen(sum(allExpenses.filter(x=>normalizeDate(x.date).startsWith(y)),calcTotal)))).join('')+'</div>'+
   '<h4 class="charttitle">チケット代</h4>'+stackedYears(ticketCost)+
   '<h4 class="charttitle" style="margin-top:18px">総費用</h4>'+stackedYears(calcTotal);
 }
