@@ -72,18 +72,23 @@ export default {
       headers.set("X-LiveFans-URL", upstreamUrl);
 
       if (!upstream.ok) {
-        return new Response(body || `LiveFans returned HTTP ${upstream.status}`, {
-          status: 502, headers
-        });
+        console.error("LIVEFANS_UPSTREAM_HTTP_ERROR", upstream.status, upstream.url, body.slice(0, 500));
+        return new Response(
+          `LIVEFANS_UPSTREAM_HTTP_ERROR\nstatus=${upstream.status}\nurl=${upstream.url}\nbody_preview=${body.slice(0, 500)}`,
+          { status: 502, headers: { ...Object.fromEntries(headers), "Content-Type": "text/plain; charset=utf-8" } }
+        );
       }
       if (body.length < 1000 || !/livefans|セットリスト|公演情報/i.test(body)) {
-        return new Response("LiveFans response was empty or not an event page", {
-          status: 502, headers
-        });
+        console.error("LIVEFANS_UNEXPECTED_BODY", upstream.status, upstream.url, body.slice(0, 500));
+        return new Response(
+          `LIVEFANS_UNEXPECTED_BODY\nstatus=${upstream.status}\nlength=${body.length}\nurl=${upstream.url}\nbody_preview=${body.slice(0, 500)}`,
+          { status: 502, headers: { ...Object.fromEntries(headers), "Content-Type": "text/plain; charset=utf-8" } }
+        );
       }
       return new Response(body, { status: 200, headers });
     } catch (error) {
-      return new Response(`LiveFans fetch failed: ${error?.message || String(error)}`, {
+      console.error("LIVEFANS_FETCH_EXCEPTION", error?.name || "Error", error?.message || String(error), error?.stack || "");
+      return new Response(`LIVEFANS_FETCH_EXCEPTION\nname=${error?.name || "Error"}\nmessage=${error?.message || String(error)}`, {
         status: 502,
         headers: { ...Object.fromEntries(cors), "Content-Type": "text/plain; charset=utf-8" }
       });
