@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.37</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.38</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1220;--panel:#151f30;--line:#29364b;--muted:#9aabc2;--txt:#f4f7fb;--accent:#80b7ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -74,7 +74,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .live-form textarea{width:100%;box-sizing:border-box;resize:vertical;min-height:140px;padding:10px;border:1px solid var(--border,#ccd);border-radius:8px;font:inherit}.setlist-field{grid-column:1/-1}.setlist-source-link{display:inline-block;margin-left:6px;font-size:12px}
 .diagnostic-box{margin-top:12px;padding:12px;border:1px solid #9b7044;border-radius:9px;background:#241d18}.diagnostic-box textarea{width:100%;min-height:190px;resize:vertical;font:12px/1.45 ui-monospace,monospace;white-space:pre-wrap}.diagnostic-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.37</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.38</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>チケット代合計</small><b id="sumCost">—</b></div></div>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
@@ -141,7 +141,7 @@ const imported={"expenses":[],"songs":{"BUMP":[{"title":"BUMP OF CHICKENのテ�
 const yen=n=>typeof n==='number'?n.toLocaleString('ja-JP')+'円':'—';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // 日付表記をYYYY-MM-DDに統一（Excel由来のYYYY-M/Dとdate inputのISO形式に対応）
-// 修正ver.37：演奏履歴を全消去。楽曲名の一覧は残し、披露回数と披露日だけ初期化する。
+// 修正ver.38：演奏履歴を全消去。楽曲名の一覧は残し、披露回数と披露日だけ初期化する。
 Object.values(imported.songs||{}).forEach(list=>{if(Array.isArray(list))list.forEach(song=>{song.count=0;song.performed=[]})});
 const normalizeDate=value=>{
  if(value==null)return '';
@@ -153,7 +153,7 @@ const normalizeDate=value=>{
  return s;
 };
 const safeLoad=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||'null')??fallback}catch(e){return fallback}};
-// 修正ver.37：参加記録と演奏履歴を初期化済み。既存ブラウザの演奏履歴も一度だけ消去する。
+// 修正ver.38：参加記録と演奏履歴を初期化済み。既存ブラウザの演奏履歴も一度だけ消去する。
 const liveLogWipeKey='liveLogParticipationWipedV35';
 if(localStorage.getItem(liveLogWipeKey)!=='1'){
   ['liveLogAddedExpenses','liveLogExpenseOverrides','liveLogLiveNames','liveLogSongMarks'].forEach(key=>localStorage.removeItem(key));
@@ -967,6 +967,100 @@ async function searchSetoliCandidates(artist,date){
   return matches.map(x=>({...x,artistName:profile.name}));
 }
 let setoliFoundPages=[];
+
+function liveFansClean(value){
+  return String(value||'').replace(/!\[[^\]]*\]\([^)]*\)/g,' ')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/【\s*\d+\s*†[^】]*】/g,' ')
+    .replace(/<[^>]*>/g,' ').replace(/&nbsp;|&#160;/gi,' ').replace(/&amp;/gi,'&')
+    .replace(/[|｜]/g,' ').replace(/\s+/g,' ').trim();
+}
+function findLiveFansEventIds(raw){
+  const text=String(raw||'').replace(/\\u002F/gi,'/').replace(/\\\//g,'/').replace(/&amp;/gi,'&');
+  return [...new Set([...text.matchAll(/(?:https?:\/\/)?(?:www\.)?livefans\.jp\/events\/(\d+)/gi)].map(m=>m[1]))];
+}
+function parseLiveFansEvent(raw,url,requestedArtist,requestedDate){
+  const text=String(raw||'').replace(/\r/g,'');
+  const lines=text.split('\n').map(x=>x.trim()).filter(Boolean);
+  const dateLine=lines.find(line=>setoliDateISO(line)===requestedDate
+    || new RegExp(requestedDate.replace(/[-]/g,'[./-]')).test(line));
+  if(!dateLine) throw new Error('LIVE FANS公演ページで指定日を確認できません');
+  const normalized=setoliNormalize(text);
+  const artistNorm=setoliNormalize(requestedArtist);
+  const catalogArtist=resolveLivelogArtist(requestedArtist);
+  if(!normalized.includes(artistNorm)&&!normalized.includes(setoliNormalize(catalogArtist))){
+    throw new Error('LIVE FANS公演ページでアーティスト名を確認できません');
+  }
+  const prefPattern=/(北海道|東京都|京都府|大阪府|青森県|岩手県|宮城県|秋田県|山形県|福島県|茨城県|栃木県|群馬県|埼玉県|千葉県|神奈川県|新潟県|富山県|石川県|福井県|山梨県|長野県|岐阜県|静岡県|愛知県|三重県|滋賀県|兵庫県|奈良県|和歌山県|鳥取県|島根県|岡山県|広島県|山口県|徳島県|香川県|愛媛県|高知県|福岡県|佐賀県|長崎県|熊本県|大分県|宮崎県|鹿児島県|沖縄県)/;
+  const venueLine=lines.find(line=>/＠|@/.test(line)&&prefPattern.test(line));
+  const prefMatch=(venueLine||text).match(prefPattern);
+  const prefecture=(prefMatch?.[1]||'').replace(/都$/,'').replace(/府$/,'').replace(/県$/,'');
+  let venue='';
+  if(venueLine){
+    const m=venueLine.match(/[@＠]\s*(.+?)\s*[（(]\s*(?:北海道|東京都|京都府|大阪府|青森県|岩手県|宮城県|秋田県|山形県|福島県|茨城県|栃木県|群馬県|埼玉県|千葉県|神奈川県|新潟県|富山県|石川県|福井県|山梨県|長野県|岐阜県|静岡県|愛知県|三重県|滋賀県|兵庫県|奈良県|和歌山県|鳥取県|島根県|岡山県|広島県|山口県|徳島県|香川県|愛媛県|高知県|福岡県|佐賀県|長崎県|熊本県|大分県|宮崎県|鹿児島県|沖縄県)\s*[）)]/);
+    venue=m?liveFansClean(m[1]):'';
+  }
+  const headings=lines.filter(line=>/^#{2,6}\s+/.test(line)).map(line=>liveFansClean(line.replace(/^#+\s*/,'')));
+  let liveName='';
+  for(const h of headings){
+    const nh=setoliNormalize(h);
+    if(!h||/セットリスト|レビュー|観たレポ|関連商品|関連記事|編集部/.test(h)) continue;
+    if(nh===setoliNormalize(requestedArtist)||nh===setoliNormalize(catalogArtist)) continue;
+    if(nh.includes(setoliNormalize(requestedArtist))||nh.includes(setoliNormalize(catalogArtist))){
+      liveName=h;break;
+    }
+  }
+  if(!liveName){
+    const dateIndex=lines.indexOf(dateLine);
+    const prior=lines.slice(Math.max(0,dateIndex-8),dateIndex);
+    liveName=prior.map(liveFansClean).find(x=>x&&x.length>2&&!/^(BUMP OF CHICKEN|乃木坂46|ライブ・セットリスト情報サービス)$/.test(x)&&!/^https?:/.test(x))||'';
+  }
+  const start=lines.findIndex(line=>/セットリスト/.test(line));
+  const end=lines.findIndex((line,i)=>i>start&&/※サイトの性質上|セットリストの誤りを報告/.test(line));
+  const section=start>=0?lines.slice(start+1,end>start?end:undefined):[];
+  const songs=[];
+  for(const line of section){
+    if(!/^#{2,6}\s+/.test(line)) continue;
+    const song=liveFansClean(line.replace(/^#+\s*/,''));
+    if(!song||/^(セットリスト|レビュー|観たレポ|関連商品|関連記事)$/.test(song)) continue;
+    if(setoliNormalize(song)===setoliNormalize(requestedArtist)||setoliNormalize(song)===setoliNormalize(catalogArtist)) continue;
+    if(!songs.some(x=>setoliNormalize(x)===setoliNormalize(song))) songs.push(song);
+  }
+  return {date:requestedDate,artist:catalogArtist,liveName:liveName||requestedArtist+' '+requestedDate,
+    prefecture:prefecture,venue:venue,songs:songs,source:'LiveFans',sourceUrl:url};
+}
+async function searchLiveFansData(artist,date){
+  setoliDiag('LIVE FANS検索開始','アーティスト名・公演日で公開公演ページを検索します。');
+  const dateSlash=date.replace(/-/g,'/');
+  const dateDot=date.replace(/-/g,'.');
+  const queries=[
+    'site:livefans.jp/events "'+artist+'" "'+dateSlash+'"',
+    'site:livefans.jp/events "'+artist+'" "'+dateDot+'"'
+  ];
+  const ids=[];
+  for(const q of queries){
+    const searchUrl='https://www.google.com/search?q='+encodeURIComponent(q);
+    setoliDiag('LIVE FANS公演検索',q);
+    const result=await readViaJina(searchUrl);
+    ids.push(...findLiveFansEventIds(result));
+    if(ids.length) break;
+  }
+  const unique=[...new Set(ids)].slice(0,6);
+  setoliDiag('LIVE FANS公演候補','公演ページ候補 '+unique.length+'件: '+unique.join(', '));
+  if(!unique.length) throw new Error('LIVE FANS検索結果から公演ページを特定できませんでした');
+  const errors=[];
+  for(const id of unique){
+    const url='https://www.livefans.jp/events/'+id;
+    try{
+      const body=await readViaJina(url);
+      const data=parseLiveFansEvent(body,url,artist,date);
+      if(data.songs.length<3) throw new Error('セットリストの取得曲数が不足しています（'+data.songs.length+'曲）');
+      setoliDiag('LIVE FANS公演解析成功',url+'／'+data.liveName+'／'+(data.prefecture||'都道府県不明')+' '+(data.venue||'会場不明')+'／'+data.songs.length+'曲');
+      return data;
+    }catch(err){errors.push(id+': '+(err.message||err));setoliDiag('LIVE FANS候補解析失敗',errors[errors.length-1]);}
+  }
+  throw new Error('LIVE FANS候補ページを解析できませんでした。'+errors.join('／'));
+}
+
 async function fetchSetoliAndTransfer(){
   const button=document.getElementById('setoliTransferBtn');
   const artist=document.getElementById('setoliArtist').value.trim();
@@ -978,9 +1072,28 @@ async function fetchSetoliAndTransfer(){
   setoliDiagnostic={startedAt:Date.now(),artist,date,stage:'入力確認',events:[]};
   try{
     setoliDiag('入力確認','アーティスト名と日付を受け取りました');
-    setoliStatus.textContent='セトリモンスターのアーティスト一覧から該当アーティストを探しています…';
-    setoliDiag('公演一覧検索','アーティストページから対象日の公演URLを検索開始');
-    const candidates=await searchSetoliCandidates(artist,date);
+    let liveFansData=null;
+    try{
+      setoliStatus.textContent='LIVE FANSから該当公演を検索しています…';
+      liveFansData=await searchLiveFansData(artist,date);
+    }catch(liveFansError){
+      setoliDiag('LIVE FANS検索失敗','セトリモンスターで補完します：'+(liveFansError.message||liveFansError));
+    }
+    setoliStatus.textContent=liveFansData
+      ? 'LIVE FANSの公演情報を取得しました。セットリストの補完を確認しています…'
+      : 'セトリモンスターから該当公演を検索しています…';
+    setoliDiag('公演一覧検索','セトリモンスターから対象日の公演URLを検索開始');
+    let candidates=[];
+    try{candidates=await searchSetoliCandidates(artist,date);}
+    catch(setoliError){
+      if(!liveFansData) throw setoliError;
+      setoliDiag('セトリモンスター補完失敗','LIVE FANSの取得結果を使用します：'+(setoliError.message||setoliError));
+    }
+    if(!candidates.length&&!liveFansData) throw new Error('該当する公演ページが見つかりませんでした。');
+    if(!candidates.length&&liveFansData){
+      transferSetoliRecord(liveFansData);
+      return;
+    }
     setoliDiag('公演一覧検索',`公演URL候補 ${candidates.length}件: `+candidates.map(x=>x.url).join(', '));
     if(!candidates.length) throw new Error('該当する公演ページが見つかりませんでした。');
     setoliStatus.textContent=`該当日付の公演候補${candidates.length}件を確認しています…`;
@@ -999,7 +1112,18 @@ async function fetchSetoliAndTransfer(){
         found.push({data,label:`${data.date}｜${data.liveName}｜${data.prefecture||'都道府県不明'} ${data.venue}`});
       }catch(e){errors.push(`${candidate.url}: ${e.message||e}`);setoliDiag('候補公演の処理失敗',`${candidate.url}: ${e.message||e}`);}
     }
-    if(!found.length) throw new Error('候補ページを取得・解析できませんでした。'+(errors[0]||'公演ページの内容を確認できません。'));
+    if(!found.length&&!liveFansData) throw new Error('候補ページを取得・解析できませんでした。'+(errors[0]||'公演ページの内容を確認できません。'));
+    if(liveFansData&&found.length){
+      const bestSetoli=found.map(x=>x.data).sort((a,b)=>(b.songs?.length||0)-(a.songs?.length||0))[0];
+      const chosen=(bestSetoli.songs?.length||0)>(liveFansData.songs?.length||0)?bestSetoli:liveFansData;
+      chosen.prefecture=liveFansData.prefecture||chosen.prefecture||'';
+      chosen.venue=liveFansData.venue||chosen.venue||'';
+      chosen.liveName=liveFansData.liveName||chosen.liveName;
+      setoliDiag('情報統合','LIVE FANS（'+liveFansData.songs.length+'曲）／セトリモンスター（'+bestSetoli.songs.length+'曲）。曲数の多いセットリストを採用し、都道府県・会場はLIVE FANSの情報を優先します。');
+      found.splice(0,found.length,{data:chosen,label:chosen.date+'｜'+chosen.liveName+'｜'+(chosen.prefecture||'都道府県不明')+' '+chosen.venue});
+    }else if(liveFansData&&!found.length){
+      found.push({data:liveFansData,label:liveFansData.date+'｜'+liveFansData.liveName+'｜'+(liveFansData.prefecture||'都道府県不明')+' '+liveFansData.venue});
+    }
     setoliDiag('楽曲照合','取得成功。転記処理へ進みます。');
     setoliFoundPages=found;
     if(found.length===1){transferSetoliRecord(found[0].data);return;}
