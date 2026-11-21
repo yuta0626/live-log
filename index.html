@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.114</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.115</title>
 <style>
 :root{color-scheme:dark;--bg:#080d17;--panel:#111b2b;--line:#34445a;--muted:#a7b4c7;--txt:#f4f3ee;--accent:#c6a96b;--gold:#c6a96b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -18%,#25344b 0%,#111a29 38%,#080d17 78%);background-attachment:fixed;color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -188,7 +188,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 }
 
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.114</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.115</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
 <section id="live" class="panel"><div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>費用</small><b id="sumCost">—</b></div></div><h2>実績・費用</h2>
@@ -762,19 +762,37 @@ function setoliOfficialDateVenue(text,date){
   return venue?{venue,prefecture}:null;
 }
 async function fetchOfficialBumpPerformance(date){
-  const list=await readViaJina('https://www.bumpofchicken.com/live_information');
-  const year=String(date).slice(0,4);
-  const links=[];
-  const re=/\[([^\]]{2,200})\]\((https?:\/\/www\.bumpofchicken\.com\/live_information\/\d+)[^)]*\)/gi;
-  for(const m of list.matchAll(re)){
-    if(m[1].includes(year)||new RegExp('\\b'+year+'\\b').test(m[0]))links.push({title:m[1].trim(),url:m[2]});
+  const year=Number(String(date||'').slice(0,4));
+  // 公式LIVEページの個別アーカイブ。2012年はGOLD GLIDER TOURの公式ページを直接参照する。
+  const knownPages={
+    2012:{url:'https://www.bumpofchicken.com/live_information/215',title:'BUMP OF CHICKEN GOLD GLIDER TOUR 2012'}
+  };
+  let candidates=[];
+  if(knownPages[year])candidates=[knownPages[year]];
+  else{
+    const list=await readViaJina('https://www.bumpofchicken.com/live_information?sort=desc');
+    const re=/\[([^\]]{2,250})\]\((https?:\/\/www\.bumpofchicken\.com\/live_information\/\d+)[^)]*\)/gi;
+    const seen=new Set();
+    for(const m of list.matchAll(re)){
+      if(seen.has(m[2]))continue;
+      seen.add(m[2]);
+      const around=list.slice(Math.max(0,m.index-180),Math.min(list.length,m.index+500));
+      if(around.includes(String(year)))candidates.push({title:m[1].trim(),url:m[2]});
+    }
   }
-  const unique=[...new Map(links.map(x=>[x.url,x])).values()];
-  for(const item of unique){
+  for(const item of candidates){
     const page=await readViaJina(item.url);
     const title=(page.match(/^#\s+(.+)$/m)||[])[1]?.trim()||item.title;
     const schedule=setoliOfficialDateVenue(page,date);
-    if(schedule)return {liveName:title,venue:schedule.venue,prefecture:schedule.prefecture,url:item.url,source:'BUMP OF CHICKEN公式LIVE'};
+    if(schedule){
+      return {
+        liveName:title,
+        venue:schedule.venue,
+        prefecture:schedule.prefecture,
+        url:item.url,
+        source:'BUMP OF CHICKEN公式LIVE'
+      };
+    }
   }
   return null;
 }
