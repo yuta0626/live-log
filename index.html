@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.93</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.94</title>
 <style>
 :root{color-scheme:dark;--bg:#080d17;--panel:#111b2b;--line:#34445a;--muted:#a7b4c7;--txt:#f4f3ee;--accent:#c6a96b;--gold:#c6a96b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -18%,#25344b 0%,#111a29 38%,#080d17 78%);background-attachment:fixed;color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -102,7 +102,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 @media(max-width:560px){.live-records-wrap{max-height:38vh}.vchart{gap:10px}.vchart-col{flex-basis:78px;min-width:78px}.matrixwrap th.live-col{width:104px;min-width:104px;max-width:104px}.live-head{height:81px;min-height:81px}}
 .setlist-modal{position:fixed;inset:0;z-index:1000;background:#000b;display:none;align-items:center;justify-content:center;padding:16px}.setlist-modal.open{display:flex}.setlist-dialog{width:min(620px,100%);max-height:88vh;display:flex;flex-direction:column;background:linear-gradient(145deg,#172337,#101827);border:1px solid #776344;border-radius:13px;box-shadow:0 18px 60px #0009;padding:16px}.setlist-dialog h3{margin:0 0 10px;font-size:16px}.setlist-content{overflow:auto;max-height:70vh;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;padding:12px;border:1px solid var(--line);border-radius:8px;background:#0b1422;color:var(--txt)}.setlist-dialog-actions{display:flex;justify-content:flex-end;margin-top:12px}
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.93</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.94</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
 <section id="live" class="panel"><div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>費用</small><b id="sumCost">—</b></div></div><h2>実績・費用</h2>
@@ -159,7 +159,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 <select id="newSongArtist" aria-label="追加先アーティスト"><option value="BUMP">BUMP OF CHICKEN</option><option value="乃木坂">乃木坂46</option></select>
 <input id="newSongTitle" type="text" maxlength="120" placeholder="追加する曲名" aria-label="追加する曲名" style="flex:1;min-width:180px">
 <button type="button" id="addSongBtn">楽曲を追加</button>
-<span id="addSongStatus" class="muted" style="width:100%;font-size:12px">追加した曲はこのブラウザに保存されます。</span>
+<span id="addSongStatus" class="muted" style="width:100%;font-size:12px">古い曲も追加できます。各曲の「削除」で楽曲一覧から取り除けます。変更はこのブラウザに保存されます。</span>
 </div>
 <div class="toolbar">
 <select id="songArtist"><option>BUMP</option><option>乃木坂</option></select>
@@ -194,6 +194,7 @@ const normalizeDate=value=>{
 };
 const safeLoad=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||'null')??fallback}catch(e){return fallback}};
 const customSongs=safeLoad('liveLogCustomSongs',{BUMP:[],乃木坂:[]});
+const deletedSongs=safeLoad('liveLogDeletedSongs',{BUMP:[],乃木坂:[]});
 const normalizeCustomSongTitle=value=>String(value||'').normalize('NFKC').toLocaleLowerCase('ja').replace(/[\\s\\u3000]+/g,'');
 Object.entries(customSongs).forEach(([artist,list])=>{
  if(!Array.isArray(list))return;
@@ -203,6 +204,11 @@ Object.entries(customSongs).forEach(([artist,list])=>{
   const title=String(song?.title||'').trim(),key=normalizeCustomSongTitle(title);
   if(title&&key&&!known.has(key)){target.push({title,count:0,performed:[]});known.add(key);}
  });
+});
+Object.entries(deletedSongs).forEach(([artist,list])=>{
+ if(!Array.isArray(list)||!imported.songs[artist])return;
+ const removed=new Set(list.map(normalizeCustomSongTitle));
+ imported.songs[artist]=imported.songs[artist].filter(song=>!removed.has(normalizeCustomSongTitle(song.title)));
 });
 // 旧バージョンの一括初期化処理は停止。既存ブラウザの保存データを保持する。
 const savedLiveNames=safeLoad('liveLogLiveNames',{});
@@ -334,7 +340,7 @@ function renderSongs(){
   const played=new Set((x.performed||[]).map(normalizeDate)),recordDates=setlistDates.get(setoliNormalize(x.title))||new Set(),markKey=d=>artist+'::'+x.title+'::'+d;
   recordDates.forEach(d=>played.add(d));
   dates.forEach(d=>{if(savedSongMarks[markKey(d)]===true)played.add(d);if(savedSongMarks[markKey(d)]===false)played.delete(d)});
-  return '<tr><td>'+esc(x.title)+'</td><td class="num">'+(Number(x.count)||0)+'回</td>'+dates.map(d=>'<td class="'+(played.has(d)?'mark':'no-mark')+'">'+(songMatrixLocked?(played.has(d)?'○':'—'):'<button class="song-mark-toggle" data-artist="'+esc(artist)+'" data-song="'+esc(x.title)+'" data-date="'+esc(d)+'" title="披露有無を切替">'+(played.has(d)?'○':'—')+'</button>')+'</td>').join('')+'</tr>';
+  return '<tr><td>'+esc(x.title)+'</td><td class="num">'+(Number(x.count)||0)+'回</td>'+dates.map(d=>'<td class="'+(played.has(d)?'mark':'no-mark')+'">'+(songMatrixLocked?(played.has(d)?'○':'—'):'<button class="song-mark-toggle" data-artist="'+esc(artist)+'" data-song="'+esc(x.title)+'" data-date="'+esc(d)+'" title="披露有無を切替">'+(played.has(d)?'○':'—')+'</button>')+'</td>').join('')+'<td><button type="button" class="secondary-btn song-delete-btn" data-song-action="delete" data-artist="'+esc(artist)+'" data-song="'+esc(x.title)+'">削除</button></td></tr>';
  }).join('')||'<tr><td colspan="'+(dates.length+2)+'">該当する楽曲はありません</td></tr>';
  const max=Math.max(1,...rows.map(x=>Number(x.count)||0)),color=artistColors[artist]||'#65a9ed';
  const lockButton=document.getElementById('songMatrixLock');if(lockButton){lockButton.textContent=songMatrixLocked?'🔒 ロック中':'🔓 ロック解除中';lockButton.setAttribute('aria-pressed',String(songMatrixLocked));}
@@ -440,6 +446,27 @@ document.getElementById('addSongBtn').addEventListener('click',()=>{
  status.textContent='「'+title+'」を'+(artist==='BUMP'?'BUMP OF CHICKEN':'乃木坂46')+'の楽曲一覧に追加しました。';
 });
 document.getElementById('newSongTitle').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('addSongBtn').click()});
+document.getElementById('songBody').addEventListener('click',e=>{
+ const button=e.target.closest('[data-song-action="delete"]');
+ if(!button)return;
+ const artist=button.dataset.artist,title=button.dataset.song;
+ if(!artist||!title)return;
+ if(!window.confirm('「'+title+'」を'+(artist==='BUMP'?'BUMP OF CHICKEN':'乃木坂46')+'の楽曲一覧から削除しますか？\\n過去のライブ記録・セットリスト自体は削除されません。'))return;
+ const key=normalizeCustomSongTitle(title);
+ imported.songs[artist]=(imported.songs[artist]||[]).filter(song=>normalizeCustomSongTitle(song.title)!==key);
+ deletedSongs[artist]=[...new Set([...(deletedSongs[artist]||[]).map(normalizeCustomSongTitle),key])];
+ customSongs[artist]=(customSongs[artist]||[]).filter(song=>normalizeCustomSongTitle(song.title)!==key);
+ try{
+  localStorage.setItem('liveLogDeletedSongs',JSON.stringify(deletedSongs));
+  localStorage.setItem('liveLogCustomSongs',JSON.stringify(customSongs));
+  Object.keys(savedSongMarks).forEach(mark=>{const parts=mark.split('::');if(parts.length>=3&&parts[0]===artist&&normalizeCustomSongTitle(parts[1])===key)delete savedSongMarks[mark];});
+  localStorage.setItem('liveLogSongMarks',JSON.stringify(savedSongMarks));
+  renderSongs();
+  document.getElementById('addSongStatus').textContent='「'+title+'」を楽曲一覧から削除しました。過去のライブ記録は保持しています。';
+ }catch(err){
+  document.getElementById('addSongStatus').textContent='削除内容を保存できませんでした。ブラウザの保存容量・設定を確認してください。';
+ }
+});
 document.getElementById('songMatrixLock').addEventListener('click',()=>{
  songMatrixLocked=!songMatrixLocked;
  try{localStorage.setItem('liveLogSongMatrixLocked',JSON.stringify(songMatrixLocked));}catch(_){}
