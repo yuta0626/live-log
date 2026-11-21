@@ -1524,12 +1524,7 @@ async function fetchSetoliAndTransfer(){
           const pref=candidate.label.match(/(北海道|東京都|京都府|大阪府|[一-龯ぁ-んァ-ヶ]{2,4}県)/);
           if(pref) data.prefecture=pref[1].replace(/都$/,'').replace(/府$/,'').replace(/県$/,'');
         }
-        if(!data.prefecture && data.venue){
-          data.prefecture=await lookupSetoliPrefecture(data.venue);
-          setoliDiag('開催地補完',data.prefecture
-            ? `会場名「${data.venue}」から都道府県「${data.prefecture}」を特定しました。`
-            : `会場名「${data.venue}」から都道府県を特定できませんでした。誤入力防止のため空欄のままにします。`);
-        }
+        // 都道府県を会場名から外部推定しない。公式HPに記載がなければ既存取得値を維持する。
         found.push({data,label:`${data.date}｜${data.liveName}｜${data.prefecture||'都道府県不明'} ${data.venue}`});
       }catch(e){errors.push(`${candidate.url}: ${e.message||e}`);setoliDiag('候補公演の処理失敗',`${candidate.url}: ${e.message||e}`);}
     }
