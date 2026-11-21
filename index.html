@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.80</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.81</title>
 <style>
 :root{color-scheme:dark;--bg:#080d17;--panel:#111b2b;--line:#34445a;--muted:#a7b4c7;--txt:#f4f3ee;--accent:#c6a96b;--gold:#c6a96b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -18%,#25344b 0%,#111a29 38%,#080d17 78%);background-attachment:fixed;color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -92,7 +92,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .song-vvalue{font-size:10px;color:#d7e6f7}.matrix-tools{display:flex;justify-content:flex-start;margin:0 0 7px}.matrix-tools .matrix-lock-btn{display:inline-block;margin:0;padding:5px 9px;font-size:11px;white-space:nowrap}
  .song-vbar-track{height:160px;width:14px;display:flex;align-items:flex-end;background:#26354b;border-radius:4px 4px 0 0;overflow:hidden}
 .song-vbar{width:100%;border-radius:4px 4px 0 0;background:var(--barcolor,#65a9ed)}
-.song-ranking-box{padding-bottom:2px}.song-vlabel-slot{width:34px;height:var(--song-label-height);min-height:0;box-sizing:border-box;overflow:visible;padding:0;display:block;position:relative}.song-vlabel{display:block;position:absolute;right:13px;top:-4px;width:max-content;max-width:none;box-sizing:border-box;font-size:8px;line-height:1;color:#cbd9eb;white-space:nowrap;overflow:visible;text-align:left;transform:rotate(-60deg);transform-origin:bottom right;margin:0;padding:0}
+.song-ranking-box{padding-bottom:0}.song-vlabel-slot{width:34px;height:var(--song-label-height);min-height:0;box-sizing:border-box;overflow:visible;padding:0;display:block;position:relative}.song-vlabel{display:block;position:absolute;right:13px;top:0;width:max-content;max-width:none;box-sizing:border-box;font-size:8px;line-height:1;color:#cbd9eb;white-space:nowrap;overflow:visible;text-align:left;transform:rotate(-60deg);transform-origin:bottom right;margin:0;padding:0}
 .matrixwrap th.live-col{width:112px;min-width:112px;max-width:112px;white-space:normal;text-align:center;vertical-align:top}
 .live-note-cell{vertical-align:middle!important;text-align:left;white-space:pre-line;line-height:1.5;min-width:150px}
  .live-head{display:grid;grid-template-rows:14px 25px 30px 12px;justify-items:center;align-items:start;row-gap:0;height:81px;min-height:81px;padding:0}
@@ -102,7 +102,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 @media(max-width:560px){.live-records-wrap{max-height:38vh}.vchart{gap:10px}.vchart-col{flex-basis:78px;min-width:78px}.matrixwrap th.live-col{width:104px;min-width:104px;max-width:104px}.live-head{height:81px;min-height:81px}}
 .setlist-modal{position:fixed;inset:0;z-index:1000;background:#000b;display:none;align-items:center;justify-content:center;padding:16px}.setlist-modal.open{display:flex}.setlist-dialog{width:min(620px,100%);max-height:88vh;display:flex;flex-direction:column;background:linear-gradient(145deg,#172337,#101827);border:1px solid #776344;border-radius:13px;box-shadow:0 18px 60px #0009;padding:16px}.setlist-dialog h3{margin:0 0 10px;font-size:16px}.setlist-content{overflow:auto;max-height:70vh;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;padding:12px;border:1px solid var(--line);border-radius:8px;background:#0b1422;color:var(--txt)}.setlist-dialog-actions{display:flex;justify-content:flex-end;margin-top:12px}
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.80</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.81</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
 <section id="live" class="panel"><div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>費用</small><b id="sumCost">—</b></div></div><h2>実績・費用</h2>
@@ -322,8 +322,12 @@ function renderSongs(){
  }).join('')||'<tr><td colspan="'+(dates.length+2)+'">該当する楽曲はありません</td></tr>';
  const max=Math.max(1,...rows.map(x=>Number(x.count)||0)),color=artistColors[artist]||'#65a9ed';
  const lockButton=document.getElementById('songMatrixLock');if(lockButton){lockButton.textContent=songMatrixLocked?'🔒 ロック中':'🔓 ロック解除中';lockButton.setAttribute('aria-pressed',String(songMatrixLocked));}
+ const songLabelCanvas=document.createElement('canvas');
+ const songLabelContext=songLabelCanvas.getContext('2d');
+ songLabelContext.font='8px sans-serif';
+ const longestSongLabelWidth=Math.max(0,...rows.map(x=>songLabelContext.measureText(String(x.title||'')).width));
  const longestSongTitle=Math.max(0,...rows.map(x=>[...String(x.title||'')].length));
- const songLabelHeight=Math.max(12,Math.ceil(longestSongTitle*6.93+4));
+ const songLabelHeight=Math.max(12,Math.ceil(longestSongLabelWidth*0.8660254+8));
  const songChartHeight=176+songLabelHeight;
  document.getElementById('songChart').innerHTML='<div class="song-vchart-wrap" style="--song-label-left:'+Math.ceil(longestSongTitle*2.5+4)+'px"><div class="song-vchart" style="--song-label-height:'+songLabelHeight+'px;--song-chart-height:'+songChartHeight+'px">'+rows.map(x=>{
   const value=Number(x.count)||0,height=value/max*100;
