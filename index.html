@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.117</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.118</title>
 <style>
 :root{color-scheme:dark;--bg:#080d17;--panel:#111b2b;--line:#34445a;--muted:#a7b4c7;--txt:#f4f3ee;--accent:#c6a96b;--gold:#c6a96b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -18%,#25344b 0%,#111a29 38%,#080d17 78%);background-attachment:fixed;color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -762,22 +762,26 @@ function setoliOfficialDateVenue(text,date){
 }
 async function fetchOfficialBumpPerformance(date){
   const year=Number(String(date||'').slice(0,4));
-  // 公式LIVEページの個別アーカイブ。2012年はGOLD GLIDER TOURの公式ページを直接参照する。
+  // 公式LIVEページの個別アーカイブ。確認済みの代表的な公演ページは先に直接照合し、
+  // それ以外の日付・同年の別公演は公式LIVE一覧から候補を追加して照合する。
   const knownPages={
-    2012:{url:'https://www.bumpofchicken.com/live_information/215',title:'BUMP OF CHICKEN GOLD GLIDER TOUR 2012'}
+    2012:{url:'https://www.bumpofchicken.com/live_information/215',title:'BUMP OF CHICKEN GOLD GLIDER TOUR 2012'},
+    2014:{url:'https://www.bumpofchicken.com/live_information/335',title:'BUMP OF CHICKEN TOUR WILLPOLIS 2014 FINAL'}
   };
-  let candidates=[];
-  if(knownPages[year])candidates=[knownPages[year]];
-  else{
-    const list=await readViaJina('https://www.bumpofchicken.com/live_information?sort=desc');
-    const re=/\[([^\]]{2,250})\]\((https?:\/\/www\.bumpofchicken\.com\/live_information\/\d+)[^)]*\)/gi;
-    const seen=new Set();
-    for(const m of list.matchAll(re)){
-      if(seen.has(m[2]))continue;
-      seen.add(m[2]);
-      const around=list.slice(Math.max(0,m.index-180),Math.min(list.length,m.index+500));
-      if(around.includes(String(year)))candidates.push({title:m[1].trim(),url:m[2]});
-    }
+  const candidates=[];
+  const seen=new Set();
+  const addCandidate=item=>{
+    if(!item?.url||seen.has(item.url))return;
+    seen.add(item.url);
+    candidates.push(item);
+  };
+  if(knownPages[year])addCandidate(knownPages[year]);
+  // 既知ページに指定日がない場合にも、同年の別公演ページを探せるよう一覧検索を続ける。
+  const list=await readViaJina('https://www.bumpofchicken.com/live_information?sort=desc');
+  const re=/\[([^\]]{2,250})\]\((https?:\/\/www\.bumpofchicken\.com\/live_information\/\d+)[^)]*\)/gi;
+  for(const m of list.matchAll(re)){
+    const around=list.slice(Math.max(0,m.index-180),Math.min(list.length,m.index+500));
+    if(around.includes(String(year)))addCandidate({title:m[1].trim(),url:m[2]});
   }
   for(const item of candidates){
     const page=await readViaJina(item.url);
