@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.43</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.44</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1220;--panel:#151f30;--line:#29364b;--muted:#9aabc2;--txt:#f4f7fb;--accent:#80b7ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -74,7 +74,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .live-form textarea{width:100%;box-sizing:border-box;resize:vertical;min-height:140px;padding:10px;border:1px solid var(--border,#ccd);border-radius:8px;font:inherit}.setlist-field{grid-column:1/-1}.setlist-source-link{display:inline-block;margin-left:6px;font-size:12px}
 .diagnostic-box{margin-top:12px;padding:12px;border:1px solid #9b7044;border-radius:9px;background:#241d18}.diagnostic-box textarea{width:100%;min-height:190px;resize:vertical;font:12px/1.45 ui-monospace,monospace;white-space:pre-wrap}.diagnostic-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.43</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.44</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>チケット代合計</small><b id="sumCost">—</b></div></div>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
@@ -135,7 +135,7 @@ const imported={"expenses":[],"songs":{"BUMP":[{"title":"BUMP OF CHICKENのテ�
 const yen=n=>typeof n==='number'?n.toLocaleString('ja-JP')+'円':'—';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // 日付表記をYYYY-MM-DDに統一（Excel由来のYYYY-M/Dとdate inputのISO形式に対応）
-// 修正ver.43：演奏履歴を全消去。楽曲名の一覧は残し、披露回数と披露日だけ初期化する。
+// 修正ver.44：演奏履歴を全消去。楽曲名の一覧は残し、披露回数と披露日だけ初期化する。
 Object.values(imported.songs||{}).forEach(list=>{if(Array.isArray(list))list.forEach(song=>{song.count=0;song.performed=[]})});
 const normalizeDate=value=>{
  if(value==null)return '';
@@ -147,7 +147,7 @@ const normalizeDate=value=>{
  return s;
 };
 const safeLoad=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||'null')??fallback}catch(e){return fallback}};
-// 修正ver.43：参加履歴・演奏履歴を再度全消去。楽曲名カタログは保持する。
+// 修正ver.44：参加履歴・演奏履歴を再度全消去。楽曲名カタログは保持する。
 const liveLogWipeKey='liveLogParticipationWipedV43';
 if(localStorage.getItem(liveLogWipeKey)!=='1'){
   ['liveLogAddedExpenses','liveLogExpenseOverrides','liveLogLiveNames','liveLogSongMarks'].forEach(key=>localStorage.removeItem(key));
@@ -967,8 +967,31 @@ function liveFansClean(value){
     .replace(/[|｜]/g,' ').replace(/\s+/g,' ').trim();
 }
 function findLiveFansEventIds(raw){
-  const text=String(raw||'').replace(/\\u002F/gi,'/').replace(/\\\//g,'/').replace(/&amp;/gi,'&');
-  return [...new Set([...text.matchAll(/(?:https?:\/\/)?(?:www\.)?livefans\.jp\/events\/(\d+)/gi)].map(m=>m[1]))];
+  // Bing/Jinaの検索結果はJSONエスケープ・URLエンコード・Bing転送URLの場合がある。
+  const variants=[String(raw||'')];
+  for(let pass=0;pass<2;pass++){
+    const source=variants[variants.length-1];
+    let decoded=source.replace(/\\\\u002f/gi,'/').replace(/\\\\\//g,'/')
+      .replace(/&amp;|&#38;/gi,'&').replace(/&#x2f;|&#47;/gi,'/')
+      .replace(/\\\\u003a/gi,':').replace(/\\\\u0026/gi,'&');
+    try{decoded=decodeURIComponent(decoded);}catch(_){}
+    if(decoded!==source)variants.push(decoded);
+  }
+  for(const source of [...variants]){
+    for(const m of source.matchAll(/[?&]u=a1([A-Za-z0-9_-]+)/g)){
+      try{let x=m[1].replace(/-/g,'+').replace(/_/g,'/');while(x.length%4)x+='=';const value=atob(x);if(value)variants.push(value);}catch(_){}
+    }
+  }
+  const ids=[];
+  const add=id=>{if(/^\d+$/.test(String(id))&&!ids.includes(String(id)))ids.push(String(id));};
+  for(const source of variants){
+    const value=source.replace(/\\\\\//g,'/').replace(/\\\\u002f/gi,'/');
+    for(const m of value.matchAll(/(?:https?:\/\/)?(?:www\.)?livefans\.jp\/events\/(\d+)/gi))add(m[1]);
+    if(/livefans\.jp/i.test(value)){
+      for(const m of value.matchAll(/(?:href\s*=\s*["']|\]\()\s*\/?events\/(\d+)/gi))add(m[1]);
+    }
+  }
+  return ids;
 }
 function parseLiveFansEvent(raw,url,requestedArtist,requestedDate){
   const text=String(raw||'').replace(/\r/g,'');
@@ -1024,27 +1047,40 @@ function parseLiveFansEvent(raw,url,requestedArtist,requestedDate){
     prefecture:prefecture,venue:venue,songs:songs,source:'LiveFans',sourceUrl:url};
 }
 async function searchLiveFansData(artist,date){
-  setoliDiag('LIVE FANS検索開始','アーティスト名・公演日で公開公演ページを検索します。');
+  setoliDiag('LIVE FANS検索開始','BingでLiveFansの公演ページを検索します。Google検索は前回の403/429を避けるため使用しません。');
+  const catalogArtist=resolveLivelogArtist(artist);
+  const artistQuery=setoliNormalize(catalogArtist)==='bump'?'BUMP OF CHICKEN':catalogArtist;
   const dateSlash=date.replace(/-/g,'/');
   const dateDot=date.replace(/-/g,'.');
-  const queries=[
-    {engine:'Google',url:'https://www.google.com/search?q='+encodeURIComponent('site:livefans.jp/events "'+artist+'" "'+dateSlash+'"')},
-    {engine:'Bing',url:'https://www.bing.com/search?q='+encodeURIComponent('site:livefans.jp/events "'+artist+'" "'+dateDot+'"')}
+  const dateJP=date.replace(/-(\d{2})-(\d{2})$/,(m,month,day)=>'年'+Number(month)+'月'+Number(day)+'日');
+  const queryTexts=[
+    'site:livefans.jp/events "'+artistQuery+'" "'+dateDot+'"',
+    'site:livefans.jp/events "'+artistQuery+'" "'+dateSlash+'"',
+    'site:livefans.jp "'+artistQuery+'" "'+dateJP+'"',
+    'LiveFans '+artistQuery+' '+dateDot
   ];
   const ids=[];
-  for(const item of queries){
+  const searchErrors=[];
+  for(let i=0;i<queryTexts.length;i++){
+    const searchUrl='https://www.bing.com/search?q='+encodeURIComponent(queryTexts[i]);
     try{
-      setoliDiag('LIVE FANS公演検索',item.engine+'でアーティスト名・公演日を検索');
-      const result=await readViaJina(item.url);
-      ids.push(...findLiveFansEventIds(result));
-      if(ids.length) break;
+      setoliDiag('LIVE FANS公演検索','Bing検索 '+(i+1)+'/'+queryTexts.length+'：'+queryTexts[i]);
+      const result=await readViaJina(searchUrl);
+      const found=findLiveFansEventIds(result);
+      setoliDiag('LIVE FANS検索結果解析','取得 '+result.length+'文字／LiveFans表記 '+(result.match(/livefans/gi)||[]).length+'箇所／公演URL候補 '+found.length+'件');
+      ids.push(...found);
+      if(ids.length)break;
     }catch(searchError){
-      setoliDiag('LIVE FANS検索エンジン失敗',item.engine+'：'+(searchError.message||searchError));
+      const reason=(searchError.message||String(searchError));
+      searchErrors.push(reason);
+      setoliDiag('LIVE FANS検索エンジン失敗','Bing '+(i+1)+'：'+reason);
     }
   }
-  const unique=[...new Set(ids)].slice(0,6);
+  const unique=[...new Set(ids)].slice(0,8);
   setoliDiag('LIVE FANS公演候補','公演ページ候補 '+unique.length+'件: '+unique.join(', '));
-  if(!unique.length) throw new Error('LIVE FANS検索結果から公演ページを特定できませんでした');
+  if(!unique.length){
+    throw new Error('Bing検索結果からLiveFans公演URLを抽出できませんでした。検索語 '+queryTexts.length+'種類を確認済み／'+(searchErrors.join('／')||'検索応答は取得できましたが候補URLが含まれていません'));
+  }
   const errors=[];
   for(const id of unique){
     const url='https://www.livefans.jp/events/'+id;
@@ -1054,7 +1090,10 @@ async function searchLiveFansData(artist,date){
       if(data.songs.length<3) throw new Error('セットリストの取得曲数が不足しています（'+data.songs.length+'曲）');
       setoliDiag('LIVE FANS公演解析成功',url+'／'+data.liveName+'／'+(data.prefecture||'都道府県不明')+' '+(data.venue||'会場不明')+'／'+data.songs.length+'曲');
       return data;
-    }catch(err){errors.push(id+': '+(err.message||err));setoliDiag('LIVE FANS候補解析失敗',errors[errors.length-1]);}
+    }catch(err){
+      errors.push(id+': '+(err.message||err));
+      setoliDiag('LIVE FANS候補解析失敗',errors[errors.length-1]);
+    }
   }
   throw new Error('LIVE FANS候補ページを解析できませんでした。'+errors.join('／'));
 }
