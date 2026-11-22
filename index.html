@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.147</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.148</title>
 <style>
 :root{color-scheme:dark;--bg:#080d17;--panel:#111b2b;--line:#34445a;--muted:#a7b4c7;--txt:#f4f3ee;--accent:#c6a96b;--gold:#c6a96b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -18%,#25344b 0%,#111a29 38%,#080d17 78%);background-attachment:fixed;color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -361,8 +361,56 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
  background-color:#263a56!important;
 }
 
+
+
+
+
+
+/* ver.148: 固定列の隙間をなくし、統計の金額と円を一体で配置 */
+.live-records-wrap tbody td{
+ background-color:#101a2a!important;
+ background-clip:padding-box!important;
+ box-shadow:inset 0 -1px 0 var(--line),inset -1px 0 0 var(--line)!important;
+}
+.live-records-wrap tbody tr:hover td{background-color:#1b2a40!important}
+.live-records-wrap tbody td:first-child,
+.live-records-wrap tbody td:nth-child(2){
+ position:sticky!important;
+ background-color:#101a2a!important;
+ background-clip:padding-box!important;
+}
+.live-records-wrap tbody td:first-child{
+ left:0!important;z-index:11!important;
+ width:40px!important;min-width:40px!important;max-width:40px!important;
+}
+.live-records-wrap tbody td:nth-child(2){
+ left:40px!important;z-index:10!important;
+ width:82px!important;min-width:82px!important;max-width:82px!important;
+}
+.live-records-wrap tbody tr:hover td:first-child,
+.live-records-wrap tbody tr:hover td:nth-child(2){background-color:#1b2a40!important}
+.summary-financial-row.summary-financial-compact{
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr) 5ch 3ch max-content max-content!important;
+ column-gap:3px!important;
+ align-items:baseline!important;
+}
+.summary-financial-compact .summary-financial-name{grid-column:1!important;grid-row:1!important;min-width:0!important}
+.summary-financial-compact .summary-financial-count{grid-column:2!important;grid-row:1!important;text-align:right!important}
+.summary-financial-compact .summary-financial-main-label{grid-column:3!important;grid-row:1!important;white-space:nowrap!important}
+.summary-financial-compact .summary-financial-main-value{grid-column:4!important;grid-row:1!important;text-align:right!important;white-space:nowrap!important}
+.summary-financial-compact .summary-financial-main-unit{grid-column:5!important;grid-row:1!important;white-space:nowrap!important}
+.summary-financial-compact .summary-financial-ticket-label,
+.summary-financial-compact .summary-financial-ticket-value,
+.summary-financial-compact .summary-financial-ticket-unit{display:none!important}
+@media(max-width:560px){
+ .summary-financial-row.summary-financial-compact{
+  grid-template-columns:minmax(0,1fr) 4ch 3ch max-content max-content!important;
+  column-gap:2px!important;
+ }
+}
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.147</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.148</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
 <section id="live" class="panel"><div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>費用</small><b id="sumCost">—</b></div></div><h2>実績・費用</h2>
@@ -1874,32 +1922,3 @@ rebuildLiveIndex();refreshStats();renderLive();renderSummaries();renderSongs();
 })();
 
 </script></body></html>
-
-
-/* ver.147: 都道府県・会場の統計行を専用幅にし、実績一覧の固定列の横罫線を補強 */
-.summary-financial-row.summary-financial-compact{
- display:grid!important;
- grid-template-columns:minmax(0,1fr) 5ch 3ch minmax(7ch,max-content) 2ch!important;
- column-gap:3px!important;
- align-items:baseline!important;
-}
-.summary-financial-compact .summary-financial-name{grid-column:1!important;grid-row:1!important;min-width:0!important}
-.summary-financial-compact .summary-financial-count{grid-column:2!important;grid-row:1!important;text-align:right!important}
-.summary-financial-compact .summary-financial-main-label{grid-column:3!important;grid-row:1!important;white-space:nowrap!important}
-.summary-financial-compact .summary-financial-main-value{grid-column:4!important;grid-row:1!important;text-align:right!important;white-space:nowrap!important}
-.summary-financial-compact .summary-financial-main-unit{grid-column:5!important;grid-row:1!important;white-space:nowrap!important}
-.summary-financial-compact .summary-financial-ticket-label,
-.summary-financial-compact .summary-financial-ticket-value,
-.summary-financial-compact .summary-financial-ticket-unit{display:none!important}
-@media(max-width:560px){
- .summary-financial-row.summary-financial-compact{
-  grid-template-columns:minmax(0,1fr) 4ch 3ch minmax(6ch,max-content) 1.5ch!important;
-  column-gap:2px!important;
- }
-}
-.live-records-wrap tbody td:first-child,
-.live-records-wrap tbody td:nth-child(2){
- box-shadow:inset 0 -1px 0 var(--line)!important;
-}
-.live-records-wrap tbody td:first-child{z-index:11!important}
-.live-records-wrap tbody td:nth-child(2){z-index:10!important}
