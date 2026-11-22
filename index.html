@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.164</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.165</title>
 <style>
 :root{color-scheme:dark;--bg:#080d17;--panel:#111b2b;--line:#34445a;--muted:#a7b4c7;--txt:#f4f3ee;--accent:#c6a96b;--gold:#c6a96b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -18%,#25344b 0%,#111a29 38%,#080d17 78%);background-attachment:fixed;color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -668,7 +668,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
  overflow:visible!important;
 }
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.164</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.165</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
 <section id="live" class="panel"><div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>費用</small><b id="sumCost">—</b></div></div><h2>実績・費用</h2>
@@ -1435,7 +1435,7 @@ async function fetchOfficialNogizakaPerformance(date){
       const schedule=setoliOfficialDateVenue(page,date);
       if(!schedule)continue;
       const heading=(page.match(/^#\s+(.+)$/m)||[])[1]?.trim()||item.title;
-      const liveName=heading.replace(/^乃木坂46\s*/,'').trim();
+      const liveName=heading.trim(); // 公式タイトルの「乃木坂46」も含めて保持する。
       setoliDiag('乃木坂公式LIVE詳細照合','対象日を確認：'+item.url+'／公演名「'+(liveName||'')+'」／会場「'+schedule.venue+'」／都道府県「'+schedule.prefecture+'」');
       return {liveName,venue:schedule.venue,prefecture:schedule.prefecture,url:item.url,source:'乃木坂46公式LIVE詳細'};
     }
