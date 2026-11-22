@@ -231,7 +231,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 例：
 天体観測
 カルマ"></textarea></label><div class="form-actions"><button type="button" class="secondary-btn" id="lfSetlistSearch">セットリスト掲載サイトを検索</button><span class="muted">検索結果を確認し、セットリストをフォームへ入力して保存します。</span></div><label>チケット代<input type="number" min="0" step="1" id="lfTicket"></label><label>ツアー代<input type="number" min="0" step="1" id="lfTour" placeholder="交通・宿泊セット"><small class="muted">入力時は交通費・宿泊費を合計に含めません</small></label><label>交通費<input type="number" min="0" step="1" id="lfTransport"></label><label>宿泊費<input type="number" min="0" step="1" id="lfLodging"></label><label>備考<textarea id="lfNote" rows="2" placeholder="補足・メモ"></textarea></label><div class="form-actions"><button type="submit" class="primary-btn" id="lfSave">保存</button><button type="button" class="secondary-btn" id="lfCancel">キャンセル</button><span class="muted" id="lfHint"></span></div></form><h2 class="section-subtitle">実績一覧</h2>
-<div class="live-actions record-lock-tools"><button type="button" class="secondary-btn" id="liveRecordsLock" aria-pressed="true">🔒 ロック中</button><button type="button" class="secondary-btn" id="groupSelectedLives" disabled>選択公演をまとめる</button><button type="button" class="secondary-btn" id="ungroupSelectedLives" disabled>まとめを解除</button><span class="muted">初期状態は編集ロック中です。編集・公演のまとめはロック解除後に行えます。</span></div><div class="tablewrap live-records-wrap" id="liveRecordsWrap"><table><thead><tr><th>選択</th><th>日付</th><th>アーティスト</th><th>ライブ名</th><th>都道府県</th><th>会場</th><th>セットリスト</th><th>チケット</th><th>ツアー</th><th>交通</th><th>宿泊</th><th>合計</th><th>備考</th></tr></thead><tbody id="liveBody"></tbody></table></div>
+<div class="live-actions record-lock-tools"><button type="button" class="secondary-btn" id="liveRecordsLock" aria-pressed="true">🔒 ロック中</button><button type="button" class="secondary-btn" id="groupSelectedLives" disabled>選択公演をまとめる</button><button type="button" class="secondary-btn" id="ungroupSelectedLives" disabled>まとめを解除</button><span class="muted">初期状態は編集ロック中です。ロック解除後、行を押すと編集、チェックを付けて複数公演をまとめられます。</span></div><div class="tablewrap live-records-wrap" id="liveRecordsWrap"><table><thead><tr><th>選択</th><th>日付</th><th>アーティスト</th><th>ライブ名</th><th>都道府県</th><th>会場</th><th>セットリスト</th><th>チケット</th><th>ツアー</th><th>交通</th><th>宿泊</th><th>合計</th><th>備考</th></tr></thead><tbody id="liveBody"></tbody></table></div>
 <h2 class="section-subtitle stats-section-title">統計</h2>
 <div class="summary-grid">
 <div class="summary-card"><h3>アーティスト別回数</h3><div id="artistCounts"></div></div>
@@ -392,8 +392,9 @@ const openLiveForm=(item=null)=>{form.reset();editingLiveId=item?item._id:null;e
 function renderLive(){
  const q=document.getElementById('liveSearch').value.toLowerCase(),a=document.getElementById('artistFilter').value;
  let rows=allExpenses.filter(x=>(!a||(a==='__OTHER__'?!['BUMP','乃木坂'].includes(x.artist):x.artist===a))&&[x.date,x.artist,x.prefecture,x.venue,x.liveName].join(' ').toLowerCase().includes(q));
- const groupOrder=new Map();Object.keys(expenseGroups).forEach(gid=>{const members=(expenseGroups[gid].ids||[]).map(id=>allExpenses.find(x=>x._id===id)).filter(Boolean);if(members.length)groupOrder.set(gid,Math.min(...members.map(x=>Date.parse(normalizeDate(x.date)+'T00:00:00')||0)));});
- rows.sort((x,y)=>{const gx=x._groupId,gy=y._groupId;if(gx&&gx===gy)return normalizeDate(x.date).localeCompare(normalizeDate(y.date));const ax=gx?(groupOrder.get(gx)??0):(Date.parse(normalizeDate(x.date)+'T00:00:00')||0),ay=gy?(groupOrder.get(gy)??0):(Date.parse(normalizeDate(y.date)+'T00:00:00')||0);return ax-ay||normalizeDate(x.date).localeCompare(normalizeDate(y.date));});
+ const units=[],seenGroups=new Set();
+ rows.forEach(x=>{if(x._groupId){if(seenGroups.has(x._groupId))return;seenGroups.add(x._groupId);const members=rows.filter(y=>y._groupId===x._groupId).sort((u,v)=>normalizeDate(u.date).localeCompare(normalizeDate(v.date)));if(members.length)units.push({date:normalizeDate(members[0].date),rows:members});}else units.push({date:normalizeDate(x.date),rows:[x]});});
+ units.sort((u,v)=>u.date.localeCompare(v.date));rows=units.flatMap(unit=>unit.rows);
  const runs=new Map();rows.forEach((x,i)=>{if(x._groupId){if(!runs.has(x._groupId))runs.set(x._groupId,[]);runs.get(x._groupId).push(i);}});
  const sharedCells=(x,span)=>'<td rowspan="'+span+'"><span class="artist-tag artist-'+esc(x.artist)+'">'+esc(x.artist)+'</span></td><td rowspan="'+span+'" class="shared-edit-cell">'+esc(cleanLiveName(x.liveName,x.artist,x.date)||'—')+'</td><td rowspan="'+span+'" class="shared-edit-cell">'+esc(x.prefecture||'—')+'</td><td rowspan="'+span+'" class="shared-edit-cell">'+esc(x.venue||'—')+'</td>';
  document.getElementById('liveBody').innerHTML=rows.map((x,i)=>{const first=!x._groupId||runs.get(x._groupId)?.[0]===i,span=x._groupId?(runs.get(x._groupId)?.length||1):1,shared=first?sharedCells(x,span):'',costs=first?'<td rowspan="'+span+'" class="num shared-edit-cell">'+yen(x.tour??x.transportLodging)+'</td><td rowspan="'+span+'" class="num shared-edit-cell">'+yen(x.transport)+'</td><td rowspan="'+span+'" class="num shared-edit-cell">'+yen(x.lodging)+'</td>':'',note=first?'<td rowspan="'+span+'" class="live-note-cell shared-edit-cell">'+esc(x.note||'—')+'</td>':'';return '<tr data-live-row="'+esc(x._id)+'" class="'+(x._groupId?'grouped-live-row':'')+'"><td><input type="checkbox" class="live-select-check" data-live-select="'+esc(x._id)+'" '+(selectedLiveIds.has(x._id)?'checked ':'')+(liveRecordsLocked?'disabled ':'')+'aria-label="'+esc(dateJP(x.date))+'を選択"></td><td>'+esc(dateJP(x.date))+'</td>'+shared+'<td>'+(x.setlist&&x.setlist.trim()?'<button type="button" class="edit-btn" data-view-setlist="'+esc(x._id)+'">セトリ表示（'+x.setlist.trim().split(/\r?\n/).filter(Boolean).length+'曲）</button>':'—')+'</td><td class="num">'+yen(x.ticket)+'</td>'+costs+'<td class="num">'+yen(calcTotal(x))+'</td>'+note+'</tr>';}).join('')||'<tr><td colspan="13">該当する記録はありません</td></tr>';
@@ -415,7 +416,9 @@ function renderSummaries(){
  const venuePrefectureIndex=name=>{const matches=scopedExpenses.filter(x=>canonicalVenue(x.venue)===name).map(x=>prefectureIndex(x.prefecture));return matches.length?Math.min(...matches):999;};
  const venues=[...new Set(scopedExpenses.map(x=>canonicalVenue(x.venue)).filter(Boolean))].sort((a,b)=>venuePrefectureIndex(a)-venuePrefectureIndex(b)||a.localeCompare(b,'ja'));
  const row=(label,value)=>'<div class="summary-row"><span>'+esc(label)+'</span><b>'+esc(value)+'</b></div>';
- const financeRow=(name,count,mainLabel,mainValue,ticketValue=null)=>'<div class="summary-row summary-financial-row"><span class="summary-financial-name">'+esc(name)+'</span><span class="summary-financial-count">'+esc(count||'')+'</span><span class="summary-financial-main-label">'+esc(mainLabel)+'</span><b class="summary-financial-main-value">'+esc(mainValue)+'</b><span class="summary-financial-ticket-label">'+(ticketValue===null?'':'（チケット')+'</span><b class="summary-financial-ticket-value">'+(ticketValue===null?'':esc(ticketValue)+'）')+'</b></div>';
+ const financeParts=value=>{const v=String(value??'');return v.endsWith('円')?[v.slice(0,-1),'円']:[v,''];};
+ const financeRow=(name,count,mainLabel,mainValue,ticketValue=null)=>{const m=financeParts(mainValue),t=financeParts(ticketValue);return '<div class="summary-row summary-financial-row"><span class="summary-financial-name">'+esc(name)+'</span><span class="summary-financial-count">'+esc(count||'')+'</span><span class="summary-financial-main-label">'+esc(mainLabel)+'</span><b class="summary-financial-main-value">'+esc(m[0])+'</b><span class="summary-financial-unit">'+esc(m[1])+'</span><span class="summary-financial-ticket-label">'+(ticketValue===null?'':'（チケット')+'</span><b class="summary-financial-ticket-value">'+(ticketValue===null?'':esc(t[0])+'）')+'</b><span class="summary-financial-unit">'+(ticketValue===null?'':esc(t[1]))+'</span></div>';};
+
  const vertical=(items,metric,format)=>{
   const vals=items.map(x=>metric(x)),max=Math.max(1,...vals);
   return '<div class="vchart">'+items.map((item,i)=>{
@@ -491,7 +494,7 @@ function renderSongs(){
   const played=new Set((x.performed||[]).map(normalizeDate)),recordDates=setlistDates.get(setoliNormalize(x.title))||new Set(),markKey=d=>artist+'::'+x.title+'::'+d;
   recordDates.forEach(d=>played.add(d));
   dates.forEach(d=>{if(savedSongMarks[markKey(d)]===true)played.add(d);if(savedSongMarks[markKey(d)]===false)played.delete(d)});
-  return '<tr data-song-row="'+esc(x.title)+'"><td class="song-title-cell'+(songPerformanceFilter&&songPerformanceFilter.artist===artist&&songPerformanceFilter.title===x.title?' song-filter-active':'')+'" draggable="'+(!songMatrixLocked&&sort!=='count')+'" style="cursor:'+(songMatrixLocked||sort==='count'?'default':'grab')+'" title="'+(songMatrixLocked?'ロック中は並び替えできません':sort==='count'?'披露回数順では並び替えできません':'ここをドラッグして並び替え')+'">'+esc(x.title)+'</td><td class="num">'+(Number(x.count)||0)+'回</td>'+dateGroups.map(group=>{const hit=group.dates.some(d=>played.has(d));return '<td class="'+(hit?'mark':'no-mark')+'">'+(songMatrixLocked?(hit?'○':'—'):'<button class="song-mark-toggle" data-artist="'+esc(artist)+'" data-song="'+esc(x.title)+'" data-date="'+esc(group.dates[0])+'" title="披露有無を切替">'+(hit?'○':'—')+'</button>')+'</td>';}).join('')+'<td><button type="button" class="secondary-btn song-delete-btn" data-song-action="delete" data-artist="'+esc(artist)+'" data-song="'+esc(x.title)+'">削除</button></td></tr>';
+  return '<tr data-song-row="'+esc(x.title)+'"><td class="song-title-cell'+(songPerformanceFilter&&songPerformanceFilter.artist===artist&&songPerformanceFilter.title===x.title?' song-filter-active':'')+'" draggable="'+(!songMatrixLocked&&sort!=='count')+'" style="cursor:'+(songMatrixLocked||sort==='count'?'default':'grab')+'" title="'+(songMatrixLocked?'ロック中は並び替えできません':sort==='count'?'披露回数順では並び替えできません':'ここをドラッグして並び替え')+'">'+esc(x.title)+'</td><td class="num">'+(Number(x.count)||0)+'回</td>'+dateGroups.map(group=>{const hit=group.dates.some(d=>played.has(d));return '<td class="'+(hit?'mark':'no-mark')+'">'+(songMatrixLocked?(hit?'○':'—'):'<button class="song-mark-toggle" data-artist="'+esc(artist)+'" data-song="'+esc(x.title)+'" data-date="'+esc(group.dates[0])+'" data-dates="'+esc(group.dates.join('|'))+'" title="披露有無を切替">'+(hit?'○':'—')+'</button>')+'</td>';}).join('')+'<td><button type="button" class="secondary-btn song-delete-btn" data-song-action="delete" data-artist="'+esc(artist)+'" data-song="'+esc(x.title)+'">削除</button></td></tr>';
  }).join('')||'<tr><td colspan="'+(dates.length+2)+'">該当する楽曲はありません</td></tr>';
  const max=Math.max(1,...rows.map(x=>Number(x.count)||0)),color=artistColors[artist]||'#65a9ed';
  const lockButton=document.getElementById('songMatrixLock');if(lockButton){lockButton.textContent=songMatrixLocked?'🔒 ロック中':'🔓 ロック解除中';lockButton.setAttribute('aria-pressed',String(songMatrixLocked));}
@@ -555,14 +558,9 @@ form.addEventListener('submit',e=>{
   const target=allExpenses.find(x=>x._id===editingLiveId);
   if(target){
    const oldArtist=target.artist,oldDate=normalizeDate(target.date),newDate=normalizeDate(record.date),newArtist=record.artist;
-   if(oldArtist!==newArtist||oldDate!==newDate){
-    (imported.songs[oldArtist]||[]).forEach(song=>{
-     const oldKey=`${oldArtist}::${song.title}::${oldDate}`,newKey=`${newArtist}::${song.title}::${newDate}`;
-     const wasBase=(song.performed||[]).map(normalizeDate).includes(oldDate),hadOverride=Object.prototype.hasOwnProperty.call(savedSongMarks,oldKey);
-     if(wasBase||hadOverride){const current=hadOverride?savedSongMarks[oldKey]:wasBase;savedSongMarks[oldKey]=false;savedSongMarks[newKey]=!!current;}
-    });
-    try{localStorage.setItem('liveLogSongMarks',JSON.stringify(savedSongMarks))}catch(err){}
-   }
+   const migrationMembers=editingGroupId&&expenseGroups[editingGroupId]?(expenseGroups[editingGroupId].ids||[]).map(id=>allExpenses.find(x=>x._id===id)).filter(Boolean):[target];
+   migrationMembers.forEach(member=>{const memberOldArtist=member.artist,memberOldDate=normalizeDate(member.date),memberNewArtist=editingGroupId?newArtist:newArtist,memberNewDate=member===target?newDate:memberOldDate;if(memberOldArtist!==memberNewArtist||memberOldDate!==memberNewDate){(imported.songs[memberOldArtist]||[]).forEach(song=>{const oldKey=`${memberOldArtist}::${song.title}::${memberOldDate}`,newKey=`${memberNewArtist}::${song.title}::${memberNewDate}`,wasBase=(song.performed||[]).map(normalizeDate).includes(memberOldDate),hadOverride=Object.prototype.hasOwnProperty.call(savedSongMarks,oldKey);if(wasBase||hadOverride){const current=hadOverride?savedSongMarks[oldKey]:wasBase;savedSongMarks[oldKey]=false;savedSongMarks[newKey]=!!current;}});}});
+   try{localStorage.setItem('liveLogSongMarks',JSON.stringify(savedSongMarks))}catch(err){}
    if(editingGroupId&&expenseGroups[editingGroupId]){const members=(expenseGroups[editingGroupId].ids||[]).map(id=>allExpenses.find(x=>x._id===id)).filter(Boolean);members.forEach(member=>{if(member===target)Object.assign(member,{date:record.date,year:record.year,ticket:record.ticket,setlist:record.setlist});Object.assign(member,{artist:record.artist,prefecture:record.prefecture,liveName:record.liveName,venue:record.venue,tour:record.tour,transport:record.transport,lodging:record.lodging,note:record.note});});expenseGroups[editingGroupId].shared={artist:record.artist,prefecture:record.prefecture,liveName:record.liveName,venue:record.venue,tour:record.tour,transport:record.transport,lodging:record.lodging,note:record.note};}else Object.assign(target,record);
   }
  }
@@ -679,11 +677,11 @@ document.addEventListener('click',e=>{
 document.getElementById('songBody').addEventListener('click',e=>{
  if(songMatrixLocked)return;
  const b=e.target.closest('.song-mark-toggle');if(!b)return;
- const key=`${b.dataset.artist}::${b.dataset.song}::${b.dataset.date}`;
+ const targetDates=(b.dataset.dates||b.dataset.date||'').split('|').filter(Boolean);
  const ss=imported.songs[b.dataset.artist]||[],song=ss.find(x=>x.title===b.dataset.song);
- const base=(song?.performed||[]).map(normalizeDate).includes(b.dataset.date);
- const current=savedSongMarks[key]===true?true:savedSongMarks[key]===false?false:base;
- savedSongMarks[key]=!current;
+ const currentStates=targetDates.map(d=>{const key=`${b.dataset.artist}::${b.dataset.song}::${d}`,base=(song?.performed||[]).map(normalizeDate).includes(d);return savedSongMarks[key]===true?true:savedSongMarks[key]===false?false:base;});
+ const next=!currentStates.every(Boolean);
+ targetDates.forEach(d=>{savedSongMarks[`${b.dataset.artist}::${b.dataset.song}::${d}`]=next;});
  try{localStorage.setItem('liveLogSongMarks',JSON.stringify(savedSongMarks))}catch(err){alert('披露状況を保存できませんでした。');return}
  renderSongs();
 });
