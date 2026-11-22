@@ -716,8 +716,11 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 
 /* ver.212: 都道府県境界線を会場名ラベル側へ下げる */
 .venue-prefecture-divider{top:calc(var(--venue-chart-height,260px) - 36px)!important;height:18px!important}
+/* ver.218: 都道府県名を境界線間の中央に置き、境界線と同じ高さに揃える */
+.venue-prefecture-band{position:absolute!important;top:calc(var(--venue-chart-height,260px) - 36px)!important;height:18px!important;align-items:center!important;z-index:4;margin-top:0!important;padding-top:0!important;padding-bottom:0!important}
+.venue-prefecture-group{height:18px!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important;line-height:18px!important}
 </style></head><body>
-<header class="app-header"><div class="header-main"><h1>LIVE LOG <span class="version-tag">修正ver.215</span></h1><p>ライブ実績・費用・演奏曲</p></div><div class="last-updated">最終更新：2026/11/22 23:xx</div></header>
+<header class="app-header"><div class="header-main"><h1>LIVE LOG <span class="version-tag">修正ver.218</span></h1><p>ライブ実績・費用・演奏曲</p></div><div class="last-updated">最終更新：2026/11/22 23:xx</div></header>
 <main>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
 <section id="live" class="panel"><div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>費用</small><b id="sumCost">—</b></div></div><h2>実績・費用</h2>
