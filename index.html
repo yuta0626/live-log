@@ -1347,8 +1347,7 @@ async function fetchOfficialBumpPerformance(date){
   return null;
 }
 async function readOfficialNogizakaPage(url,quiet=false){
-  // Jina ReaderのMarkdownはページ言語を英語へ変換する場合があるため、
-  // 乃木坂公式ページはHTMLを直接取得し、日本語のDOMテキストを優先する。
+  // Jina ReaderのMarkdownは英語へ変換される場合があるため、日本語HTMLを優先して解析する。
   const log=(stage,message)=>{if(!quiet)setoliDiag(stage,message);};
   try{
     log('乃木坂公式ページ取得','日本語HTML本文を直接取得します：'+url);
@@ -1368,14 +1367,14 @@ async function readOfficialNogizakaPage(url,quiet=false){
       const parsed=JSON.parse(raw),data=parsed&&parsed.data;
       html=typeof data==='string'?data:String(data&&typeof data==='object'?(data.content||data.html||data.text||''):(parsed.content||parsed.html||parsed.text||''));
     }catch(_){}
-    if(html.length<500||!/<(?:html|body|main|h1)\\b/i.test(html))throw new Error('HTML本文を確認できません');
+    if(html.length<500||!/<(?:html|body|main|h1)\b/i.test(html))throw new Error('HTML本文を確認できません');
     const doc=new DOMParser().parseFromString(html,'text/html');
     const body=doc.body;
     const text=body?(body.innerText||body.textContent||''):'';
-    const heading=(doc.querySelector('h1')?.textContent||doc.querySelector('meta[property="og:title"]')?.content||doc.title||'').replace(/\\s+/g,' ').trim();
-    if(!/[\\u3040-\\u30ff\\u3400-\\u9fff]/.test(heading+' '+text))throw new Error('日本語本文が含まれていません');
+    const heading=(doc.querySelector('h1')?.textContent||doc.querySelector('meta[property="og:title"]')?.content||doc.title||'').replace(/\s+/g,' ').trim();
+    if(!/[\u3040-\u30ff\u3400-\u9fff]/.test(heading+' '+text))throw new Error('日本語本文が含まれていません');
     log('乃木坂公式ページ取得','日本語HTML本文を取得しました（'+text.length+'文字）。');
-    return (heading?'# '+heading+'\\n':'')+text;
+    return (heading?'# '+heading+'\n':'')+text;
   }catch(error){
     log('乃木坂公式ページ取得','日本語HTMLを取得できないため通常取得へ切り替えます：'+(error&&error.message||error));
     return await readViaJina(url);
@@ -1500,7 +1499,7 @@ async function enrichSetoliWithOfficialSite(data){
     if(key==='乃木坂'){
       const hasJapanese=value=>/[\u3040-\u30ff\u3400-\u9fff]/.test(String(value||''));
       data.liveName=hasJapanese(performance.liveName)?performance.liveName:(original.liveName||'');
-      if(data.liveName&&!/^乃木坂46\\s*/.test(data.liveName))data.liveName='乃木坂46 '+data.liveName;
+      if(data.liveName&&!/^乃木坂46\s*/.test(data.liveName))data.liveName='乃木坂46 '+data.liveName;
       data.venue=hasJapanese(performance.venue)?performance.venue:(original.venue||'');
       data.prefecture=performance.prefecture||original.prefecture||'';
       if(!hasJapanese(performance.liveName)||!hasJapanese(performance.venue)||!performance.prefecture){
