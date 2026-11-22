@@ -1273,6 +1273,9 @@ function setoliOfficialDateVenue(text,date){
   let rest=source.slice(hit.index+hit[0].length);
   // 日付直後の曜日表記を、全角・半角括弧の両方で除去する。
   rest=rest.replace(/^[\s|｜・:：,、]*[（(](?=[^）)]{0,12}[月火水木金土日])[^）)]{1,12}[）)]\s*/,'');
+  // 日程行の後ろに続く料金・チケット案内・共通フッターを会場名に含めない。
+  const sectionEnd=/(?:#{1,6}\s*(?:price|料金)|\bprice\b|料金|チケット料金|ticket information|live top|producer|乃木坂46合同会社|所属タレント一覧|jasrac|©|購入・ダウンロード|streaming|\bfaq\b|\bcontact\b)/i;
+  rest=rest.split(sectionEnd)[0];
   // 次の公演日・開場情報より前だけを対象にする。
   rest=rest.split(new RegExp('(?:'+y+'\\s*[年./-]\\s*\\d{1,2}\\s*[月./-]\\s*\\d{1,2}\\s*日?|\\bOPEN\\b|開場|開演|BOC\\s+TICKET)','i'))[0].trim();
   rest=rest.replace(/^[|｜・:：,、\s]+/,'').trim();
