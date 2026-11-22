@@ -1467,11 +1467,9 @@ async function fetchOfficialOdaPerformance(date){
 }
 async function enrichSetoliWithOfficialSite(data){
   const artist=String(data.artist||'').trim(),date=String(data.date||'').trim();
-  // 公演名・会場・都道府県は公式HPで確認できた情報だけを採用し、Setoli由来の値は引き継がない。
+  // 公式HPの値を優先する。ただし乃木坂公式ページが英語化された場合は、
+  // 英語の公演名・会場名や空欄で、Setoli一覧から得た日本語情報を壊さない。
   const original={liveName:data.liveName,venue:data.venue,prefecture:data.prefecture};
-  data.liveName='';
-  data.venue='';
-  data.prefecture='';
   if(!artist||!date){
     setoliDiag('公式HP公演照合','アーティスト名または日付が不足しているため、公演名・会場・都道府県は空欄にします。');
     return data;
@@ -1490,9 +1488,19 @@ async function enrichSetoliWithOfficialSite(data){
       setoliDiag('公式HP公演照合',key+'の公式サイトで'+date+'の公演情報を特定できなかったため、公演名・会場・都道府県は空欄にします。');
       return data;
     }
-    data.liveName=performance.liveName||'';
-    data.venue=performance.venue||'';
-    data.prefecture=performance.prefecture||'';
+    if(key==='乃木坂'){
+      const hasJapanese=value=>/[\u3040-\u30ff\u3400-\u9fff]/.test(String(value||''));
+      data.liveName=hasJapanese(performance.liveName)?performance.liveName:(original.liveName||'');
+      data.venue=hasJapanese(performance.venue)?performance.venue:(original.venue||'');
+      data.prefecture=performance.prefecture||original.prefecture||'';
+      if(!hasJapanese(performance.liveName)||!hasJapanese(performance.venue)||!performance.prefecture){
+        setoliDiag('乃木坂公式情報の言語判定','公式ページの英語表記または未取得項目は採用せず、日本語の公演一覧情報を維持します。');
+      }
+    }else{
+      data.liveName=performance.liveName||'';
+      data.venue=performance.venue||'';
+      data.prefecture=performance.prefecture||'';
+    }
     setoliDiag('公式HP公演照合',
       performance.source+'を参照。'+date+
       '／公演名「'+(original.liveName||'')+'」→「'+(data.liveName||'（空欄）')+'」'+
