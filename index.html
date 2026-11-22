@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.143</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.144</title>
 <style>
 :root{color-scheme:dark;--bg:#080d17;--panel:#111b2b;--line:#34445a;--muted:#a7b4c7;--txt:#f4f3ee;--accent:#c6a96b;--gold:#c6a96b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -18%,#25344b 0%,#111a29 38%,#080d17 78%);background-attachment:fixed;color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -280,8 +280,35 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .matrixwrap thead .live-song-count{min-height:16px;line-height:16px;padding-top:2px}
 .matrixwrap thead th.live-name-group .live-title{display:flex!important;align-items:center;justify-content:center;min-height:100%;border-bottom:1px solid #34445c;padding-bottom:4px;box-sizing:border-box}
 
+
+/* ver.144: 備考欄・統計列・演奏曲ヘッダーの共通レイアウト */
+.live-records-wrap .live-note-cell{white-space:pre!important;min-width:max-content!important;width:max-content!important;max-width:none!important;overflow:visible!important}
+.live-records-wrap table{width:max-content;min-width:100%}
+.summary-financial-row{display:grid!important;grid-template-columns:minmax(0,1fr) 4.5ch 4.5ch minmax(6ch,8ch) 2ch 7ch minmax(6ch,8ch) 2ch!important;column-gap:3px!important;align-items:baseline!important}
+.summary-financial-name{grid-column:1;grid-row:1;min-width:0}
+.summary-financial-count{grid-column:2;grid-row:1;text-align:right}
+.summary-financial-main-label{grid-column:3;grid-row:1;white-space:nowrap}
+.summary-financial-main-value{grid-column:4;grid-row:1;text-align:right}
+.summary-financial-main-unit{grid-column:5;grid-row:1;white-space:nowrap}
+.summary-financial-ticket-label{grid-column:6;grid-row:1;white-space:nowrap}
+.summary-financial-ticket-value{grid-column:7;grid-row:1;text-align:right}
+.summary-financial-ticket-unit{grid-column:8;grid-row:1;white-space:nowrap}
+.summary-financial-ticket-label:empty,.summary-financial-ticket-value:empty,.summary-financial-ticket-unit:empty{visibility:hidden}
+@media(max-width:560px){.summary-financial-row{grid-template-columns:minmax(0,1fr) 4ch 4.5ch minmax(5ch,6ch) 1.5ch 6.5ch minmax(5ch,6ch) 1.5ch!important;column-gap:2px!important;font-size:10px}.summary-financial-row>*{font-size:10px}}
+.matrixwrap{position:relative}
+#songMatrix thead{position:sticky;top:0;z-index:8}
+#songMatrix thead th{position:static!important;top:auto!important;border-top:1px solid #34445c!important;border-left:1px solid #34445c!important;border-right:1px solid #34445c!important;border-bottom:0!important;box-sizing:border-box}
+#songMatrix thead th:first-child,#songMatrix thead th:nth-child(2){position:sticky!important;left:0;z-index:12!important;background:#263a56!important}
+#songMatrix thead th:nth-child(2){left:112px}
+#songMatrix thead tr:last-child th{border-bottom:1px solid #34445c!important}
+#songMatrix thead tr:first-child th[rowspan="3"]{border-bottom:1px solid #34445c!important}
+#songMatrix thead th.live-name-group,#songMatrix thead th.live-col{background:#263a56!important;color:#f1f6ff!important}
+#songMatrix thead th.live-name-group .live-title{display:block!important;width:100%;min-height:0!important;height:auto!important;max-height:none!important;padding:0!important;margin:0!important;border:0!important;line-height:1.3;text-align:center;overflow-wrap:anywhere}
+#songMatrix thead .live-date,#songMatrix thead .live-venue,#songMatrix thead .live-song-count{display:block;box-sizing:border-box;min-height:0!important;height:auto!important;padding:2px!important;margin:0!important;border:0!important;line-height:1.3;text-align:center}
+#songMatrix thead .live-head{display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:2px}
+
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.143</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.144</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
 <section id="live" class="panel"><div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>費用</small><b id="sumCost">—</b></div></div><h2>実績・費用</h2>
@@ -508,7 +535,7 @@ function renderSummaries(){
  const venues=[...new Set(scopedExpenses.map(x=>canonicalVenue(x.venue)).filter(Boolean))].sort((a,b)=>venuePrefectureIndex(a)-venuePrefectureIndex(b)||a.localeCompare(b,'ja'));
  const row=(label,value)=>'<div class="summary-row"><span>'+esc(label)+'</span><b>'+esc(value)+'</b></div>';
  const financeParts=value=>{const v=String(value??'');return v.endsWith('円')?[v.slice(0,-1),'円']:[v,''];};
- const financeRow=(name,count,mainLabel,mainValue,ticketValue=null)=>{const m=financeParts(mainValue),t=financeParts(ticketValue);return '<div class="summary-row summary-financial-row"><span class="summary-financial-name">'+esc(name)+'</span><span class="summary-financial-count">'+esc(count||'')+'</span><span class="summary-financial-main-label">'+esc(mainLabel)+'</span><b class="summary-financial-main-value">'+esc(m[0])+'</b><span class="summary-financial-unit">'+esc(m[1])+'</span><span class="summary-financial-ticket-label">'+(ticketValue===null?'':'（チケット')+'</span><b class="summary-financial-ticket-value">'+(ticketValue===null?'':esc(t[0])+'）')+'</b><span class="summary-financial-unit">'+(ticketValue===null?'':esc(t[1]))+'</span></div>';};
+ const financeRow=(name,count,mainLabel,mainValue,ticketValue=null)=>{const m=financeParts(mainValue),t=financeParts(ticketValue);return '<div class="summary-row summary-financial-row"><span class="summary-financial-name">'+esc(name)+'</span><span class="summary-financial-count">'+esc(count||'')+'</span><span class="summary-financial-main-label">'+esc(mainLabel)+'</span><b class="summary-financial-main-value">'+esc(m[0])+'</b><span class="summary-financial-main-unit">'+esc(m[1])+'</span><span class="summary-financial-ticket-label">'+(ticketValue===null?'':'（チケット')+'</span><b class="summary-financial-ticket-value">'+(ticketValue===null?'':esc(t[0])+'）')+'</b><span class="summary-financial-ticket-unit">'+(ticketValue===null?'':esc(t[1]))+'</span></div>';};
 
  const vertical=(items,metric,format)=>{
   const vals=items.map(x=>metric(x)),max=Math.max(1,...vals);
@@ -581,10 +608,7 @@ function renderSongs(){
  const titleGroups=[];dateGroups.forEach(group=>{const prev=titleGroups[titleGroups.length-1];if(group.name&&prev&&prev.name===group.name)prev.dates.push(...group.dates);else titleGroups.push({name:group.name,dates:[...group.dates]});});
  const header='<tr><th rowspan="3">楽曲</th><th rowspan="3">披露回数</th>'+dateGroups.map(group=>'<th class="live-col"><span class="live-date">'+dateJP(group.dates[0])+'</span></th>').join('')+'<th rowspan="3">操作</th></tr><tr>'+titleGroups.map(group=>'<th class="live-name-group" colspan="'+group.dates.length+'"><span class="live-title">'+esc(group.name||'ライブ名未登録')+'</span></th>').join('')+'</tr><tr>'+dateGroups.map(group=>{const d=group.dates[0],live=liveByDate[artist+'::'+d],venue=live?.venue||'会場未登録',count=liveSongCount(d)+'曲';return '<th class="live-col"><div class="live-head"><span class="live-venue">'+esc(venue)+'</span><span class="live-song-count">'+count+'</span></div></th>';}).join('')+'</tr>';
  document.getElementById('songHead').innerHTML=header;
- const alignHeaderHeights=(selector)=>{const nodes=[...document.querySelectorAll('#songHead '+selector)];if(!nodes.length)return;const max=Math.max(...nodes.map(node=>node.scrollHeight));nodes.forEach(node=>{node.style.minHeight=max+'px';});};
- alignHeaderHeights('.live-date');alignHeaderHeights('.live-title');alignHeaderHeights('.live-venue');alignHeaderHeights('.live-song-count');
- const positionSongHeaderRows=()=>{const head=document.getElementById('songHead');if(!head)return;let offset=0;[...head.querySelectorAll('tr')].forEach(row=>{row.querySelectorAll('th').forEach(th=>{th.style.top=offset+'px';});offset+=row.getBoundingClientRect().height;});};
- positionSongHeaderRows();
+ // ヘッダーはthead全体を固定し、ライブごとの個別高さ調整は行わない。
  document.getElementById('songBody').innerHTML=rows.map(x=>{
   const played=new Set((x.performed||[]).map(normalizeDate)),recordDates=setlistDates.get(setoliNormalize(x.title))||new Set(),markKey=d=>artist+'::'+x.title+'::'+d;
   recordDates.forEach(d=>played.add(d));
