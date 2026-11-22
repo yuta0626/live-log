@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.135</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.136</title>
 <style>
 :root{color-scheme:dark;--bg:#080d17;--panel:#111b2b;--line:#34445a;--muted:#a7b4c7;--txt:#f4f3ee;--accent:#c6a96b;--gold:#c6a96b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -18%,#25344b 0%,#111a29 38%,#080d17 78%);background-attachment:fixed;color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -72,12 +72,12 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .summary-card h3{font-size:14px;margin:0 0 8px}
 .summary-row{display:grid;grid-template-columns:minmax(0,1fr) max-content;align-items:baseline;gap:12px;padding:5px 0;border-bottom:1px solid #26354b;font-size:12px}
 .summary-row:last-child{border-bottom:0}.summary-row span:first-child{overflow:hidden;text-overflow:ellipsis}
-.summary-financial-row{grid-template-columns:minmax(0,1fr) 5ch 5ch 8ch 8ch 8ch;column-gap:4px;align-items:baseline}
+.summary-financial-row{grid-template-columns:minmax(0,1fr) 5ch 5ch 8ch 2ch 8ch 8ch 2ch;column-gap:3px;align-items:baseline}
 .summary-financial-name{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .summary-financial-count,.summary-financial-main-label,.summary-financial-ticket-label{white-space:nowrap;color:#cbd9eb}
 .summary-financial-count,.summary-financial-main-value,.summary-financial-ticket-value{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-.summary-financial-main-label,.summary-financial-ticket-label{text-align:left}
-@media(max-width:560px){.summary-financial-row{grid-template-columns:minmax(0,1fr) 4ch 4ch 6ch 6ch 6ch;column-gap:2px;font-size:10px}.summary-financial-count,.summary-financial-main-label,.summary-financial-ticket-label,.summary-financial-main-value,.summary-financial-ticket-value{font-size:10px}}
+.summary-financial-main-label,.summary-financial-ticket-label{text-align:left}.summary-financial-unit{white-space:nowrap;text-align:left;color:#cbd9eb;font-variant-numeric:tabular-nums}
+@media(max-width:560px){.summary-financial-row{grid-template-columns:minmax(0,1fr) 4ch 4ch 6ch 2ch 6ch 6ch 2ch;column-gap:2px;font-size:10px}.summary-financial-count,.summary-financial-main-label,.summary-financial-ticket-label,.summary-financial-main-value,.summary-financial-ticket-value,.summary-financial-unit{font-size:10px}}
 .summary-row b{white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums;font-feature-settings:'tnum'}
 .summary-metrics{display:grid;gap:4px;margin:6px 0 10px}
 .summary-metric{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:#c8d7e9}
@@ -138,10 +138,10 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .song-ranking-box{padding-bottom:0}.song-vlabel-slot{width:30px;height:var(--song-label-height);min-height:0;box-sizing:border-box;overflow:visible;padding:0;display:block;position:relative}.song-vlabel{display:block;position:absolute;right:15px;top:0;width:max-content;max-width:none;box-sizing:border-box;font-size:8px;line-height:1;color:#cbd9eb;white-space:nowrap;overflow:visible;text-align:left;transform:rotate(-60deg);transform-origin:bottom right;margin:0;padding:0}
 .matrixwrap th.live-col{width:112px;min-width:112px;max-width:112px;white-space:normal;text-align:center;vertical-align:top}
 .live-note-cell{vertical-align:middle!important;text-align:left;white-space:pre-line;line-height:1.5;min-width:150px}
- .live-head{display:grid;grid-template-rows:14px auto auto 14px;justify-items:stretch;align-items:start;row-gap:2px;min-height:0;height:auto;padding:0}
+ .live-head{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:3px;min-height:0;height:auto;padding:0;white-space:normal}
 .live-head .live-date{font-weight:700;color:#f1f6ff;white-space:nowrap;text-align:center;height:14px;line-height:14px}
-.live-head .live-title{font-size:10px;line-height:1.2;font-weight:600;white-space:normal;overflow-wrap:anywhere;min-height:0;height:auto;max-height:none;overflow:visible;border-bottom:1px solid #34445c;padding:0 0 2px;width:100%;text-align:center}
-.live-head .live-venue{font-size:10px;line-height:1.15;color:var(--muted);white-space:normal;overflow-wrap:anywhere;height:auto;max-height:none;min-height:0;overflow:visible;border-bottom:1px solid #34445c;padding:0 0 2px;width:100%;display:block;text-align:center}.live-head .live-song-count{font-size:10px;color:#9fc7f3;font-weight:700;height:14px;line-height:14px;padding-top:0;text-align:center}
+.live-head .live-title{display:block;box-sizing:border-box;min-width:0;width:100%;font-size:10px;line-height:1.3;font-weight:600;white-space:normal;overflow-wrap:anywhere;word-break:normal;min-height:0;height:auto;max-height:none;overflow:visible;border-bottom:1px solid #34445c;padding:0 0 3px;text-align:center}
+.live-head .live-venue{display:block;box-sizing:border-box;min-width:0;width:100%;font-size:10px;line-height:1.25;color:var(--muted);white-space:normal;overflow-wrap:anywhere;word-break:normal;height:auto;max-height:none;min-height:0;overflow:visible;border-bottom:1px solid #34445c;padding:0 0 3px;text-align:center}.live-head .live-song-count{display:block;font-size:10px;color:#9fc7f3;font-weight:700;min-height:14px;line-height:14px;padding-top:0;text-align:center}
 @media(max-width:560px){.live-records-wrap{max-height:38vh}.vchart{gap:3px}.vchart-col{flex-basis:78px;min-width:78px}.matrixwrap th.live-col{width:104px;min-width:104px;max-width:104px}.live-head{height:auto;min-height:0}}
 .setlist-modal{position:fixed;inset:0;z-index:1000;background:#000b;display:none;align-items:center;justify-content:center;padding:16px}.setlist-modal.open{display:flex}.setlist-dialog{width:min(620px,100%);max-height:88vh;display:flex;flex-direction:column;background:linear-gradient(145deg,#172337,#101827);border:1px solid #776344;border-radius:13px;box-shadow:0 18px 60px #0009;padding:16px}.setlist-dialog h3{margin:0 0 10px;font-size:16px}.setlist-content{overflow:auto;max-height:70vh;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;padding:12px;border:1px solid var(--line);border-radius:8px;background:#0b1422;color:var(--txt)}.setlist-dialog-actions{display:flex;justify-content:flex-end;margin-top:12px}
 /* PC・iPhone共通のレスポンシブ調整 */
@@ -190,7 +190,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 }
 
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.135</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.136</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
 <section id="live" class="panel"><div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>費用</small><b id="sumCost">—</b></div></div><h2>実績・費用</h2>
@@ -231,7 +231,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 例：
 天体観測
 カルマ"></textarea></label><div class="form-actions"><button type="button" class="secondary-btn" id="lfSetlistSearch">セットリスト掲載サイトを検索</button><span class="muted">検索結果を確認し、セットリストをフォームへ入力して保存します。</span></div><label>チケット代<input type="number" min="0" step="1" id="lfTicket"></label><label>ツアー代<input type="number" min="0" step="1" id="lfTour" placeholder="交通・宿泊セット"><small class="muted">入力時は交通費・宿泊費を合計に含めません</small></label><label>交通費<input type="number" min="0" step="1" id="lfTransport"></label><label>宿泊費<input type="number" min="0" step="1" id="lfLodging"></label><label>備考<textarea id="lfNote" rows="2" placeholder="補足・メモ"></textarea></label><div class="form-actions"><button type="submit" class="primary-btn" id="lfSave">保存</button><button type="button" class="secondary-btn" id="lfCancel">キャンセル</button><span class="muted" id="lfHint"></span></div></form><h2 class="section-subtitle">実績一覧</h2>
-<div class="tablewrap live-records-wrap" id="liveRecordsWrap"><table><thead><tr><th>日付</th><th>アーティスト</th><th>ライブ名</th><th>都道府県</th><th>会場</th><th>セットリスト</th><th>チケット</th><th>ツアー</th><th>交通</th><th>宿泊</th><th>合計</th><th>備考</th><th>操作</th></tr></thead><tbody id="liveBody"></tbody></table></div>
+<div class="live-actions record-lock-tools"><button type="button" class="secondary-btn" id="liveRecordsLock" aria-pressed="true">🔒 ロック中</button><button type="button" class="secondary-btn" id="groupSelectedLives" disabled>選択公演をまとめる</button><button type="button" class="secondary-btn" id="ungroupSelectedLives" disabled>まとめを解除</button><span class="muted">初期状態は編集ロック中です。編集・公演のまとめはロック解除後に行えます。</span></div><div class="tablewrap live-records-wrap" id="liveRecordsWrap"><table><thead><tr><th>選択</th><th>日付</th><th>アーティスト</th><th>ライブ名</th><th>都道府県</th><th>会場</th><th>セットリスト</th><th>チケット</th><th>ツアー</th><th>交通</th><th>宿泊</th><th>合計</th><th>備考</th></tr></thead><tbody id="liveBody"></tbody></table></div>
 <h2 class="section-subtitle stats-section-title">統計</h2>
 <div class="summary-grid">
 <div class="summary-card"><h3>アーティスト別回数</h3><div id="artistCounts"></div></div>
@@ -335,6 +335,9 @@ Object.entries(deletedSongs).forEach(([artist,list])=>{
 
 // 旧バージョンの一括初期化処理は停止。既存ブラウザの保存データを保持する。
 const savedLiveNames=safeLoad('liveLogLiveNames',{});
+const expenseGroups=safeLoad('liveLogExpenseGroups',{});
+let liveRecordsLocked=safeLoad('liveLogRecordsLocked',true)!==false;
+const selectedLiveIds=new Set();
 const savedSongMarks=safeLoad('liveLogSongMarks',{});
 let songMatrixLocked=safeLoad('liveLogSongMatrixLocked',true)!==false;
 let songPerformanceFilter=null;
@@ -353,6 +356,7 @@ const allExpenses=imported.expenses.map((x,i)=>{
  return item;
 });
 addedExpenses.forEach((x,i)=>{const item={...x,_id:x._id||`added-${i}`};if(item.tour==null&&item.transportLodging!=null)item.tour=item.transportLodging;allExpenses.push(item)});
+Object.entries(expenseGroups).forEach(([gid,g])=>(g.ids||[]).forEach(id=>{const item=allExpenses.find(x=>x._id===id);if(item){item._groupId=gid;Object.assign(item,g.shared||{});}}));
 const artistColors={'BUMP':'#df4b57','乃木坂':'#b56bd1','小田和正':'#62bd83'};
 const dateJP=s=>{const d=normalizeDate(s);return d?d.replaceAll('-','.'):''};
 const cleanLiveName=(value,artist='',date='')=>{
@@ -364,11 +368,14 @@ const normalizeVenueName=value=>String(value||'').replace(/\s+/g,' ').trim();
 const liveByDate={};
 const rebuildLiveIndex=()=>{Object.keys(liveByDate).forEach(k=>delete liveByDate[k]);allExpenses.forEach(x=>{const d=normalizeDate(x.date);if(d)liveByDate[`${x.artist}::${d}`]=x})};
 const saveAdded=()=>{localStorage.setItem('liveLogAddedExpenses',JSON.stringify(allExpenses.filter(x=>String(x._id).startsWith('added-'))))};
+const saveGroups=()=>{Object.keys(expenseGroups).forEach(gid=>{const g=expenseGroups[gid];g.ids=(g.ids||[]).filter(id=>allExpenses.some(x=>x._id===id));if(!g.ids.length)delete expenseGroups[gid];else{const first=allExpenses.find(x=>x._id===g.ids[0]);if(first)g.shared={artist:first.artist,liveName:first.liveName,prefecture:first.prefecture,venue:first.venue,tour:first.tour??first.transportLodging,transport:first.transport,lodging:first.lodging,note:first.note||''};}});localStorage.setItem('liveLogExpenseGroups',JSON.stringify(expenseGroups))};
 const saveOverrides=()=>{const obj={};allExpenses.filter(x=>String(x._id).startsWith('base-')).forEach(x=>{const i=x._id.slice(5);obj[x._id]={year:x.year,date:x.date,artist:x.artist,prefecture:x.prefecture,liveName:x.liveName,venue:x.venue,ticket:x.ticket,tour:x.tour??x.transportLodging,transport:x.transport,lodging:x.lodging,transportLodging:null,total:calcTotal(x),setlist:x.setlist||'',note:x.note||''}});localStorage.setItem('liveLogExpenseOverrides',JSON.stringify(obj))};
 const normalizeStoredLiveNames=()=>{let changed=false;allExpenses.forEach(x=>{const next=cleanLiveName(x.liveName,x.artist,x.date),venue=normalizeVenueName(x.venue);if(next!==String(x.liveName||'')){x.liveName=next;changed=true}if(venue!==String(x.venue||'')){x.venue=venue;changed=true}});if(changed){try{saveAdded();saveOverrides()}catch(_){}}};
 const numVal=v=>typeof v==='number'&&Number.isFinite(v)?v:0;
 const ticketCost=x=>numVal(x.ticket);
+const groupPrimaryId=gid=>{const g=expenseGroups[gid];const members=(g?.ids||[]).map(id=>allExpenses.find(x=>x._id===id)).filter(Boolean).sort((a,b)=>normalizeDate(a.date).localeCompare(normalizeDate(b.date)));return members[0]?._id||null;};
 const otherCost=x=>{
+ if(x._groupId&&groupPrimaryId(x._groupId)!==x._id)return 0;
  const tour=x.tour??x.transportLodging;
  return tour!=null?numVal(tour):numVal(x.transport)+numVal(x.lodging);
 };
@@ -377,15 +384,20 @@ normalizeStoredLiveNames();
 const getArtistFilteredExpenses=()=>{const a=document.getElementById('artistFilter').value;return allExpenses.filter(x=>!a||(a==='__OTHER__'?!['BUMP','乃木坂'].includes(x.artist):x.artist===a))};
 const refreshStats=()=>{const items=getArtistFilteredExpenses();document.getElementById('nLive').textContent=items.length+'件';document.getElementById('sumCost').textContent=yen(items.reduce((s,x)=>s+calcTotal(x),0))};
 let editingLiveId=null;
+let editingGroupId=null;
 const form=document.getElementById('liveForm');
 const formFields={date:document.getElementById('lfDate'),artist:document.getElementById('lfArtist'),prefecture:document.getElementById('lfPref'),liveName:document.getElementById('lfName'),venue:document.getElementById('lfVenue'),ticket:document.getElementById('lfTicket'),transport:document.getElementById('lfTransport'),tour:document.getElementById('lfTour'),lodging:document.getElementById('lfLodging'),setlist:document.getElementById('lfSetlist'),note:document.getElementById('lfNote')};
-const closeLiveForm=()=>{form.classList.add('hidden');form.reset();editingLiveId=null;document.getElementById('liveFormTitle').textContent='ライブ情報を編集';document.getElementById('lfSave').textContent='保存';document.getElementById('lfHint').textContent=''};
-const openLiveForm=(item=null)=>{form.reset();editingLiveId=item?item._id:null;document.getElementById('liveFormTitle').textContent='ライブ情報を編集';document.getElementById('lfSave').textContent='変更を保存';if(item){formFields.date.value=normalizeDate(item.date);formFields.artist.value=item.artist||'';formFields.prefecture.value=item.prefecture||'';formFields.liveName.value=item.liveName||'';formFields.venue.value=item.venue||'';formFields.ticket.value=item.ticket??'';formFields.tour.value=item.tour??item.transportLodging??'';formFields.transport.value=item.transport??'';formFields.lodging.value=item.lodging??'';formFields.setlist.value=item.setlist||'';formFields.note.value=item.note||'';}form.classList.remove('hidden');form.scrollIntoView({behavior:'smooth',block:'nearest'});};
+const closeLiveForm=()=>{form.classList.add('hidden');form.reset();editingLiveId=null;editingGroupId=null;document.getElementById('liveFormTitle').textContent='ライブ情報を編集';document.getElementById('lfSave').textContent='保存';document.getElementById('lfHint').textContent=''};
+const openLiveForm=(item=null)=>{form.reset();editingLiveId=item?item._id:null;editingGroupId=item?item._groupId||null:null;document.getElementById('liveFormTitle').textContent=editingGroupId?'まとめた公演の共通情報を編集':'ライブ情報を編集';document.getElementById('lfSave').textContent='変更を保存';if(item){formFields.date.value=normalizeDate(item.date);formFields.artist.value=item.artist||'';formFields.prefecture.value=item.prefecture||'';formFields.liveName.value=item.liveName||'';formFields.venue.value=item.venue||'';formFields.ticket.value=item.ticket??'';formFields.tour.value=item.tour??item.transportLodging??'';formFields.transport.value=item.transport??'';formFields.lodging.value=item.lodging??'';formFields.setlist.value=item.setlist||'';formFields.note.value=item.note||'';}form.classList.remove('hidden');form.scrollIntoView({behavior:'smooth',block:'nearest'});};
 function renderLive(){
- let q=document.getElementById('liveSearch').value.toLowerCase(),a=document.getElementById('artistFilter').value;
- let rows=allExpenses.filter(x=>(!a||(a==="__OTHER__"?!["BUMP","乃木坂"].includes(x.artist):x.artist===a))&&[x.date,x.artist,x.prefecture,x.venue,x.liveName].join(' ').toLowerCase().includes(q));
- rows.sort((x,y)=>normalizeDate(x.date).localeCompare(normalizeDate(y.date)));
- document.getElementById('liveBody').innerHTML=rows.map(x=>`<tr><td>${esc(dateJP(x.date))}</td><td><span class="artist-tag artist-${esc(x.artist)}">${esc(x.artist)}</span></td><td>${esc(cleanLiveName(x.liveName,x.artist,x.date)||'—')}</td><td>${esc(x.prefecture||'—')}</td><td>${esc(x.venue||'—')}</td><td>${x.setlist&&x.setlist.trim()?`<button type="button" class="edit-btn" data-view-setlist="${esc(x._id)}">セトリ表示（${x.setlist.trim().split(/\r?\n/).filter(Boolean).length}曲）</button>`:'—'}</td><td class="num">${yen(x.ticket)}</td><td class="num">${yen(x.tour??x.transportLodging)}</td><td class="num">${yen(x.transport)}</td><td class="num">${yen(x.lodging)}</td><td class="num">${yen(calcTotal(x))}</td><td class="live-note-cell">${esc(x.note||'—')}</td><td><button type="button" class="edit-btn" data-edit-id="${esc(x._id)}">編集</button></td></tr>`).join('')||'<tr><td colspan="13">該当する記録はありません</td></tr>';
+ const q=document.getElementById('liveSearch').value.toLowerCase(),a=document.getElementById('artistFilter').value;
+ let rows=allExpenses.filter(x=>(!a||(a==='__OTHER__'?!['BUMP','乃木坂'].includes(x.artist):x.artist===a))&&[x.date,x.artist,x.prefecture,x.venue,x.liveName].join(' ').toLowerCase().includes(q));
+ const groupOrder=new Map();Object.keys(expenseGroups).forEach(gid=>{const members=(expenseGroups[gid].ids||[]).map(id=>allExpenses.find(x=>x._id===id)).filter(Boolean);if(members.length)groupOrder.set(gid,Math.min(...members.map(x=>Date.parse(normalizeDate(x.date)+'T00:00:00')||0)));});
+ rows.sort((x,y)=>{const gx=x._groupId,gy=y._groupId;if(gx&&gx===gy)return normalizeDate(x.date).localeCompare(normalizeDate(y.date));const ax=gx?(groupOrder.get(gx)??0):(Date.parse(normalizeDate(x.date)+'T00:00:00')||0),ay=gy?(groupOrder.get(gy)??0):(Date.parse(normalizeDate(y.date)+'T00:00:00')||0);return ax-ay||normalizeDate(x.date).localeCompare(normalizeDate(y.date));});
+ const runs=new Map();rows.forEach((x,i)=>{if(x._groupId){if(!runs.has(x._groupId))runs.set(x._groupId,[]);runs.get(x._groupId).push(i);}});
+ const sharedCells=(x,span)=>'<td rowspan="'+span+'"><span class="artist-tag artist-'+esc(x.artist)+'">'+esc(x.artist)+'</span></td><td rowspan="'+span+'" class="shared-edit-cell">'+esc(cleanLiveName(x.liveName,x.artist,x.date)||'—')+'</td><td rowspan="'+span+'" class="shared-edit-cell">'+esc(x.prefecture||'—')+'</td><td rowspan="'+span+'" class="shared-edit-cell">'+esc(x.venue||'—')+'</td>';
+ document.getElementById('liveBody').innerHTML=rows.map((x,i)=>{const first=!x._groupId||runs.get(x._groupId)?.[0]===i,span=x._groupId?(runs.get(x._groupId)?.length||1):1,shared=first?sharedCells(x,span):'',costs=first?'<td rowspan="'+span+'" class="num shared-edit-cell">'+yen(x.tour??x.transportLodging)+'</td><td rowspan="'+span+'" class="num shared-edit-cell">'+yen(x.transport)+'</td><td rowspan="'+span+'" class="num shared-edit-cell">'+yen(x.lodging)+'</td>':'',note=first?'<td rowspan="'+span+'" class="live-note-cell shared-edit-cell">'+esc(x.note||'—')+'</td>':'';return '<tr data-live-row="'+esc(x._id)+'" class="'+(x._groupId?'grouped-live-row':'')+'"><td><input type="checkbox" class="live-select-check" data-live-select="'+esc(x._id)+'" '+(selectedLiveIds.has(x._id)?'checked ':'')+(liveRecordsLocked?'disabled ':'')+'aria-label="'+esc(dateJP(x.date))+'を選択"></td><td>'+esc(dateJP(x.date))+'</td>'+shared+'<td>'+(x.setlist&&x.setlist.trim()?'<button type="button" class="edit-btn" data-view-setlist="'+esc(x._id)+'">セトリ表示（'+x.setlist.trim().split(/\r?\n/).filter(Boolean).length+'曲）</button>':'—')+'</td><td class="num">'+yen(x.ticket)+'</td>'+costs+'<td class="num">'+yen(calcTotal(x))+'</td>'+note+'</tr>';}).join('')||'<tr><td colspan="13">該当する記録はありません</td></tr>';
+ const lock=document.getElementById('liveRecordsLock');lock.textContent=liveRecordsLocked?'🔒 ロック中':'🔓 ロック解除中';lock.setAttribute('aria-pressed',String(liveRecordsLocked));document.getElementById('groupSelectedLives').disabled=liveRecordsLocked||selectedLiveIds.size<2;document.getElementById('ungroupSelectedLives').disabled=liveRecordsLocked||!rows.some(x=>selectedLiveIds.has(x._id)&&x._groupId);
 }
 
 function renderSummaries(){
@@ -470,10 +482,8 @@ function renderSongs(){
  if(sort==='count') rows.sort((a,b)=>(b.count||0)-(a.count||0)||manualCompare(a,b));
  else rows.sort(manualCompare);
  const liveSongCount=d=>{const live=liveByDate[artist+'::'+d];if(live?.setlist&&String(live.setlist).trim())return String(live.setlist).trim().split(/\r?\n/).filter(Boolean).length;return source.reduce((n,song)=>{const key=artist+'::'+song.title+'::'+d,base=(song.performed||[]).map(normalizeDate).includes(d),v=savedSongMarks[key];return n+((v===true||(v===undefined&&base))?1:0)},0)};
- const header='<tr><th>楽曲</th><th>披露回数</th>'+dates.map(d=>{
-  const live=liveByDate[artist+'::'+d],liveName=cleanLiveName(live?.liveName,artist,d)||'ライブ名未登録',venue=live?.venue||'会場未登録';
-  return '<th class="live-col"><div class="live-head"><span class="live-date">'+dateJP(d)+'</span><span class="live-title">'+esc(liveName)+'</span><span class="live-venue">'+esc(venue)+'</span><span class="live-song-count">'+liveSongCount(d)+'曲</span></div></th>';
- }).join('')+'<th>操作</th></tr>';
+ const dateGroups=[];dates.forEach(d=>{const live=liveByDate[artist+'::'+d],name=cleanLiveName(live?.liveName,artist,d).trim(),prev=dateGroups[dateGroups.length-1];if(name&&prev&&prev.name===name)prev.dates.push(d);else dateGroups.push({name,dates:[d]});});
+ const header='<tr><th>楽曲</th><th>披露回数</th>'+dateGroups.map(group=>{const lives=group.dates.map(d=>liveByDate[artist+'::'+d]),venue=[...new Set(lives.map(x=>x?.venue||'会場未登録'))].join('・'),counts=group.dates.map(d=>liveSongCount(d)+'曲').join(' / ');return '<th class="live-col"><div class="live-head"><span class="live-date">'+group.dates.map(dateJP).join('<br>')+'</span><span class="live-title">'+esc(group.name||'ライブ名未登録')+'</span><span class="live-venue">'+esc(venue)+'</span><span class="live-song-count">'+counts+'</span></div></th>';}).join('')+'<th>操作</th></tr>';
  document.getElementById('songHead').innerHTML=header;
  const alignHeaderHeights=(selector)=>{const nodes=[...document.querySelectorAll('#songHead '+selector)];if(!nodes.length)return;const max=Math.max(...nodes.map(node=>node.scrollHeight));nodes.forEach(node=>{node.style.height=max+'px';node.style.minHeight=max+'px';});};
  alignHeaderHeights('.live-title');alignHeaderHeights('.live-venue');
@@ -481,7 +491,7 @@ function renderSongs(){
   const played=new Set((x.performed||[]).map(normalizeDate)),recordDates=setlistDates.get(setoliNormalize(x.title))||new Set(),markKey=d=>artist+'::'+x.title+'::'+d;
   recordDates.forEach(d=>played.add(d));
   dates.forEach(d=>{if(savedSongMarks[markKey(d)]===true)played.add(d);if(savedSongMarks[markKey(d)]===false)played.delete(d)});
-  return '<tr data-song-row="'+esc(x.title)+'"><td class="song-title-cell'+(songPerformanceFilter&&songPerformanceFilter.artist===artist&&songPerformanceFilter.title===x.title?' song-filter-active':'')+'" draggable="'+(!songMatrixLocked&&sort!=='count')+'" style="cursor:'+(songMatrixLocked||sort==='count'?'default':'grab')+'" title="'+(songMatrixLocked?'ロック中は並び替えできません':sort==='count'?'披露回数順では並び替えできません':'ここをドラッグして並び替え')+'">'+esc(x.title)+'</td><td class="num">'+(Number(x.count)||0)+'回</td>'+dates.map(d=>'<td class="'+(played.has(d)?'mark':'no-mark')+'">'+(songMatrixLocked?(played.has(d)?'○':'—'):'<button class="song-mark-toggle" data-artist="'+esc(artist)+'" data-song="'+esc(x.title)+'" data-date="'+esc(d)+'" title="披露有無を切替">'+(played.has(d)?'○':'—')+'</button>')+'</td>').join('')+'<td><button type="button" class="secondary-btn song-delete-btn" data-song-action="delete" data-artist="'+esc(artist)+'" data-song="'+esc(x.title)+'">削除</button></td></tr>';
+  return '<tr data-song-row="'+esc(x.title)+'"><td class="song-title-cell'+(songPerformanceFilter&&songPerformanceFilter.artist===artist&&songPerformanceFilter.title===x.title?' song-filter-active':'')+'" draggable="'+(!songMatrixLocked&&sort!=='count')+'" style="cursor:'+(songMatrixLocked||sort==='count'?'default':'grab')+'" title="'+(songMatrixLocked?'ロック中は並び替えできません':sort==='count'?'披露回数順では並び替えできません':'ここをドラッグして並び替え')+'">'+esc(x.title)+'</td><td class="num">'+(Number(x.count)||0)+'回</td>'+dateGroups.map(group=>{const hit=group.dates.some(d=>played.has(d));return '<td class="'+(hit?'mark':'no-mark')+'">'+(songMatrixLocked?(hit?'○':'—'):'<button class="song-mark-toggle" data-artist="'+esc(artist)+'" data-song="'+esc(x.title)+'" data-date="'+esc(group.dates[0])+'" title="披露有無を切替">'+(hit?'○':'—')+'</button>')+'</td>';}).join('')+'<td><button type="button" class="secondary-btn song-delete-btn" data-song-action="delete" data-artist="'+esc(artist)+'" data-song="'+esc(x.title)+'">削除</button></td></tr>';
  }).join('')||'<tr><td colspan="'+(dates.length+2)+'">該当する楽曲はありません</td></tr>';
  const max=Math.max(1,...rows.map(x=>Number(x.count)||0)),color=artistColors[artist]||'#65a9ed';
  const lockButton=document.getElementById('songMatrixLock');if(lockButton){lockButton.textContent=songMatrixLocked?'🔒 ロック中':'🔓 ロック解除中';lockButton.setAttribute('aria-pressed',String(songMatrixLocked));}
@@ -506,6 +516,8 @@ document.getElementById('exportDataBtn').addEventListener('click',()=>{
   liveLogLiveNames:safeLoad('liveLogLiveNames',{}),
   liveLogSongMarks:safeLoad('liveLogSongMarks',{}),
   liveLogSongMatrixLocked:safeLoad('liveLogSongMatrixLocked',true),
+  liveLogExpenseGroups:safeLoad('liveLogExpenseGroups',{}),
+  liveLogRecordsLocked:safeLoad('liveLogRecordsLocked',true),
   liveLogCustomSongs:safeLoad('liveLogCustomSongs',{BUMP:[],乃木坂:[]}),
    liveLogSongOrder:safeLoad('liveLogSongOrder',{BUMP:[],乃木坂:[]}),
    liveLogSongOrderSourceVersion:safeLoad('liveLogSongOrderSourceVersion',null)
@@ -520,14 +532,18 @@ document.getElementById('importDataFile').addEventListener('change',async e=>{
   const payload=JSON.parse(await file.text());
   if(payload?.format!=='LIVE_LOG_BACKUP'||payload?.version!==1||!payload.data)throw new Error('LIVE LOGのバックアップファイルではありません');
   if(!confirm('この端末のLIVE LOG保存データをバックアップ内容で置き換えます。続行しますか？'))return;
-  const d=payload.data,keys=['liveLogAddedExpenses','liveLogExpenseOverrides','liveLogLiveNames','liveLogSongMarks','liveLogSongMatrixLocked','liveLogCustomSongs','liveLogSongOrder','liveLogSongOrderSourceVersion'];
+  const d=payload.data,keys=['liveLogAddedExpenses','liveLogExpenseOverrides','liveLogLiveNames','liveLogSongMarks','liveLogSongMatrixLocked','liveLogExpenseGroups','liveLogRecordsLocked','liveLogCustomSongs','liveLogSongOrder','liveLogSongOrderSourceVersion'];
   keys.forEach(k=>{if(Object.prototype.hasOwnProperty.call(d,k))localStorage.setItem(k,JSON.stringify(d[k]));else localStorage.removeItem(k)});
   alert('読み込みました。画面を再読み込みします。');location.reload();
  }catch(err){alert('読み込みに失敗しました：'+err.message)}
  finally{e.target.value=''}
 });
 document.getElementById('lfCancel').addEventListener('click',closeLiveForm);
-document.getElementById('liveBody').addEventListener('click',e=>{const b=e.target.closest('[data-edit-id]');if(!b)return;const item=allExpenses.find(x=>x._id===b.dataset.editId);if(item)openLiveForm(item)});
+document.getElementById('liveRecordsLock').addEventListener('click',()=>{liveRecordsLocked=!liveRecordsLocked;selectedLiveIds.clear();try{localStorage.setItem('liveLogRecordsLocked',JSON.stringify(liveRecordsLocked))}catch(_){}renderLive()});
+document.getElementById('liveBody').addEventListener('change',e=>{const c=e.target.closest('[data-live-select]');if(!c)return;if(c.checked)selectedLiveIds.add(c.dataset.liveSelect);else selectedLiveIds.delete(c.dataset.liveSelect);renderLive()});
+document.getElementById('groupSelectedLives').addEventListener('click',()=>{if(liveRecordsLocked)return;const ids=[...selectedLiveIds],members=ids.map(id=>allExpenses.find(x=>x._id===id)).filter(Boolean);if(ids.length<2||members.length!==ids.length)return;if(members.some(x=>x._groupId)){alert('すでにまとめられた公演を含めずに選択してください。先にまとめを解除できます。');return;}const first=members.slice().sort((a,b)=>normalizeDate(a.date).localeCompare(normalizeDate(b.date)))[0];if(!confirm('選択した公演を1つにまとめます。アーティスト・ライブ名・都道府県・会場・ツアー代・交通費・宿泊費・備考は、日付が最も早い公演の内容を共通情報として使用します。チケット代とセットリストは公演ごとに保持します。よろしいですか？'))return;const gid='bundle-'+Date.now(),shared={artist:first.artist,liveName:first.liveName,prefecture:first.prefecture,venue:first.venue,tour:first.tour??first.transportLodging,transport:first.transport,lodging:first.lodging,note:first.note||''};expenseGroups[gid]={ids:members.map(x=>x._id),shared};members.forEach(x=>{x._groupId=gid;Object.assign(x,shared)});selectedLiveIds.clear();try{saveGroups();saveAdded();saveOverrides()}catch(err){alert('まとめ情報の保存に失敗しました。');return;}rebuildLiveIndex();refreshStats();renderLive();renderSummaries();renderSongs()});
+document.getElementById('ungroupSelectedLives').addEventListener('click',()=>{if(liveRecordsLocked)return;const gids=[...new Set([...selectedLiveIds].map(id=>allExpenses.find(x=>x._id===id)?._groupId).filter(Boolean))];if(!gids.length)return;if(!confirm('選択した公演が属するまとめを解除します。各公演の現在の共通情報はそのまま残ります。よろしいですか？'))return;gids.forEach(gid=>{const g=expenseGroups[gid];(g?.ids||[]).forEach(id=>{const x=allExpenses.find(v=>v._id===id);if(x)delete x._groupId});delete expenseGroups[gid]});selectedLiveIds.clear();try{saveGroups();saveAdded();saveOverrides()}catch(err){alert('まとめ解除の保存に失敗しました。');return;}rebuildLiveIndex();refreshStats();renderLive();renderSummaries();renderSongs()});
+document.getElementById('liveBody').addEventListener('click',e=>{if(e.target.closest('[data-view-setlist],input,button'))return;if(liveRecordsLocked)return;const tr=e.target.closest('[data-live-row]');if(!tr)return;const item=allExpenses.find(x=>x._id===tr.dataset.liveRow);if(item)openLiveForm(item)});
 form.addEventListener('submit',e=>{
  e.preventDefault();
  const val=id=>document.getElementById(id).value.trim();
@@ -547,11 +563,11 @@ form.addEventListener('submit',e=>{
     });
     try{localStorage.setItem('liveLogSongMarks',JSON.stringify(savedSongMarks))}catch(err){}
    }
-   Object.assign(target,record);
+   if(editingGroupId&&expenseGroups[editingGroupId]){const members=(expenseGroups[editingGroupId].ids||[]).map(id=>allExpenses.find(x=>x._id===id)).filter(Boolean);members.forEach(member=>{if(member===target)Object.assign(member,{date:record.date,year:record.year,ticket:record.ticket,setlist:record.setlist});Object.assign(member,{artist:record.artist,prefecture:record.prefecture,liveName:record.liveName,venue:record.venue,tour:record.tour,transport:record.transport,lodging:record.lodging,note:record.note});});expenseGroups[editingGroupId].shared={artist:record.artist,prefecture:record.prefecture,liveName:record.liveName,venue:record.venue,tour:record.tour,transport:record.transport,lodging:record.lodging,note:record.note};}else Object.assign(target,record);
   }
  }
  else{alert('既存のライブ記録を編集するときに使用してください。');return}
- try{saveAdded();saveOverrides();}catch(err){alert('ブラウザへの保存に失敗しました。保存容量や設定を確認してください。');return}
+ try{saveAdded();saveOverrides();saveGroups();}catch(err){alert('ブラウザへの保存に失敗しました。保存容量や設定を確認してください。');return}
  
 rebuildLiveIndex();refreshStats();renderLive();renderSummaries();renderSongs();closeLiveForm();
 });
