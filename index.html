@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.196</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.197</title>
 <style>
 :root{color-scheme:dark;--bg:#080d17;--panel:#111b2b;--line:#34445a;--muted:#a7b4c7;--txt:#f4f3ee;--accent:#c6a96b;--gold:#c6a96b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -18%,#25344b 0%,#111a29 38%,#080d17 78%);background-attachment:fixed;color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -29,7 +29,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .matrixwrap td.mark{text-align:center;color:#8ed1ff;font-size:15px}
 .matrixwrap td.no-mark{text-align:center;color:#42536a}.song-mark-toggle{padding:2px 5px;min-width:28px;border:0;background:transparent;color:inherit;font-size:14px}.song-mark-toggle:hover{background:#315783}
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.196</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.197</title>
 <style>
 :root{color-scheme:dark;--bg:#080d17;--panel:#111b2b;--line:#34445a;--muted:#a7b4c7;--txt:#f4f3ee;--accent:#c6a96b;--gold:#c6a96b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -18%,#25344b 0%,#111a29 38%,#080d17 78%);background-attachment:fixed;color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -697,7 +697,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .venue-prefecture-group:before{left:0}
 .venue-prefecture-group:after{right:0}
 </style></head><body>
-<header class="app-header"><div class="header-main"><h1>LIVE LOG <span class="version-tag">修正ver.196</span></h1><p>ライブ実績・費用・演奏曲</p></div><div class="last-updated">最終更新：2026/11/22 23:xx</div></header>
+<header class="app-header"><div class="header-main"><h1>LIVE LOG <span class="version-tag">修正ver.197</span></h1><p>ライブ実績・費用・演奏曲</p></div><div class="last-updated">最終更新：2026/11/22 23:xx</div></header>
 <main>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
 <section id="live" class="panel"><div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>費用</small><b id="sumCost">—</b></div></div><h2>実績・費用</h2>
@@ -780,7 +780,7 @@ const imported={"expenses":[],"songs":{"BUMP":[{"title":"BUMP OF CHICKENのテ�
 const yen=n=>typeof n==='number'?n.toLocaleString('ja-JP')+'円':'—';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // 日付表記をYYYY-MM-DDに統一（Excel由来のYYYY-M/Dとdate inputのISO形式に対応）
-// 修正ver.196：演奏履歴を全消去。楽曲名の一覧は残し、披露回数と披露日だけ初期化する。
+// 修正ver.197：演奏履歴を全消去。楽曲名の一覧は残し、披露回数と披露日だけ初期化する。
 Object.values(imported.songs||{}).forEach(list=>{if(Array.isArray(list))list.forEach(song=>{song.count=0;song.performed=[]})});
 const normalizeDate=value=>{
  if(value==null)return '';
@@ -2356,20 +2356,26 @@ async function fetchSetoliAndTransfer(){
           if(data.liveName) label=label.replace(data.liveName,' ');
           label=label.replace(/^\s*20\d{2}\s+\d{1,2}[./-]\d{1,2}\s*/,' ')
             .replace(/^\s*[月火水木金土日](?:曜日)?\s*/,' ')
-            // 公演一覧の付加情報（開催地・公演日程・パターン名）を会場名から除去
             .replace(/(?:^|\s)(?:北海道|青森|岩手|宮城|秋田|山形|福島|茨城|栃木|群馬|埼玉|千葉|東京|神奈川|新潟|富山|石川|福井|山梨|長野|岐阜|静岡|愛知|三重|滋賀|京都|大阪|兵庫|奈良|和歌山|鳥取|島根|岡山|広島|山口|徳島|香川|愛媛|高知|福岡|佐賀|長崎|熊本|大分|宮崎|鹿児島|沖縄)(?:県|都|府)?(?:\s*\d+日目)?(?:昼|夜)?公演(?=\s|$)/g,' ')
             .replace(/(?:^|\s)[^\s]*\d+日目(?=\s|$)/g,' ')
             .replace(/(?:^|\s)パターン\s*[A-ZＡ-Ｚ0-9]+(?=\s|$)/g,' ')
             .replace(/\s*(?:単発|セトリあり|セトリなし|\d+曲)\s*/g,' ')
             .replace(/\s+/g,' ').trim();
+          // 「愛知 Zepp Nagoya」のような開催地プレフィックスを会場名から分離
+          const prefectureNames='北海道|青森|岩手|宮城|秋田|山形|福島|茨城|栃木|群馬|埼玉|千葉|東京|神奈川|新潟|富山|石川|福井|山梨|長野|岐阜|静岡|愛知|三重|滋賀|京都|大阪|兵庫|奈良|和歌山|鳥取|島根|岡山|山口|徳島|香川|愛媛|高知|福岡|佐賀|長崎|熊本|大分|宮崎|鹿児島|沖縄|広島';
+          const leadingPref=label.match(new RegExp('^('+prefectureNames+')(?:県|都|府)?\\s+(.+)$'));
+          if(leadingPref){
+            if(!data.prefecture)data.prefecture=leadingPref[1];
+            label=leadingPref[2].trim();
+          }
           if(label && label.length<=100 && !/^(?:ライブ|公演|セトリ)$/i.test(label)){
             data.venue=label;
-            setoliDiag('会場名補完',`公演一覧の表示情報から会場名「${data.venue}」を取得しました。`);
+            setoliDiag('会場名補完','公演一覧の表示情報から会場名「'+data.venue+'」を取得しました。');
           }
         }
         if(!data.prefecture){
-          const pref=candidate.label.match(/(北海道|東京都|京都府|大阪府|[一-龯ぁ-んァ-ヶ]{2,4}県)/);
-          if(pref) data.prefecture=pref[1].replace(/都$/,'').replace(/府$/,'').replace(/県$/,'');
+          const pref=candidate.label.match(/(北海道|東京都|京都府|大阪府|青森県|岩手県|宮城県|秋田県|山形県|福島県|茨城県|栃木県|群馬県|埼玉県|千葉県|神奈川県|新潟県|富山県|石川県|福井県|山梨県|長野県|岐阜県|静岡県|愛知県|三重県|滋賀県|兵庫県|奈良県|和歌山県|鳥取県|島根県|岡山県|広島県|山口県|徳島県|香川県|愛媛県|高知県|福岡県|佐賀県|長崎県|熊本県|大分県|宮崎県|鹿児島県|沖縄県|北海道|東京|京都|大阪|愛知|埼玉|千葉|神奈川)/);
+          if(pref)data.prefecture=pref[1].replace(/都$/,'').replace(/府$/,'').replace(/県$/,'');
         }
         // 都道府県を会場名から外部推定しない。公式HPに記載がなければ既存取得値を維持する。
         found.push({data,label:`${data.date}｜${data.liveName}｜${data.prefecture||'都道府県不明'} ${data.venue}`});
