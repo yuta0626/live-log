@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.160</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.161</title>
 <style>
 :root{color-scheme:dark;--bg:#080d17;--panel:#111b2b;--line:#34445a;--muted:#a7b4c7;--txt:#f4f3ee;--accent:#c6a96b;--gold:#c6a96b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -18%,#25344b 0%,#111a29 38%,#080d17 78%);background-attachment:fixed;color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -668,7 +668,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
  overflow:visible!important;
 }
 </style></head><body>
-<header><h1>LIVE LOG <span class="version-tag">修正ver.160</span></h1><p>ライブ実績・費用・演奏曲</p></header>
+<header><h1>LIVE LOG <span class="version-tag">修正ver.161</span></h1><p>ライブ実績・費用・演奏曲</p></header>
 <main>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
 <section id="live" class="panel"><div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>費用</small><b id="sumCost">—</b></div></div><h2>実績・費用</h2>
@@ -1347,7 +1347,9 @@ async function fetchOfficialBumpPerformance(date){
   return null;
 }
 async function fetchOfficialNogizakaPerformance(date){
-  const listUrl='https://www.nogizaka46.com/s/n46/live?ima=3524';
+  const year=String(date||'').slice(0,4);
+  // 年別LIVE一覧を直接取得する。全期間一覧だと新しい公演に偏り、過去年の詳細ページを取りこぼす。
+  const listUrl='https://www.nogizaka46.com/s/n46/live?dy='+encodeURIComponent(year);
   let list='';
   try{
     list=await readViaJinaEventList(listUrl);
@@ -1386,9 +1388,8 @@ async function fetchOfficialNogizakaPerformance(date){
     add((m[1]||'https://www.nogizaka46.com')+m[2],'',context);
   }
   // 対象年を含む候補を先に調べるが、年の記載位置が離れたページも取りこぼさない。
-  const year=String(date).slice(0,4);
   candidates.sort((a,b)=>Number(b.context.includes(year)||b.title.includes(year))-Number(a.context.includes(year)||a.title.includes(year)));
-  setoliDiag('乃木坂公式LIVE一覧解析','公式一覧から詳細ページ候補を'+candidates.length+'件抽出しました。対象日 '+date+' を各ページの日程で照合します。');
+  setoliDiag('乃木坂公式LIVE一覧解析',year+'年の公式LIVE一覧 '+listUrl+' から詳細ページ候補を'+candidates.length+'件抽出しました。対象日 '+date+' を各ページの日程で照合します。');
   for(const item of candidates){
     const page=await readViaJina(item.url);
     const schedule=setoliOfficialDateVenue(page,date);
