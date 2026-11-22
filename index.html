@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.195</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.196</title>
 <style>
 :root{color-scheme:dark;--bg:#080d17;--panel:#111b2b;--line:#34445a;--muted:#a7b4c7;--txt:#f4f3ee;--accent:#c6a96b;--gold:#c6a96b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -18%,#25344b 0%,#111a29 38%,#080d17 78%);background-attachment:fixed;color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -29,7 +29,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .matrixwrap td.mark{text-align:center;color:#8ed1ff;font-size:15px}
 .matrixwrap td.no-mark{text-align:center;color:#42536a}.song-mark-toggle{padding:2px 5px;min-width:28px;border:0;background:transparent;color:inherit;font-size:14px}.song-mark-toggle:hover{background:#315783}
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.195</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.196</title>
 <style>
 :root{color-scheme:dark;--bg:#080d17;--panel:#111b2b;--line:#34445a;--muted:#a7b4c7;--txt:#f4f3ee;--accent:#c6a96b;--gold:#c6a96b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -18%,#25344b 0%,#111a29 38%,#080d17 78%);background-attachment:fixed;color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -691,13 +691,13 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 /* ver.191: 会場別グラフは都道府県ごとに範囲表示 */
 .venue-chart-scroll{width:100%;max-width:100%;overflow-x:auto;overflow-y:visible;box-sizing:border-box;overscroll-behavior-x:contain}
 .venue-chart-scroll .venue-stack-chart{width:max-content;min-width:max-content;overflow:visible!important;padding-right:10px}
-.venue-prefecture-band{display:flex;align-items:stretch;width:max-content;min-width:max-content;padding-left:var(--venue-label-left,14px);padding-right:10px;box-sizing:border-box;margin-top:8px}
-.venue-prefecture-group{position:relative;flex:0 0 auto;box-sizing:border-box;text-align:center;padding:4px 2px 0;color:#cbd9eb;font-size:10px;line-height:1.2;white-space:nowrap}
-.venue-prefecture-group:before,.venue-prefecture-group:after{content:"";position:absolute;top:-8px;height:8px;border-left:1px solid #8297b3}
+.venue-prefecture-band{display:flex;align-items:stretch;width:max-content;min-width:max-content;padding-left:var(--venue-label-left,14px);padding-right:10px;box-sizing:border-box;margin-top:9px}
+.venue-prefecture-group{position:relative;flex:0 0 auto;box-sizing:border-box;text-align:center;border-top:1px solid #91a8c4;padding:5px 2px 0;color:#cbd9eb;font-size:11px;font-weight:600;line-height:1.2;white-space:nowrap}
+.venue-prefecture-group:before,.venue-prefecture-group:after{content:"";position:absolute;top:-9px;height:9px;border-left:1px solid #91a8c4}
 .venue-prefecture-group:before{left:0}
 .venue-prefecture-group:after{right:0}
 </style></head><body>
-<header class="app-header"><div class="header-main"><h1>LIVE LOG <span class="version-tag">修正ver.195</span></h1><p>ライブ実績・費用・演奏曲</p></div><div class="last-updated">最終更新：2026/11/22 23:xx</div></header>
+<header class="app-header"><div class="header-main"><h1>LIVE LOG <span class="version-tag">修正ver.196</span></h1><p>ライブ実績・費用・演奏曲</p></div><div class="last-updated">最終更新：2026/11/22 23:xx</div></header>
 <main>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
 <section id="live" class="panel"><div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>費用</small><b id="sumCost">—</b></div></div><h2>実績・費用</h2>
@@ -780,7 +780,7 @@ const imported={"expenses":[],"songs":{"BUMP":[{"title":"BUMP OF CHICKENのテ�
 const yen=n=>typeof n==='number'?n.toLocaleString('ja-JP')+'円':'—';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // 日付表記をYYYY-MM-DDに統一（Excel由来のYYYY-M/Dとdate inputのISO形式に対応）
-// 修正ver.195：演奏履歴を全消去。楽曲名の一覧は残し、披露回数と披露日だけ初期化する。
+// 修正ver.196：演奏履歴を全消去。楽曲名の一覧は残し、披露回数と披露日だけ初期化する。
 Object.values(imported.songs||{}).forEach(list=>{if(Array.isArray(list))list.forEach(song=>{song.count=0;song.performed=[]})});
 const normalizeDate=value=>{
  if(value==null)return '';
