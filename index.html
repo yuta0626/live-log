@@ -1466,7 +1466,9 @@ function transferSetoliRecord(data) {
   const songArtist=document.getElementById('songArtist');
   if([...songArtist.options].some(o=>o.value===artist)) songArtist.value=artist;
   renderSongs();
-  setoliStatus.textContent=`転記完了：${data.liveName}／${data.prefecture||'都道府県不明'} ${data.venue||'会場不明'}。セットリスト${data.songs.length}曲中、楽曲一覧の${matched.length}曲に○を付けました。`+(unmatched.length?` 未登録曲：${unmatched.join('、')}`:'');
+  setoliStatus.textContent=data.songs.length
+    ? `転記完了：${data.liveName}／${data.prefecture||'都道府県不明'} ${data.venue||'会場不明'}。セットリスト${data.songs.length}曲中、楽曲一覧の${matched.length}曲に○を付けました。`+(unmatched.length?` 未登録曲：${unmatched.join('、')}`:'')
+    : `公演情報を登録しました：${data.liveName}／${data.prefecture||'都道府県不明'} ${data.venue||'会場不明'}。セットリストはまだ登録されていません。後日、セトリ掲載後に再検索すると曲情報を追加できます。`;
   setoliDiag('転記データ確認',`解析結果：都道府県=${data.prefecture||'（空欄）'}／会場=${data.venue||'（空欄）'}／セットリスト=${data.songs.length}曲`);
   const saved=allExpenses.find(x=>x.artist===artist && normalizeDate(x.date)===data.date);
   setoliDiag('保存後確認',`保存レコード：都道府県=${saved?.prefecture||'（空欄）'}／会場=${saved?.venue||'（空欄）'}／セットリスト=${(saved?.setlist||'').split(/\r?\n/).filter(Boolean).length}曲`);
@@ -1887,7 +1889,33 @@ async function fetchSetoliAndTransfer(){
     setoliDiag('入力確認','アーティスト名と日付を受け取りました');
     setoliStatus.textContent='セトリモンスターのアーティスト一覧から該当アーティストを探しています…';
     setoliDiag('公演一覧検索','アーティストページから対象日の公演URLを検索開始');
-    const candidates=await searchSetoliCandidates(artist,date);
+    let candidates=[];
+    try{
+      candidates=await searchSetoliCandidates(artist,date);
+    }catch(searchError){
+      // Setoli側に公演日だけが掲載され、セトリ個別ページがまだ作成されていない公演は、
+      // 対応アーティストの公式日程で確認できた場合に限り、公演情報のみ先行登録する。
+      setoliDiag('セトリ個別ページ照合','該当日の個別セトリページを特定できませんでした。公式日程で公演の存在を確認します。 '+(searchError?.message||searchError));
+      const officialKey=setoliOfficialArtistKey(artist);
+      let official=null;
+      if(officialKey==='BUMP')official=await fetchOfficialBumpPerformance(date);
+      else if(officialKey==='乃木坂')official=await fetchOfficialNogizakaPerformance(date);
+      else if(officialKey==='小田和正')official=await fetchOfficialOdaPerformance(date);
+      if(!official)throw searchError;
+      const metadataOnly={
+        artist:resolveLivelogArtist(artist),
+        requestedArtist:artist,
+        date,
+        liveName:official.liveName||'',
+        prefecture:official.prefecture||'',
+        venue:official.venue||'',
+        songs:[],
+        url:official.url||''
+      };
+      setoliDiag('公式日程から公演情報を登録','公式サイトで日付を確認できたため、公演名・都道府県・会場を先行登録します。セットリストは未登録のため空欄にします。');
+      transferSetoliRecord(metadataOnly);
+      return;
+    }
     setoliDiag('公演一覧検索',`公演URL候補 ${candidates.length}件: `+candidates.map(x=>x.url).join(', '));
     if(!candidates.length) throw new Error('該当する公演ページが見つかりませんでした。');
     setoliStatus.textContent=`該当日付の公演候補${candidates.length}件を確認しています…`;
