@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.184</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.185</title>
 <style>
 :root{color-scheme:dark;--bg:#080d17;--panel:#111b2b;--line:#34445a;--muted:#a7b4c7;--txt:#f4f3ee;--accent:#c6a96b;--gold:#c6a96b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -18%,#25344b 0%,#111a29 38%,#080d17 78%);background-attachment:fixed;color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -29,7 +29,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .matrixwrap td.mark{text-align:center;color:#8ed1ff;font-size:15px}
 .matrixwrap td.no-mark{text-align:center;color:#42536a}.song-mark-toggle{padding:2px 5px;min-width:28px;border:0;background:transparent;color:inherit;font-size:14px}.song-mark-toggle:hover{background:#315783}
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.184</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.185</title>
 <style>
 :root{color-scheme:dark;--bg:#080d17;--panel:#111b2b;--line:#34445a;--muted:#a7b4c7;--txt:#f4f3ee;--accent:#c6a96b;--gold:#c6a96b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -18%,#25344b 0%,#111a29 38%,#080d17 78%);background-attachment:fixed;color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -689,7 +689,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 #songMatrix thead .live-song-count{border-top:0!important}
 
 </style></head><body>
-<header class="app-header"><div class="header-main"><h1>LIVE LOG <span class="version-tag">修正ver.184</span></h1><p>ライブ実績・費用・演奏曲</p></div><div class="last-updated">最終更新：2026/11/22 17:00</div></header>
+<header class="app-header"><div class="header-main"><h1>LIVE LOG <span class="version-tag">修正ver.185</span></h1><p>ライブ実績・費用・演奏曲</p></div><div class="last-updated">最終更新：2026/11/22 22:46</div></header>
 <main>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
 <section id="live" class="panel"><div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>費用</small><b id="sumCost">—</b></div></div><h2>実績・費用</h2>
@@ -772,7 +772,7 @@ const imported={"expenses":[],"songs":{"BUMP":[{"title":"BUMP OF CHICKENのテ�
 const yen=n=>typeof n==='number'?n.toLocaleString('ja-JP')+'円':'—';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // 日付表記をYYYY-MM-DDに統一（Excel由来のYYYY-M/Dとdate inputのISO形式に対応）
-// 修正ver.184：演奏履歴を全消去。楽曲名の一覧は残し、披露回数と披露日だけ初期化する。
+// 修正ver.185：演奏履歴を全消去。楽曲名の一覧は残し、披露回数と披露日だけ初期化する。
 Object.values(imported.songs||{}).forEach(list=>{if(Array.isArray(list))list.forEach(song=>{song.count=0;song.performed=[]})});
 const normalizeDate=value=>{
  if(value==null)return '';
@@ -1485,37 +1485,67 @@ async function fetchOfficialNogizakaPerformance(date){
       return {liveName:heading,venue:schedule.venue,prefecture:schedule.prefecture,url:item.url,source:'乃木坂46公式LIVE詳細'};
     }
   }
-  // LIVE一覧に詳細ページがない公演は、同月の公式ニュース記事を本文の日付で照合する。
-  // ニュース一覧はリンク形式・日付表記に揺れがあるため、空白を正規化して対象月日を判定する。
+  // LIVE一覧に詳細ページがない場合は、対象月だけでなく開催告知が掲載される前月以前の公式ニュースも確認する。
+  // 公演発表は開催月より前に掲載されることがあるため、最大4か月分のライブ/イベント記事を検索する。
   try{
     const [targetYear,targetMonth,targetDay]=date.split('-').map(Number);
-    const newsUrl='https://www.nogizaka46.com/s/n46/news/list?dy='+targetYear+String(targetMonth).padStart(2,'0');
-    let newsList='';
-    try{newsList=await readViaJinaEventList(newsUrl);}catch(_){newsList=await readViaJina(newsUrl);}
-    const newsLinks=new Set();
-    const newsPattern=/(?:https?:\/\/www\.nogizaka46\.com)?\/s\/n46\/news\/detail\/\d+/gi;
-    for(const match of newsList.matchAll(newsPattern)){
-      try{newsLinks.add(new URL(match[0],'https://www.nogizaka46.com').href);}catch(_){}
+    const targetDate=new Date(targetYear,targetMonth-1,targetDay);
+    const datePatterns=[
+      new RegExp(targetYear+'年\\s*'+targetMonth+'月\\s*'+targetDay+'日'),
+      new RegExp(targetMonth+'月\\s*'+targetDay+'日'),
+      new RegExp(targetYear+'[./年-]\\s*0?'+targetMonth+'[./月-]\\s*0?'+targetDay+'日?')
+    ];
+    const hasTargetDate=value=>datePatterns.some(re=>re.test(String(value||'').normalize('NFKC')));
+    const newsCandidates=new Map();
+    for(let monthOffset=0;monthOffset<4;monthOffset++){
+      const monthDate=new Date(targetYear,targetMonth-1-monthOffset,1);
+      const listYear=monthDate.getFullYear(),listMonth=String(monthDate.getMonth()+1).padStart(2,'0');
+      const newsUrl='https://www.nogizaka46.com/s/n46/news/list?ct=live&dy='+listYear+listMonth;
+      let newsList='';
+      try{newsList=await readViaJinaEventList(newsUrl);}catch(_){newsList=await readViaJina(newsUrl);}
+      const newsLinks=new Set();
+      const newsPattern=/(?:https?:\/\/www\.nogizaka46\.com)?\/s\/n46\/news\/detail\/\d+/gi;
+      for(const match of newsList.matchAll(newsPattern)){
+        try{newsLinks.add(new URL(match[0],'https://www.nogizaka46.com').href);}catch(_){}
+      }
+      for(const url of newsLinks){
+        const relative=url.replace('https://www.nogizaka46.com','');
+        const at=newsList.indexOf(relative);
+        const context=at>=0?newsList.slice(Math.max(0,at-700),Math.min(newsList.length,at+1500)):'';
+        const flat=context.normalize('NFKC').replace(/\s+/g,' ');
+        const titleMatch=flat.match(/(?:ライブ|イベント|コンサート|公演)/);
+        const dateHit=hasTargetDate(flat);
+        const liveContext=!!titleMatch;
+        const previous=newsCandidates.get(url);
+        const score=(dateHit?100:0)+(liveContext?10:0)+(monthOffset===0?2:0);
+        if(!previous||score>previous.score)newsCandidates.set(url,{url,score,dateHit,monthOffset,context:flat});
+      }
+      setoliDiag('乃木坂公式ニュース一覧検索',listYear+'年'+Number(listMonth)+'月の公式ライブ/イベント記事 '+newsLinks.size+'件を確認しました。対象公演日 '+date+' の記載を優先します。');
     }
-    // 先に対象日が同じ行・近傍に記載された記事を優先する。
-    const candidates=[...newsLinks].map(url=>{
-      const at=newsList.indexOf(url.replace('https://www.nogizaka46.com',''));
-      const context=at>=0?newsList.slice(Math.max(0,at-500),Math.min(newsList.length,at+900)):'';
-      const flat=context.replace(/\s+/g,' ');
-      const hasMonthDay=new RegExp(targetMonth+'月[^。]{0,180}?'+targetDay+'日|'+targetMonth+'[./][^。]{0,100}?'+targetDay+'日').test(flat);
-      return {url,priority:hasMonthDay?1:0};
-    }).sort((a,b)=>b.priority-a.priority);
-    for(const item of candidates.slice(0,40)){
-      const page=await readOfficialNogizakaPage(item.url,true);
-      const flat=page.replace(/\s+/g,' ');
-      const hasMonth= new RegExp(targetMonth+'月|'+targetMonth+'[./]').test(flat);
-      const hasDay=new RegExp('(?:^|[^0-9])'+targetDay+'日(?:[^0-9]|$)').test(flat);
-      if(!hasMonth||!hasDay)continue;
-      const eventTitle=(flat.match(/[「『]([^「」『』]{2,120}(?:LIVE|ライブ)[^「」『』]{0,40})[」』]/)||[])[1];
+    const ordered=[...newsCandidates.values()].sort((a,b)=>b.score-a.score);
+    // 一覧の抜粋に開催日が現れている記事を優先。抜粋にない場合もライブ関連の候補を少数確認する。
+    const prioritized=ordered.filter(x=>x.dateHit);
+    const fallback=ordered.filter(x=>!x.dateHit&&/ライブ|イベント|コンサート|公演/.test(x.context));
+    const scan=[...prioritized,...fallback].slice(0,35);
+    setoliDiag('乃木坂公式ニュース候補','対象月と開催前3か月の公式記事 '+newsCandidates.size+'件から、対象日記載 '+prioritized.length+'件を優先して最大'+scan.length+'件を照合します。');
+    for(const item of scan){
+      let page='';
+      try{page=await readOfficialNogizakaPage(item.url,true);}
+      catch(error){
+        setoliDiag('乃木坂公式ニュース記事取得失敗',item.url+'：'+String(error?.message||error));
+        continue;
+      }
+      const flat=page.normalize('NFKC').replace(/\s+/g,' ');
+      if(!hasTargetDate(flat))continue;
+      const eventTitle=(flat.match(/[「『]([^「」『』]{2,160}(?:LIVE|ライブ|コンサート|公演)[^「」『』]{0,50})[」』]/i)||[])[1]
+        ||(page.match(/^#\s+([^\r\n]+)/m)||[])[1]?.replace(/^#\s*/,'');
       if(!eventTitle)continue;
-      const venue=flat.includes('国立代々木競技場第一体育館')||flat.includes('国立代々木競技場 第一体育館')?'国立代々木競技場第一体育館':'';
-      const prefecture=venue?'東京':'';
-      setoliDiag('乃木坂公式ニュース照合','公式ニュース記事で対象日 '+date+' と公演名「'+eventTitle+'」を確認しました。URL='+item.url);
+      // 会場名は公式本文に明記されたものだけを採用。都道府県は本文に明記がある場合のみ入力する。
+      const venueMatch=flat.match(/(?:会場[：:\s]*|[、,]\s*)([^、。，\s]{2,45}(?:アリーナ(?:[A-ZＡ-Ｚ]{0,4})?|ドーム|ホール|体育館|スタジアム|会館|国技館|メッセ))\s*(?:にて開催|で開催|[、。，])/);
+      const venue=venueMatch?venueMatch[1].trim():'';
+      const prefectureMatch=flat.match(/(北海道|東京都|(?:京都|大阪)府|.{2,3}県)(?:内|の会場|公演|会場)/);
+      const prefecture=prefectureMatch?prefectureMatch[1]:'';
+      setoliDiag('乃木坂公式ニュース照合','開催日 '+date+' を公式記事本文で確認しました。公演名「'+eventTitle+'」／会場「'+venue+'」／都道府県「'+prefecture+'」／URL='+item.url);
       return {liveName:eventTitle.trim(),venue,prefecture,url:item.url,source:'乃木坂46公式ニュース'};
     }
   }catch(newsError){
