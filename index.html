@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.259</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.260</title>
 <style>
 :root{color-scheme:dark;--bg:#080d17;--panel:#111b2b;--line:#34445a;--muted:#a7b4c7;--txt:#f4f3ee;--accent:#c6a96b;--gold:#c6a96b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -18%,#25344b 0%,#111a29 38%,#080d17 78%);background-attachment:fixed;color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -150,6 +150,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .live-head .live-venue{display:block;box-sizing:border-box;min-width:0;width:100%;font-size:10px;line-height:1.25;color:var(--muted);white-space:normal;overflow-wrap:anywhere;word-break:normal;height:auto;max-height:none;min-height:0;overflow:visible;border-bottom:1px solid #34445c;padding:0 0 3px;text-align:center}.live-head .live-song-count{display:block;font-size:10px;color:#9fc7f3;font-weight:700;min-height:14px;line-height:14px;padding-top:0;text-align:center}
 @media(max-width:560px){.live-records-wrap{max-height:38vh}.vchart{gap:3px}.vchart-col{flex-basis:78px;min-width:78px}.matrixwrap th.live-col{width:104px;min-width:104px;max-width:104px}.live-head{height:auto;min-height:0}}
 .setlist-modal{position:fixed;inset:0;z-index:1000;background:#000b;display:none;align-items:center;justify-content:center;padding:16px}.setlist-modal.open{display:flex}.setlist-dialog{width:min(620px,100%);max-height:78vh;display:flex;flex-direction:column;background:linear-gradient(145deg,#172337,#101827);border:1px solid #776344;border-radius:13px;box-shadow:0 18px 60px #0009;padding:16px}.setlist-dialog h3{margin:0 0 8px;font-size:16px}.setlist-content{overflow:auto;max-height:60vh;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;padding:10px;border:1px solid var(--line);border-radius:8px;background:#0b1422;color:var(--txt)}.setlist-dialog-actions{display:flex;justify-content:flex-end;margin-top:8px}
+.cleanup-dialog{width:min(980px,100%)}.cleanup-summary{font-size:12px;color:var(--muted);margin:0 0 10px}.cleanup-table-wrap{overflow:auto;max-height:58vh;border:1px solid var(--line);border-radius:8px;background:#0b1422}.cleanup-table{width:100%;border-collapse:collapse;font-size:12px;min-width:620px}.cleanup-table th,.cleanup-table td{padding:8px 9px;border-bottom:1px solid #34445c;text-align:left;vertical-align:top}.cleanup-table th{position:sticky;top:0;background:#1b2a40;color:#dce7f5;white-space:nowrap}.cleanup-table tr:last-child td{border-bottom:0}.cleanup-table td.song{color:#f0c9a0}
 /* PC・iPhone共通のレスポンシブ調整 */
 .live-records-wrap table{font-size:12px}
 .live-records-wrap th,.live-records-wrap td{padding:6px 7px}
@@ -813,7 +814,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 }
 
 </style></head><body>
-<header class="app-header"><div class="header-main"><h1>LIVE LOG <span class="version-tag">修正ver.259</span></h1><p>ライブ実績・費用・演奏曲</p></div><div class="last-updated">最終更新：2026/11/22 23:xx</div></header>
+<header class="app-header"><div class="header-main"><h1>LIVE LOG <span class="version-tag">修正ver.260</span></h1><p>ライブ実績・費用・演奏曲</p></div><div class="last-updated">最終更新：2026/11/22 23:xx</div></header>
 <main>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
 <section id="live" class="panel"><div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>費用</small><b id="sumCost">—</b></div></div><h2>実績・費用</h2>
@@ -888,6 +889,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
   <div class="diagnostic-actions"><button type="button" class="secondary-btn" id="setoliCopyDiagnostic">診断ログをコピー</button><span class="muted" id="setoliCopyStatus"></span></div>
  </div>
 </div>
+<div id="historicalCleanupModal" class="setlist-modal" role="dialog" aria-modal="true" aria-labelledby="historicalCleanupTitle"><div class="setlist-dialog cleanup-dialog"><div class="diagnostic-modal-head"><strong id="historicalCleanupTitle">過去のセトリ整理結果</strong><button type="button" class="secondary-btn" id="historicalCleanupClose">閉じる</button></div><p id="historicalCleanupSummary" class="cleanup-summary"></p><div id="historicalCleanupContent" class="cleanup-table-wrap"></div><div class="setlist-dialog-actions"><button type="button" class="secondary-btn" id="historicalCleanupCloseBottom">閉じる</button></div></div></div>
 <div id="setlistModal" class="setlist-modal" role="dialog" aria-modal="true" aria-labelledby="setlistModalTitle">
  <div class="setlist-dialog"><h3 id="setlistModalTitle">セットリスト</h3><div id="setlistModalContent" class="setlist-content"></div><div class="setlist-dialog-actions"><button type="button" class="secondary-btn" id="setlistModalClose">閉じる</button></div></div>
 </div>
@@ -1222,11 +1224,16 @@ form.addEventListener('submit',e=>{
 rebuildLiveIndex();refreshStats();renderLive();renderSummaries();renderSongs();updateLastUpdated();closeLiveForm();
 });
 document.getElementById('lfSetlistSearch').addEventListener('click',()=>{const date=formFields.date.value,artist=formFields.artist.value.trim();if(!date||!artist){alert('先に日付とアーティスト名を入力してください。');return}const d=date.split('-').reverse().join('-');const q=encodeURIComponent(`${artist} ${d} setlist セットリスト`);window.open(`https://www.google.com/search?q=${q}`,'_blank','noopener')});
+const historicalCleanupModal=document.getElementById('historicalCleanupModal');
+const closeHistoricalCleanup=()=>historicalCleanupModal.classList.remove('open');
+document.getElementById('historicalCleanupClose').addEventListener('click',closeHistoricalCleanup);
+document.getElementById('historicalCleanupCloseBottom').addEventListener('click',closeHistoricalCleanup);
+historicalCleanupModal.addEventListener('click',e=>{if(e.target===historicalCleanupModal)closeHistoricalCleanup()});
 const setlistModal=document.getElementById('setlistModal'),setlistModalContent=document.getElementById('setlistModalContent');
 const closeSetlistModal=()=>setlistModal.classList.remove('open');
 document.getElementById('setlistModalClose').addEventListener('click',closeSetlistModal);
 setlistModal.addEventListener('click',e=>{if(e.target===setlistModal)closeSetlistModal()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(setlistModal.classList.contains('open'))closeSetlistModal();document.getElementById('setoliDiagnosticBox').classList.remove('open')}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(setlistModal.classList.contains('open'))closeSetlistModal();closeHistoricalCleanup();document.getElementById('setoliDiagnosticBox').classList.remove('open')}});
 document.getElementById('liveBody').addEventListener('click',e=>{const b=e.target.closest('[data-view-setlist]');if(!b)return;const item=allExpenses.find(x=>x._id===b.dataset.viewSetlist);if(!item)return;setlistModalContent.textContent=String(item.setlist||'').trim();setlistModal.classList.add('open');document.getElementById('setlistModalClose').focus()});
 document.getElementById('liveSearch').addEventListener('input',renderLive);
 document.getElementById('artistFilter').addEventListener('change',()=>{renderLive();refreshStats();renderSummaries()});
@@ -1371,13 +1378,15 @@ const cleanHistoricalSetlists=()=>{
  }catch(error){
   throw new Error('過去セトリの整理結果を保存できませんでした。'+(error?.message||error));
  }
- const lines=changes.map(({record,removed})=>{
-  const date=normalizeDate(record.date)||'日付不明';
-  const name=record.liveName||'公演名不明';
-  const venue=record.venue?'／'+record.venue:'';
-  return date+' '+(record.artist||'')+'「'+name+'」'+venue+'\n  削除：'+removed.join('、');
+ const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+ const rows=changes.flatMap(({record,removed})=>{
+  const base={date:normalizeDate(record.date)||'日付不明',artist:record.artist||'不明',name:record.liveName||'公演名不明',venue:record.venue||'—'};
+  return (removed.length?removed:['（曲名の統一・重複整理）']).map(song=>({...base,song}));
  });
- setoliStatus.textContent='過去のセトリを演奏曲一覧に合わせて整理しました。\n'+lines.join('\n');
+ document.getElementById('historicalCleanupSummary').textContent='演奏曲一覧に登録されていない曲を過去のセトリから削除しました。対象 '+changes.length+'公演／削除 '+changes.reduce((n,x)=>n+x.removed.length,0)+'曲';
+ document.getElementById('historicalCleanupContent').innerHTML='<table class="cleanup-table"><thead><tr><th>公演日</th><th>アーティスト</th><th>公演名</th><th>会場</th><th>削除した曲</th></tr></thead><tbody>'+rows.map(row=>'<tr><td>'+escapeHtml(row.date)+'</td><td>'+escapeHtml(row.artist)+'</td><td>'+escapeHtml(row.name)+'</td><td>'+escapeHtml(row.venue)+'</td><td class="song">'+escapeHtml(row.song)+'</td></tr>').join('')+'</tbody></table>';
+ setoliStatus.textContent='過去のセトリを整理しました。変更内容はポップアップで確認できます。';
+ document.getElementById('historicalCleanupModal').classList.add('open');
 };
 cleanHistoricalSetlists();
 const setoliDateISO = raw => {
