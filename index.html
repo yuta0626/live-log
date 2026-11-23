@@ -1618,7 +1618,7 @@ async function fetchOfficialNogizakaPerformance(date){
       }
       // 会場名は公式本文に明記されたものだけを採用。都道府県は本文に明記がある場合のみ入力する。
       const venueMatch=flat.match(/(?:会場[：:\s]*|[、,]\s*)([^、。，\s]{2,45}(?:アリーナ(?:[A-ZＡ-Ｚ]{0,4})?|ドーム|ホール|体育館|スタジアム|会館|国技館|メッセ))\s*(?:にて開催|で開催|[、。，])/);
-      const venue=venueMatch?venueMatch[1].trim().replace(/^横浜(?=ぴあアリーナ)/,''):'';
+      const venue=venueMatch?venueMatch[1].trim().replace(/^(?:東京都?|東京)[・･、,]/,'').replace(/^横浜(?=ぴあアリーナ)/,''):'';
       const prefectureMatch=flat.match(/(北海道|東京都|(?:京都|大阪)府|.{2,3}県)(?:内|の会場|公演|会場)/);
       const prefecture=prefectureMatch?prefectureMatch[1]:'';
       setoliDiag('乃木坂公式ニュース照合','開催日 '+date+' を公式記事本文で確認しました。公演名「'+eventTitle+'」／会場「'+venue+'」／都道府県「'+prefecture+'」／URL='+item.url);
