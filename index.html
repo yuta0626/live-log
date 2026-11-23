@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.254</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.255</title>
 <style>
 :root{color-scheme:dark;--bg:#080d17;--panel:#111b2b;--line:#34445a;--muted:#a7b4c7;--txt:#f4f3ee;--accent:#c6a96b;--gold:#c6a96b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -18%,#25344b 0%,#111a29 38%,#080d17 78%);background-attachment:fixed;color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -728,7 +728,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
 .vchart-segment{overflow:visible!important}
 .vchart-segment span{position:relative;z-index:5;display:block;width:max-content;max-width:none;white-space:nowrap;overflow:visible;text-align:center}
 
-/* ver.254: iPhone専用の表示サイズ・見出し調整 */
+/* ver.255: iPhone表示と統計配色・見出し調整 */
 @media(max-width:560px){
  /* 実績一覧：選択・日付だけを固定し、アーティスト列から右を横スクロール */
  .live-records-wrap th:first-child,
@@ -746,16 +746,19 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
  .live-records-wrap .live-fixed-col-6{
   position:static!important;left:auto!important;
  }
- /* 実績一覧：セトリ表示ボタンをコンパクトに */
+ /* 実績一覧：セトリ表示ボタンの縦幅を縮小 */
  .live-records-wrap [data-view-setlist]{
-  padding:3px 6px!important;
+  padding:1px 6px!important;
+  min-height:0!important;
+  line-height:1.1!important;
   font-size:10px!important;
-  line-height:1.2!important;
   border-radius:6px!important;
  }
  /* 統計：棒グラフの間隔は前回と今回の中間に調整 */
  .vchart{gap:5px!important}
  .vchart-col{flex-basis:52px!important;min-width:52px!important;width:52px!important}
+ .venue-stack-chart .venue-vlabel-slot{width:52px!important}
+ .venue-stack-chart .venue-vlabel{right:26px!important}
  /* 演奏曲表：楽曲列を縮め、見出しと回数列を分離 */
  #songMatrix th:first-child,#songMatrix td:first-child{
   width:88px!important;min-width:88px!important;max-width:88px!important;
@@ -777,21 +780,40 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
   padding-right:7px!important;
   font-variant-numeric:tabular-nums;
  }
- /* 公演名の文字サイズ・太さを全列で統一 */
- #songMatrix thead .live-title{
+ /* 削除ボタンの縦幅を縮小 */
+ #songMatrix tbody .song-delete-btn{
+  padding:1px 6px!important;
+  min-height:0!important;
+  line-height:1.1!important;
+  font-size:10px!important;
+ }
+ /* 公演名の書式を列幅・継承に左右されず全画面で統一 */
+ #songMatrix thead th.live-name-group > .live-title{
   display:block!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:0!important;
   font-family:inherit!important;
   font-size:9px!important;
   font-weight:600!important;
   line-height:1.25!important;
-  letter-spacing:normal!important;
+  letter-spacing:0!important;
+  text-transform:none!important;
   transform:none!important;
   zoom:1!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  word-break:normal!important;
+  text-align:center!important;
  }
 }
 
 </style></head><body>
-<header class="app-header"><div class="header-main"><h1>LIVE LOG <span class="version-tag">修正ver.254</span></h1><p>ライブ実績・費用・演奏曲</p></div><div class="last-updated">最終更新：2026/11/22 23:xx</div></header>
+<header class="app-header"><div class="header-main"><h1>LIVE LOG <span class="version-tag">修正ver.255</span></h1><p>ライブ実績・費用・演奏曲</p></div><div class="last-updated">最終更新：2026/11/22 23:xx</div></header>
 <main>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
 <section id="live" class="panel"><div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>費用</small><b id="sumCost">—</b></div></div><h2>実績・費用</h2>
@@ -1040,17 +1062,18 @@ function renderSummaries(){
    return '<div class="vchart-col"><span class="vchart-value">'+esc(format(value))+'</span><div class="vchart-stack"><div class="vchart-segment" style="height:'+height+'%;background:#70a9ed"></div></div><span class="vchart-label" title="'+esc(item[0])+'">'+esc(item[0])+'</span></div>';
   }).join('')+'</div>';
  };
- const artistLegend=()=>'<div class="vchart-legend">'+focusArtists.map((a,i)=>'<span><i style="background:'+(i===0?'#df4b57':'#b56bd1')+'"></i>'+esc(a)+'</span>').join('')+'</div>';
+ const artistColor=a=>a==='BUMP'?'#df4b57':a==='乃木坂'?'#b56bd1':'#70a9ed';
+  const artistLegend=()=>'<div class="vchart-legend">'+focusArtists.map(a=>'<span><i style="background:'+artistColor(a)+'"></i>'+esc(a)+'</span>').join('')+'</div>';
  const stackedCategory=(items,metric,chartClass='')=>{
   const vals=items.map(item=>focusArtists.map(a=>sum(scopedExpenses.filter(x=>x.artist===a&&(item.field==='venue'?canonicalVenue(x.venue):String(x[item.field]||'').trim())===item.name),metric)));
   const totals=vals.map(v=>v.reduce((a,b)=>a+b,0)),max=Math.max(1,...totals);
   const venueLabels=chartClass==='venue-stack-chart'?items.map(x=>String(x.displayName||x.name||'')):[];const venueCanvas=chartClass==='venue-stack-chart'?document.createElement('canvas'):null;const venueCtx=venueCanvas?.getContext('2d');if(venueCtx)venueCtx.font='9px sans-serif';const venueLabelWidths=venueCtx?venueLabels.map(x=>venueCtx.measureText(x).width):venueLabels.map(x=>[...x].length*9);const venueLabelWidth=Math.max(0,...venueLabelWidths);const venueLabelChars=venueLabels.length?Math.max(0,...venueLabels.map(x=>[...x].length)):0;const venueLabelHeight=venueLabels.length?Math.max(12,Math.ceil(venueLabelWidth*0.8660254+44)):12;const venueChartHeight=220+venueLabelHeight;const venueGroups=[];if(chartClass==='venue-stack-chart'){items.forEach((item,i)=>{const raw=venuePrefectureLabel(item.name);const label=raw?prefectureKey(raw):'未登録';const last=venueGroups[venueGroups.length-1];if(last&&last.label===label){last.count++;last.endIndex=i;}else venueGroups.push({label,count:1,startIndex:i,endIndex:i});});}
   const venueStyle=chartClass==='venue-stack-chart'?' style="--venue-label-left:'+Math.ceil(venueLabelChars*2.5+4)+'px;--venue-label-height:'+venueLabelHeight+'px;--venue-chart-height:'+venueChartHeight+'px"':'';
   const venueOpen=chartClass==='venue-stack-chart'?'<div class="venue-chart-scroll"'+venueStyle+'><div class="vchart category-stack-chart venue-stack-chart">':'<div class="vchart category-stack-chart '+chartClass+'">';
-  const venueLabelStartX=index=>{const left=Math.ceil(venueLabelChars*2.5+4);return index<venueLabelWidths.length?left+index*53+25-venueLabelWidths[index]*.5-7.8:left+index*53;};const venueBoundaryX=index=>venueLabelStartX(index)-(index>0?5:0);const venueClose=chartClass==='venue-stack-chart'?'<div class="venue-prefecture-dividers">'+venueGroups.map((g,gi)=>(gi>0?'<i class="venue-prefecture-divider" style="left:'+venueBoundaryX(g.startIndex).toFixed(1)+'px"></i>':'')+(gi<venueGroups.length-1?'<i class="venue-prefecture-divider" style="left:'+venueBoundaryX(g.endIndex+1).toFixed(1)+'px"></i>':'')).join('')+'</div><div class="venue-prefecture-band" style="left:'+(venueGroups.length?venueBoundaryX(venueGroups[0].startIndex):0).toFixed(1)+'px;margin-left:0;padding-left:0">'+venueGroups.map(g=>'<span class="venue-prefecture-group" style="width:'+(venueBoundaryX(g.endIndex+1)-venueBoundaryX(g.startIndex)).toFixed(1)+'px">'+esc(g.label)+'</span>').join('')+'</div></div>':'';
+  const venueMobile=window.matchMedia('(max-width:560px)').matches,venueStep=venueMobile?57:53,venueHalf=venueMobile?26:25;const venueLabelStartX=index=>{const left=Math.ceil(venueLabelChars*2.5+4);return index<venueLabelWidths.length?left+index*venueStep+venueHalf-venueLabelWidths[index]*.5-7.8:left+index*venueStep;};const venueBoundaryX=index=>venueLabelStartX(index)-(index>0?5:0);const venueClose=chartClass==='venue-stack-chart'?'<div class="venue-prefecture-dividers">'+venueGroups.map((g,gi)=>(gi>0?'<i class="venue-prefecture-divider" style="left:'+venueBoundaryX(g.startIndex).toFixed(1)+'px"></i>':'')+(gi<venueGroups.length-1?'<i class="venue-prefecture-divider" style="left:'+venueBoundaryX(g.endIndex+1).toFixed(1)+'px"></i>':'')).join('')+'</div><div class="venue-prefecture-band" style="left:'+(venueGroups.length?venueBoundaryX(venueGroups[0].startIndex):0).toFixed(1)+'px;margin-left:0;padding-left:0">'+venueGroups.map(g=>'<span class="venue-prefecture-group" style="width:'+(venueBoundaryX(g.endIndex+1)-venueBoundaryX(g.startIndex)).toFixed(1)+'px">'+esc(g.label)+'</span>').join('')+'</div></div>':'';
   return venueOpen+items.map((item,i)=>{
    const pair=vals[i];
-   return '<div class="vchart-col"><span class="vchart-value">'+esc(yenOrCount(totals[i],metric))+'</span><div class="vchart-stack">'+pair.map((v,j)=>'<div class="vchart-segment" style="height:'+(v/max*100)+'%;background:'+(j===0?'#df4b57':'#b56bd1')+'">'+(v>0?'<span>'+esc(metric===calcTotal||metric===ticketCost?Number(v).toLocaleString('ja-JP'):String(v))+'</span>':'')+'</div>').join('')+'</div>'+(chartClass==='venue-stack-chart'?'<span class="venue-vlabel-slot"><span class="venue-vlabel" title="'+esc(item.displayName||item.name)+'">'+esc(item.displayName||item.name)+'</span></span>':'<span class="vchart-label" title="'+esc(item.name)+'">'+esc(item.name)+'</span>')+'</div>';
+   return '<div class="vchart-col"><span class="vchart-value">'+esc(yenOrCount(totals[i],metric))+'</span><div class="vchart-stack">'+pair.map((v,j)=>'<div class="vchart-segment" style="height:'+(v/max*100)+'%;background:'+artistColor(focusArtists[j])+'">'+(v>0?'<span>'+esc(metric===calcTotal||metric===ticketCost?Number(v).toLocaleString('ja-JP'):String(v))+'</span>':'')+'</div>').join('')+'</div>'+(chartClass==='venue-stack-chart'?'<span class="venue-vlabel-slot"><span class="venue-vlabel" title="'+esc(item.displayName||item.name)+'">'+esc(item.displayName||item.name)+'</span></span>':'<span class="vchart-label" title="'+esc(item.name)+'">'+esc(item.name)+'</span>')+'</div>';
   }).join('')+'</div>'+venueClose+artistLegend();
  };
  const stackedYears=metric=>{
@@ -1058,7 +1081,7 @@ function renderSummaries(){
   const max=Math.max(1,...totals);
   return '<div class="vchart">'+years.map((y,yi)=>{
    const vals=focusArtists.map(a=>sum(scopedExpenses.filter(x=>x.artist===a&&normalizeDate(x.date).startsWith(y)),metric));
-   return '<div class="vchart-col"><span class="vchart-value">'+esc(yenOrCount(totals[yi],metric))+'</span><div class="vchart-stack">'+vals.map((v,i)=>'<div class="vchart-segment" style="height:'+(v/max*100)+'%;background:'+(i===0?'#df4b57':'#b56bd1')+'">'+(v>0?'<span>'+esc(metric===calcTotal||metric===ticketCost?Number(v).toLocaleString('ja-JP'):String(v))+'</span>':'')+'</div>').join('')+'</div><span class="vchart-label">'+esc(y)+'</span></div>';
+   return '<div class="vchart-col"><span class="vchart-value">'+esc(yenOrCount(totals[yi],metric))+'</span><div class="vchart-stack">'+vals.map((v,i)=>'<div class="vchart-segment" style="height:'+(v/max*100)+'%;background:'+artistColor(focusArtists[i])+'">'+(v>0?'<span>'+esc(metric===calcTotal||metric===ticketCost?Number(v).toLocaleString('ja-JP'):String(v))+'</span>':'')+'</div>').join('')+'</div><span class="vchart-label">'+esc(y)+'</span></div>';
   }).join('')+'</div>'+artistLegend();
  };
  const yenOrCount=(v,fn)=>fn===ticketCost||fn===calcTotal?yen(v):v+'回';
