@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.267</title>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>LIVE LOG 修正ver.268</title>
 <style>
 :root{color-scheme:dark;--bg:#080d17;--panel:#111b2b;--line:#34445a;--muted:#a7b4c7;--txt:#f4f3ee;--accent:#c6a96b;--gold:#c6a96b}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -18%,#25344b 0%,#111a29 38%,#080d17 78%);background-attachment:fixed;color:var(--txt);font:15px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
@@ -844,7 +844,7 @@ h2{font-size:17px;margin:0 0 10px}.notice{font-size:12px;color:var(--muted);marg
  }
 }
 </style></head><body>
-<header class="app-header"><div class="header-main"><h1>LIVE LOG <span class="version-tag">修正ver.267</span></h1><p>ライブ実績・費用・演奏曲</p></div><div class="last-updated">最終更新：2026/11/22 23:xx</div></header>
+<header class="app-header"><div class="header-main"><h1>LIVE LOG <span class="version-tag">修正ver.268</span></h1><p>ライブ実績・費用・演奏曲</p></div><div class="last-updated">最終更新：2026/11/22 23:xx</div></header>
 <main>
 <nav id="tabs"><button class="active" data-tab="live">実績</button><button data-tab="songs">演奏曲</button></nav>
 <section id="live" class="panel"><div class="stats"><div class="stat"><small>ライブ実績</small><b id="nLive">—</b></div><div class="stat"><small>費用</small><b id="sumCost">—</b></div></div><h2>実績・費用</h2>
@@ -1369,9 +1369,19 @@ document.addEventListener('click',e=>{
   const same=songLiveFilter&&songLiveFilter.artist===artist&&songLiveFilter.dates.join('|')===dates.join('|');
   songLiveFilter=same?null:{artist,dates};
   songPerformanceFilter=null;
-  const pageX=window.scrollX,pageY=window.scrollY,matrixWrap=document.querySelector('.matrixwrap'),matrixLeft=matrixWrap?.scrollLeft||0,matrixTop=matrixWrap?.scrollTop||0;
+  const filterKey=liveHeader.dataset.songLiveFilter;
+  const anchorTop=liveHeader.getBoundingClientRect().top;
+  const matrixWrap=document.querySelector('.matrixwrap');
+  const matrixLeft=matrixWrap?.scrollLeft||0,matrixTop=matrixWrap?.scrollTop||0;
   renderSongs();
-  requestAnimationFrame(()=>{window.scrollTo(pageX,pageY);if(matrixWrap){matrixWrap.scrollLeft=matrixLeft;matrixWrap.scrollTop=matrixTop;}});
+  requestAnimationFrame(()=>{
+   requestAnimationFrame(()=>{
+    const nextHeader=[...document.querySelectorAll('[data-song-live-filter]')].find(el=>el.dataset.songLiveFilter===filterKey);
+    if(nextHeader){const delta=nextHeader.getBoundingClientRect().top-anchorTop;if(Math.abs(delta)>1)window.scrollBy(0,delta);}
+    const nextMatrix=document.querySelector('.matrixwrap');
+    if(nextMatrix){nextMatrix.scrollLeft=matrixLeft;nextMatrix.scrollTop=matrixTop;}
+   });
+  });
   return;
  }
  const titleCell=e.target.closest('.song-title-cell');
